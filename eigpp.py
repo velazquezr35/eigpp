@@ -352,6 +352,7 @@ loc_sim.stru = sim.stru()
 if loc_sim.stru.rdOpt == 'raw':
     loc_sim.stru.resultados(*rd_rawData(data_folder+"red_pcolgante_2_modos.txt", loc_sim.stru.nodes))
     save_bin(bin_folder+"STRU_BN", loc_sim.stru) #Exportamos la info
+    print("Stru data saved")
 
 #Y si no, importamos
     
@@ -359,7 +360,7 @@ if loc_sim.stru.rdOpt=='bin':
     f = open(bin_folder+"STRU_BN",'rb')
     loc_sim.stru = pickle.load(f)
     loc_sim.stru.eigOpt = True
-    print("data loaded")
+    print("Stru data loaded")
     f.close()   
     
 loc_sim.aero = sim.aero()
@@ -368,12 +369,13 @@ loc_sim.aero = sim.aero()
 if loc_sim.aero.rdOpt == 'raw':
     loc_sim.aero.resultados_aero(*ae_loads(data_folder+"AeroFcsOnStruc.dat",loc_sim.stru.refer))
     save_bin(bin_folder+"AERO_BN", loc_sim.aero) #Exportamos la info
+    print("Stru data loaded")
 
 elif loc_sim.aero.rdOpt =='bin':
     f = open(bin_folder+"AERO_BN",'rb')
     loc_sim.aero = pickle.load(f)
     loc_sim.aero.eigOpt = True
-    print("data loaded")
+    print("Aero data loaded")
     f.close()  
 
 
@@ -412,6 +414,7 @@ if loc_sim.aero.eigOpt:
     
     loc_sim.aero.fq = np.array(loc_sim.aero.fq)
 
+ #Guardar nuevamente los resultados (update q y fq)
 def test_aux_vs_norm():
     '''Función para testear diferencias entre los 2 métodos propuestos para la descomposición modal'''
     listado = np.linspace(100, 10e3,15)
