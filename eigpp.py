@@ -182,7 +182,7 @@ def rd_u(stru_clase,**kwargs):
         
         glob_u_raw.append(local_table_raw[:,1:]) #guardamos todo menos el t
         glob_u_avr.append(local_table_avr[:,1:]) #guardamos todo menos el t
-
+        
     return glob_u_raw, glob_u_avr,glob_time,total_ntime
 
 
@@ -299,7 +299,7 @@ class sim(): #Más fácil definir una clase que contenga todo lo de interés
             self.nodes = [200001,200003]  #etiquetas de nodos de interés - lista de enteros
             self.nnode = 2       #cantidad de nodos considerados
             self.ndof = 0        #cantidad de GL considerados (incluyendo los que son restringidos por condiciones de borde)
-            self.rdOpt = 'raw'  #bandera para leer datos: 
+            self.rdOpt = 'bin'  #bandera para leer datos: 
                     #'raw' desde archivos provenientes de Simpact y delta1
                     #'bin' a partir de archivo binario guardado previamente
             self.rdof= True     #bandera que indique si hay GL rotacinales
@@ -326,7 +326,7 @@ class sim(): #Más fácil definir una clase que contenga todo lo de interés
             self.nodes = [200001,200003]  #etiquetas de nodos de interés - lista de enteros
             self.nnode = 2       #cantidad de nodos considerados
             self.rdOpt = 'raw'  #bandera para leer datos: 
-            self.eigOpt = False   #bandera para hacer (o no) descomposición modal
+            self.eigOpt = True   #bandera para hacer (o no) descomposición modal
 
         def resultados_aero(clase_aero, steps, dts, fzas):
             clase_aero.steps = steps
@@ -387,7 +387,11 @@ if loc_sim.stru.eigOpt:
         
     #Descomponemos tiempo a tiempo
     for i in range(loc_sim.stru.nt):
-        loc_sim.stru.q.append(np.matmul(loc_sim.stru.u_avr[i], aux))
+        loc_mixed_u = np.array([])
+        for j in range(len(loc_sim.stru.u_avr)):
+            loc_mixed_u = np.append(loc_mixed_u,loc_sim.stru.u_avr[j][i])
+
+        loc_sim.stru.q.append(np.matmul(loc_mixed_u, aux))
     
     loc_sim.stru.q = np.array(loc_sim.stru.q)
     
@@ -401,7 +405,10 @@ if loc_sim.aero.eigOpt:
 
     #Descomponemos tiempo a tiempo
     for i in range(loc_sim.aero.nt):
-        loc_sim.aero.fq.append(np.matmul(loc_sim.aero.fzas[i], aux))
+        loc_mixed_f = np.array([])
+        for j in range(len(loc_sim.aero.fzas[0][:,0])): #Ojo con índices!
+            loc_mixed_f = np.append(loc_mixed_f,loc_sim.aero.fzas[i][j])
+        loc_sim.aero.fq.append(np.matmul(loc_mixed_f, aux))
     
     loc_sim.aero.fq = np.array(loc_sim.aero.fq)
 
