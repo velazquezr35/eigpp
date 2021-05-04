@@ -350,7 +350,7 @@ loc_sim.stru = sim.stru()
 #hacemos los cálculos, si corresponde:
     
 if loc_sim.stru.rdOpt == 'raw':
-    loc_sim.stru.resultados(*rd_rawData(data_folder+"redox_pcolgante_2_modos.txt", loc_sim.stru.nodes))
+    loc_sim.stru.resultados(*rd_rawData(data_folder+"red_pcolgante_2_modos.txt", loc_sim.stru.nodes))
     save_bin(bin_folder+"STRU_BN", loc_sim.stru) #Exportamos la info
 
 #Y si no, importamos
