@@ -1,5 +1,16 @@
 # ayudantia_eigpp_2021
 
+### Estructura
+
+eigpp.py: Código principal
+/data: Carpeta que contiene los archivos *necesarios* (inputs).
+/iedata: Carpeta que contiene los archivos de *salida* BIN.
+
+La presente versión genera dos archivos individuales STRU y AERO.
+
+La carpeta */data* contiene un recorte de pcolgante con 2 modos (iguales) para pruebas. 
+
+*temp_file* es un ejemplo de salida al correr el auto-bat.
 
 ### Apéndice original del código
 
