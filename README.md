@@ -5,10 +5,7 @@
 
 La clase principal y sus dos subclases asociadas se definen por:
 
-```sim```
-
-   ```stru```
-   ```aero```
+```sim: stru, aero```
 
 Reservando sendos casos para análisis estructurales y con cargas aerodinámicas, respectivamente.
 
