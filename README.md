@@ -3,8 +3,9 @@
 ### Estructura
 
 eigpp.py: Código principal
-/data: Carpeta que contiene los archivos *necesarios* (inputs).
-/iedata: Carpeta que contiene los archivos de *salida* BIN.
+
+- /data: Carpeta que contiene los archivos *necesarios* (inputs).
+- /iedata: Carpeta que contiene los archivos de *salida* BIN.
 
 La presente versión genera dos archivos individuales STRU y AERO.
 
