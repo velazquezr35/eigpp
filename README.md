@@ -1,4 +1,4 @@
-# ayudantia_eigpp_2021
+# eigpp
 
 ### Estructura
 
