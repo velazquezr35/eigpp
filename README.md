@@ -7,7 +7,7 @@ eigpp.py: Código principal
 - /data: Carpeta que contiene los archivos *necesarios* (inputs).
 - /iedata: Carpeta que contiene los archivos de *salida* BIN.
 
-La presente versión genera dos archivos individuales STRU y AERO.
+La presente versión genera un único archivo SIM_BN
 
 La carpeta */data* contiene un recorte de pcolgante con 2 modos (iguales) para pruebas. 
 
