@@ -182,7 +182,7 @@ def rd_u(stru_clase,**kwargs):
         
         glob_u_raw.append(local_table_raw[:,1:]) #guardamos todo menos el t
         glob_u_avr.append(local_table_avr[:,1:]) #guardamos todo menos el t
-        
+
     return glob_u_raw, glob_u_avr,glob_time,total_ntime
 
 
@@ -299,7 +299,7 @@ class sim(): #Más fácil definir una clase que contenga todo lo de interés
             self.nodes = [200001,200003]  #etiquetas de nodos de interés - lista de enteros
             self.nnode = 2       #cantidad de nodos considerados
             self.ndof = 0        #cantidad de GL considerados (incluyendo los que son restringidos por condiciones de borde)
-            self.rdOpt = 'bin'  #bandera para leer datos: 
+            self.rdOpt = 'raw'  #bandera para leer datos: 
                     #'raw' desde archivos provenientes de Simpact y delta1
                     #'bin' a partir de archivo binario guardado previamente
             self.rdof= True     #bandera que indique si hay GL rotacinales
@@ -326,7 +326,7 @@ class sim(): #Más fácil definir una clase que contenga todo lo de interés
             self.nodes = [200001,200003]  #etiquetas de nodos de interés - lista de enteros
             self.nnode = 2       #cantidad de nodos considerados
             self.rdOpt = 'raw'  #bandera para leer datos: 
-            self.eigOpt = True   #bandera para hacer (o no) descomposición modal
+            self.eigOpt = False   #bandera para hacer (o no) descomposición modal
 
         def resultados_aero(clase_aero, steps, dts, fzas):
             clase_aero.steps = steps
@@ -352,7 +352,6 @@ loc_sim.stru = sim.stru()
 if loc_sim.stru.rdOpt == 'raw':
     loc_sim.stru.resultados(*rd_rawData(data_folder+"red_pcolgante_2_modos.txt", loc_sim.stru.nodes))
     save_bin(bin_folder+"STRU_BN", loc_sim.stru) #Exportamos la info
-    print("Stru data saved")
 
 #Y si no, importamos
     
@@ -360,7 +359,7 @@ if loc_sim.stru.rdOpt=='bin':
     f = open(bin_folder+"STRU_BN",'rb')
     loc_sim.stru = pickle.load(f)
     loc_sim.stru.eigOpt = True
-    print("Stru data loaded")
+    print("data loaded")
     f.close()   
     
 loc_sim.aero = sim.aero()
@@ -369,13 +368,12 @@ loc_sim.aero = sim.aero()
 if loc_sim.aero.rdOpt == 'raw':
     loc_sim.aero.resultados_aero(*ae_loads(data_folder+"AeroFcsOnStruc.dat",loc_sim.stru.refer))
     save_bin(bin_folder+"AERO_BN", loc_sim.aero) #Exportamos la info
-    print("Stru data loaded")
 
 elif loc_sim.aero.rdOpt =='bin':
     f = open(bin_folder+"AERO_BN",'rb')
     loc_sim.aero = pickle.load(f)
     loc_sim.aero.eigOpt = True
-    print("Aero data loaded")
+    print("data loaded")
     f.close()  
 
 
@@ -389,11 +387,7 @@ if loc_sim.stru.eigOpt:
         
     #Descomponemos tiempo a tiempo
     for i in range(loc_sim.stru.nt):
-        loc_mixed_u = np.array([])
-        for j in range(len(loc_sim.stru.u_avr)):
-            loc_mixed_u = np.append(loc_mixed_u,loc_sim.stru.u_avr[j][i])
-
-        loc_sim.stru.q.append(np.matmul(loc_mixed_u, aux))
+        loc_sim.stru.q.append(np.matmul(loc_sim.stru.u_avr[i], aux))
     
     loc_sim.stru.q = np.array(loc_sim.stru.q)
     
@@ -407,14 +401,10 @@ if loc_sim.aero.eigOpt:
 
     #Descomponemos tiempo a tiempo
     for i in range(loc_sim.aero.nt):
-        loc_mixed_f = np.array([])
-        for j in range(len(loc_sim.aero.fzas[0][:,0])): #Ojo con índices!
-            loc_mixed_f = np.append(loc_mixed_f,loc_sim.aero.fzas[i][j])
-        loc_sim.aero.fq.append(np.matmul(loc_mixed_f, aux))
+        loc_sim.aero.fq.append(np.matmul(loc_sim.aero.fzas[i], aux))
     
     loc_sim.aero.fq = np.array(loc_sim.aero.fq)
 
- #Guardar nuevamente los resultados (update q y fq)
 def test_aux_vs_norm():
     '''Función para testear diferencias entre los 2 métodos propuestos para la descomposición modal'''
     listado = np.linspace(100, 10e3,15)
