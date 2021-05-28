@@ -7,6 +7,7 @@ Created on Thu Feb 25 17:52:06 2021
 Ayudantía 2021 - Departamento de Estructuras FCEFyN
 """
 
+#Esta versión genera un único archivo SIM_BN
 #Zona para importar libs y módulos
 import pickle
 import numpy as np
