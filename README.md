@@ -45,3 +45,10 @@ La información se guarda bajo las siguientes variables, pertenecientes a la sub
 - sim.stru.fzas: Cargas sobre nodos considerados.
 - sim.stru.loads_nt: Cantidad total de instantes de tiempo.
 - sim.stru.loads_q: Descomposición de fzas. sobre modos considerados.
+
+
+##Sobre Python para considerar
+
+ + diferencias entre atributos de clase y de instancia: primera parte de [esto](https://dzone.com/articles/python-class-attributes-vs-instance-attributes#:~:text=A%20class%20attribute%20is%20a,.)%20%2C%20of%20the%20class) - básicamente, **no hay que usar atributos de clase porque se cmportan raro**
+ 
+ + 

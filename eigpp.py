@@ -48,7 +48,7 @@ def search_string(x_dat, frase):
 def rd_SimpactTable(x_dat, start_line, **kwargs):
     #función que devuelve una tabla asociada genérica. Pensada para los modos
 
-    # Directamente trabajamos con start_line dándo este valor como offset al llamarla
+    # Directamente trabajamos con start_line dando este valor como offset al llamarla
     stop_flag = True
     counter = 0
     while stop_flag:
@@ -272,10 +272,10 @@ Zona para definir opciones y clases
 # sim.str.mass:   reales, ngl         - matriz de masa diagonal del modelo
 # sim.str.om:     reales, nm          - vector de frecuencias naturales ordeandas de menor a mayor
 # sim.str.phi:    reales, ngl x nm    - matriz modal (cada columna es un modo)
-# sim.str.q:      reales, nm=ngl x nt    - matriz con coordenadas modales a lo largo del tiempo, cada columna tiene el vector q de un instante
+# sim.str.q:      reales, nm x nt     - matriz con coordenadas modales a lo largo del tiempo, cada columna tiene el vector q de un instante
 # sim.str.t:      reales, nt          - vector con instantes donde se conoce la solución (malla o grilla temporal)
 # sim.str.nt:     entero, 1           - cantidad de instantes de tiempo
-# sim.str.u_raw:  reales, ngl x nt    - matriz con desplazamientos a lo largo del tiempo, el vector u para un instante se guarda en una columna - como se obtienen de Simpact/curvas (si existen GL rotacionales, se expresan con ángulos de Euler y no se puede usar para hacer descomposición modal)
+# sim.str.u_raw:  reales, ngl x nt    - matriz con desplazamientos a lo largo del tiempo, el vector u para un instante se guarda en una columna - tal como se obtienen de Simpact/curvas (si existen GL rotacionales, se expresan con ángulos de Euler [rad] y no se puede usar para hacer descomposición modal)
 # sim.str.u_avr:  reales, ngl x nt    - como sim.str.u_raw pero transformando los GL rotacionales de ángulos de Euler a vector axial (avr: axial vector rotations)
 
 
