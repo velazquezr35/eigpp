@@ -9,13 +9,81 @@ Ayudantía 2021 - Departamento de Estructuras FCEFyN
 Esta versión genera un único archivo SIM_BN
 """
 
-#Zona para importar libs y módulos
+"""
+------------------------------------------------------------------------------
+Zona para importar libs y módulos
+------------------------------------------------------------------------------
+"""
+
 import pickle
 import numpy as np
 import re
 import os
 from scipy.spatial.transform import Rotation as Rot
 import matplotlib.pyplot as plt
+
+
+"""
+------------------------------------------------------------------------------
+Zona para definir opciones y clases
+------------------------------------------------------------------------------
+"""
+
+# Definición modelo propuesta por consigna
+
+# sim.str.mass:   reales, ngl         - matriz de masa diagonal del modelo
+# sim.str.om:     reales, nm          - vector de frecuencias naturales ordeandas de menor a mayor
+# sim.str.phi:    reales, ngl x nm    - matriz modal (cada columna es un modo)
+# sim.str.q:      reales, nm x nt     - matriz con coordenadas modales a lo largo del tiempo, cada columna tiene el vector q de un instante
+# sim.str.t:      reales, nt          - vector con instantes donde se conoce la solución (malla o grilla temporal)
+# sim.str.nt:     entero, 1           - cantidad de instantes de tiempo
+# sim.str.u_raw:  reales, ngl x nt    - matriz con desplazamientos a lo largo del tiempo, el vector u para un instante se guarda en una columna - tal como se obtienen de Simpact/curvas (si existen GL rotacionales, se expresan con ángulos de Euler [rad] y no se puede usar para hacer descomposición modal)
+# sim.str.u_avr:  reales, ngl x nt    - como sim.str.u_raw pero transformando los GL rotacionales de ángulos de Euler a vector axial (avr: axial vector rotations)
+
+
+class sim(): #Más fácil definir una clase que contenga todo lo de interés
+    def __init__(self):
+        self.name = "SIM_TESTS" #Nombre de la simulación (se usa luego para guardar archivos y demás)
+    #subclase para análisis estructural
+    class stru:
+        
+        def __init__(self):
+            self.nodes = [200001,200003]  #etiquetas de nodos de interés - lista de enteros
+            self.nnode = 2       #cantidad de nodos considerados
+            self.ndof = 0        #cantidad de GL considerados (incluyendo los que son restringidos por condiciones de borde)
+            self.strurdOpt = 'raw'  #bandera para leer datos: 
+                    #'raw' desde archivos provenientes de Simpact y delta1
+                    #'bin' a partir de archivo binario guardado previamente
+            self.rdof= True     #bandera que indique si hay GL rotacinales
+            self.strueigOpt = True   #bandera para hacer (o no) descomposición modal
+            self.loadsrdOpt = 'raw' #bandera para leer datos de cargas
+            self.loadseigOpt = True #bandera para descomponer cargas
+
+        def resultados_loads(clase_aero, steps, t, fzas):
+            clase_aero.steps = steps
+            clase_aero.loads_t = t
+            clase_aero.fzas = fzas
+            clase_aero.loads_nt = int(steps[-1])
+            clase_aero.loads_q = []
+
+        def resultados(clase,mass, phi, om, refer, u_raw,u_avr,t,nt):
+            clase.mass = mass
+            clase.phi = phi
+            clase.om = om
+            clase.refer = refer
+            clase.u_raw = u_raw
+            clase.u_avr = u_avr
+            clase.t = t
+            clase.nt = nt
+            clase.q = []
+            
+            
+        def plot(self): #Pruebas para plotear
+            fig, ax = plt.subplots()
+            ax.plot(self.t,self.u_raw[:,0])
+
+# ------------------------------------------------------------------------------
+# trash?
 
 data_folder = 'data/'
 bin_folder = 'ie_data/'
@@ -262,64 +330,7 @@ def ae_Ftable(fname, noderefs):
     return(loc_ittab[:,0], loc_ittab[:,1], loc_ftab_filt)
     
 
-"""
-------------------------------------------------------------------------------
-Zona para definir opciones y clases
-------------------------------------------------------------------------------
-"""
 
-#Definición modelo propuesta por consigna
-
-# sim.str.mass:   reales, ngl         - matriz de masa diagonal del modelo
-# sim.str.om:     reales, nm          - vector de frecuencias naturales ordeandas de menor a mayor
-# sim.str.phi:    reales, ngl x nm    - matriz modal (cada columna es un modo)
-# sim.str.q:      reales, nm x nt     - matriz con coordenadas modales a lo largo del tiempo, cada columna tiene el vector q de un instante
-# sim.str.t:      reales, nt          - vector con instantes donde se conoce la solución (malla o grilla temporal)
-# sim.str.nt:     entero, 1           - cantidad de instantes de tiempo
-# sim.str.u_raw:  reales, ngl x nt    - matriz con desplazamientos a lo largo del tiempo, el vector u para un instante se guarda en una columna - tal como se obtienen de Simpact/curvas (si existen GL rotacionales, se expresan con ángulos de Euler [rad] y no se puede usar para hacer descomposición modal)
-# sim.str.u_avr:  reales, ngl x nt    - como sim.str.u_raw pero transformando los GL rotacionales de ángulos de Euler a vector axial (avr: axial vector rotations)
-
-
-class sim(): #Más fácil definir una clase que contenga todo lo de interés
-    def __init__(self):
-        self.name = "SIM_TESTS" #Nombre de la simulación (se usa luego para guardar archivos y demás)
-    #subclase para análisis estructural
-    class stru:
-        
-        def __init__(self):
-            self.nodes = [200001,200003]  #etiquetas de nodos de interés - lista de enteros
-            self.nnode = 2       #cantidad de nodos considerados
-            self.ndof = 0        #cantidad de GL considerados (incluyendo los que son restringidos por condiciones de borde)
-            self.strurdOpt = 'raw'  #bandera para leer datos: 
-                    #'raw' desde archivos provenientes de Simpact y delta1
-                    #'bin' a partir de archivo binario guardado previamente
-            self.rdof= True     #bandera que indique si hay GL rotacinales
-            self.strueigOpt = True   #bandera para hacer (o no) descomposición modal
-            self.loadsrdOpt = 'raw' #bandera para leer datos de cargas
-            self.loadseigOpt = True #bandera para descomponer cargas
-
-        def resultados_loads(clase_aero, steps, t, fzas):
-            clase_aero.steps = steps
-            clase_aero.loads_t = t
-            clase_aero.fzas = fzas
-            clase_aero.loads_nt = int(steps[-1])
-            clase_aero.loads_q = []
-
-        def resultados(clase,mass, phi, om, refer, u_raw,u_avr,t,nt):
-            clase.mass = mass
-            clase.phi = phi
-            clase.om = om
-            clase.refer = refer
-            clase.u_raw = u_raw
-            clase.u_avr = u_avr
-            clase.t = t
-            clase.nt = nt
-            clase.q = []
-            
-            
-        def plot(self): #Pruebas para plotear
-            fig, ax = plt.subplots()
-            ax.plot(self.t,self.u_raw[:,0])
 
 """
 ------------------------------------------------------------------------------
