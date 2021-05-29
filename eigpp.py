@@ -7,7 +7,6 @@ Created on Thu Feb 25 17:52:06 2021
 Ayudantía 2021 - Departamento de Estructuras FCEFyN
 """
 
-#Esta versión genera un único archivo SIM_BN
 #Zona para importar libs y módulos
 import pickle
 import numpy as np
@@ -289,12 +288,12 @@ class sim(): #Más fácil definir una clase que contenga todo lo de interés
             self.nodes = [200001,200003]  #etiquetas de nodos de interés - lista de enteros
             self.nnode = 2       #cantidad de nodos considerados
             self.ndof = 0        #cantidad de GL considerados (incluyendo los que son restringidos por condiciones de borde)
-            self.strurdOpt = 'raw'  #bandera para leer datos: 
+            self.strurdOpt = 'bin'  #bandera para leer datos: 
                     #'raw' desde archivos provenientes de Simpact y delta1
                     #'bin' a partir de archivo binario guardado previamente
             self.rdof= True     #bandera que indique si hay GL rotacinales
             self.strueigOpt = True   #bandera para hacer (o no) descomposición modal
-            self.loadsrdOpt = 'raw' #bandera para leer datos de cargas
+            self.loadsrdOpt = 'bin' #bandera para leer datos de cargas
             self.loadseigOpt = True #bandera para descomponer cargas
 
         def resultados_loads(clase_aero, steps, t, fzas):
@@ -379,61 +378,71 @@ if __name__ == '__main__':
             loc_sim.stru.loads_q.append(np.matmul(aux, loc_sim.stru.fzas[:,i]))
         
         loc_sim.stru.loads_q = np.transpose(np.array(loc_sim.stru.loads_q))
+  
+def test_aux_vs_norm(n_times, stru_nt):
+    '''Función para testear diferencia de tiempo de cálculo entre los dos métodos propuestos para la descomp. modal'''
+    glob_t_full = []
+    glob_t_aux = []
+    for glob_time in range(n_times):
+        listado_size = np.linspace(30,15e3,5)
+        t_full = []
+        t_aux = []
+        loc_sim.stru.nt = stru_nt
+        for j in range(len(listado_size)):
+            size = int(listado_size[j])
+            loc_sim.stru.mass = np.random.rand(size)
+            loc_sim.stru.u_avr = np.random.rand(size,loc_sim.stru.nt)
+            loc_sim.stru.phi = np.random.rand(size,size)
     
-def test_aux_vs_norm():
-    '''Función para testear diferencias entre los 2 métodos propuestos para la descomposición modal'''
-    listado = np.linspace(100, 10e3,15)
-    tiempos_full = []
-    tiempos_prev = []
-    loc_sim.stru.nt = 1
-    for j in range(len(listado)):
-        size = int(listado[j])
-        loc_sim.stru.mass = np.ones(size)
-        loc_sim.stru.u_avr = np.ones((loc_sim.stru.nt,size))
-        loc_sim.stru.phi = np.ones((size,6))
-        loc_sim.stru.q = []
-        
-        if loc_sim.stru.eigOpt:
             import time
-            t_1 = time.time()
-            test = []
-            
+            t_i_full = time.time()
+            q_full = []
             for i in range(loc_sim.stru.nt):
-                loc_u = loc_sim.stru.u_avr[i]
+                loc_u = loc_sim.stru.u_avr[:,i]
                 loc_prod = np.matmul(np.diag(loc_sim.stru.mass),loc_u)
                 loc_prod = np.matmul(np.transpose(loc_sim.stru.phi),loc_prod)
-                test.append(loc_prod)
+                q_full.append(loc_prod)
+              
+            q_full = np.array(q_full)
+            dt_full = time.time()-t_i_full
             
-            dt_full = time.time()-t_1
-            test = np.array(test)
-            
-            t_2 = time.time()
+            t_i_aux = time.time()
+            q_aux = []
             #Versión más eficiente (sirve luego p/descomponer cargas)
-            aux = np.zeros((size,len(loc_sim.stru.phi[0])))
-            #Calculamos producto auxiliar
-            for i in range(len(loc_sim.stru.phi)):
-                aux[i] = loc_sim.stru.phi[i] * loc_sim.stru.mass[i]
+            # aux = np.multiply(np.transpose(loc_sim.stru.phi),loc_sim.stru.mass)
+            
+            #Alternativa con loop, pero es menos eficiente que usar NumPy:
                 
+            aux = np.zeros((len(loc_sim.stru.phi[0,:]),len(loc_sim.stru.mass)))
+            # Calculamos producto auxiliar
+            for i in range(len(aux)):
+                    aux[i] = np.multiply(loc_sim.stru.mass,loc_sim.stru.phi[:,i])
             #Descomponemos tiempo a tiempo
             for i in range(loc_sim.stru.nt):
-                loc_sim.stru.q.append(np.matmul(loc_sim.stru.u_avr[i], aux))
+                q_aux.append(np.matmul(aux, loc_sim.stru.u_avr[:,i]))
             
-            loc_sim.stru.q = np.array(loc_sim.stru.q)
-            dt_par = time.time()-t_2
-        tiempos_full.append(dt_full)
-        tiempos_prev.append(dt_par)
-        print(dt_full, dt_par)
-        
+            q_aux = np.transpose(np.array(q_aux))
+    
+            dt_aux = time.time()-t_i_aux
+            t_full.append(dt_full)
+            t_aux.append(dt_aux)
+        glob_t_full.append(t_full)
+        glob_t_aux.append(t_aux)
+    
+    t_prom_full = np.mean(glob_t_full,axis=0)
+    t_prom_aux = np.mean(glob_t_aux,axis=0)
     import matplotlib.pyplot as plt
     fig, ax = plt.subplots()
-    ax.plot(listado, tiempos_full, marker='o', label = 'Sin desc.')
-    ax.plot(listado, tiempos_prev, marker='x', label = 'Con pre-prod')
-    ax.set_xlabel('size')
+    ax.plot(listado_size, t_prom_full, marker='o', label = 'Operación normal')
+    ax.plot(listado_size, t_prom_aux, marker='x', label = 'Con pre-producto AUX')
+    ax.set_xlabel('log N DOFs')
     ax.set_ylabel('t [s]')
-    ax.set_yscale('log')
-    ax.legend()
+    ax.set_xscale('log')
+    fig.suptitle('Comparativa entre métodos de descomposición modal')
+    # ax.set_yscale('log')
+    ax.legend(title='Promedio entre ' + str(n_times) +' corridas')
+    ax.set_title('Cálculo para u_avr con '+str(loc_sim.stru.nt)+' instantes de tiempo')
     ax.grid()
-    
-    #Tests: 
-        #Cantidad de modos = cantidad de DOFs
-        #Tiempos de u_raw iguales?
+    return(t_full, t_aux)
+
+t_full, t_par = test_aux_vs_norm(4,15)
