@@ -5,9 +5,10 @@ Created on Thu Feb 25 17:52:06 2021
 @author: Rodrigo Velazquez
 
 Ayudantía 2021 - Departamento de Estructuras FCEFyN
+
+Esta versión genera un único archivo SIM_BN
 """
 
-#Esta versión genera un único archivo SIM_BN
 #Zona para importar libs y módulos
 import pickle
 import numpy as np
