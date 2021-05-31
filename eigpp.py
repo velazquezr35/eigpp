@@ -4,7 +4,7 @@ Created on Thu Feb 25 17:52:06 2021
 
 @author: Rodrigo Velazquez
 
-Ayudantía 2021 - Departamento de Estructuras FCEFyN
+Ayudantía 2021 - Departamento de EStructuras FCEFyN
 """
 
 #Zona para importar libs y módulos
@@ -14,11 +14,6 @@ import re
 import os
 from scipy.spatial.transform import Rotation as Rot
 import matplotlib.pyplot as plt
-
-data_folder = 'data/'
-bin_folder = 'ie_data/'
-
-glob_print_output = True
 
 # Class offsets - Modificar para posibles parts. a leer
 
@@ -30,7 +25,7 @@ class offsets:
 #------------------------------------------------------------------------------
 # Definición de funciones
 
-##Funciones originales para el análisis estructural
+##Funciones originales para el análisis eStructural
 
 def search_string(x_dat, frase):
     lin_count = 0  # contador de lineas
@@ -53,14 +48,12 @@ def rd_SimpactTable(x_dat, start_line, **kwargs):
     while stop_flag:
         loc_arr = line_spliter(x_dat[start_line+counter])
         b_cond = np.isnan(loc_arr)
-        # print(b_cond)
         if b_cond.any():
             stop_flag = False
             if glob_print_output:
                 print("Nan encontrado")
             # break
         else:
-            # print(loc_arr)
             if counter == 0:  # primer ciclo
                 table_gen = np.array([loc_arr])
                 # print(loc_arr)
@@ -69,8 +62,6 @@ def rd_SimpactTable(x_dat, start_line, **kwargs):
                 table_gen = np.append(table_gen, [loc_arr], axis=0)
                 
             counter = counter+1
-            # print(len(x_dat))
-            # print(loc_arr)
             try: 
                 if x_dat[start_line + counter] == '\n':
                     stop_flag = False
@@ -82,7 +73,7 @@ def rd_SimpactTable(x_dat, start_line, **kwargs):
 def rd_rawData(fname, nodos_interes):
     if glob_print_output:
         print("Raw data análisis completo")
-    return *rd_eig(fname,nodos_interes),*rd_u(loc_sim.stru)
+    return *rd_eig(fname,nodos_interes),*rd_u(loc_sim.Stru)
 
 def rd_eig(fname, nodos_interes):
     
@@ -142,21 +133,21 @@ def rd_eig(fname, nodos_interes):
         print(info_matrix)
     return M_i_matrix, np.transpose(Modes_reshaped_rows), m_O_f_p[:,1], info_matrix
 
-def rd_u(stru_clase, **kwargs):
-    '''input: class stru \n
+def rd_u(Stru_clase, **kwargs):
+    '''input: class Stru \n
         kwargs: 
         output: '''
     glob_u_raw = []
     glob_u_avr = []
-    for node_name in stru_clase.nodes:
+    for node_name in Stru_clase.nodes:
         callbat(data_folder+"pcolgante.@1", str(node_name), "0", data_folder+"temp_file")
         loc_lines = open(data_folder+"temp_file",'r')
         loc_x_dat = loc_lines.readlines()
         loc_table_raw = rd_SimpactTable(loc_x_dat,0)
         loc_table_avr = np.copy(loc_table_raw)
-        if stru_clase.rdof: #si hay grados de libertad, rotar
+        if Stru_clase.rdof: #si hay grados de libertad, rotar
             loc_table_avr[:,4:]= euler2axial(loc_table_avr[:,4:])
-        if stru_clase.nodes.index(node_name) == 0:
+        if Stru_clase.nodes.index(node_name) == 0:
             #Acomodar posibilidad de que el tiempo de 1 nodo sea menor (NaN antes q resto)
             glob_time = loc_table_raw[:,0]
             total_ntime = len(glob_time)
@@ -197,12 +188,18 @@ def line_spliter(line):
     filt = np.array(filt)
     return(filt)
 
-def save_bin(archivo, data):
-    # global data
-    f = open(archivo, 'wb')
-    pickle.dump(data, f)
-    f.close()
-    print ('Data saved - BIN file')
+def save_load_bin(modo, archivo, data):
+    if modo:
+        f = open(archivo, 'wb')
+        pickle.dump(data, f)
+        f.close()
+        print ('Data saved - BIN file')
+    else:
+        f = open(archivo,'rb')
+        loc_ret = pickle.load(f)
+        print("Data loaded - BIN file")
+        f.close()  
+        return(loc_ret)
     
 ## Funciones agregadas para el análisis de cargas
 
@@ -259,127 +256,7 @@ def ae_Ftable(fname, noderefs):
     #step, instante, tabla fuerza
     return(loc_ittab[:,0], loc_ittab[:,1], loc_ftab_filt)
     
-
-"""
-------------------------------------------------------------------------------
-Zona para definir opciones y clases
-------------------------------------------------------------------------------
-"""
-
-#Definición modelo propuesta por consigna
-
-# sim.str.mass:   reales, ngl         - matriz de masa diagonal del modelo
-# sim.str.om:     reales, nm          - vector de frecuencias naturales ordeandas de menor a mayor
-# sim.str.phi:    reales, ngl x nm    - matriz modal (cada columna es un modo)
-# sim.str.q:      reales, nm=ngl x nt    - matriz con coordenadas modales a lo largo del tiempo, cada columna tiene el vector q de un instante
-# sim.str.t:      reales, nt          - vector con instantes donde se conoce la solución (malla o grilla temporal)
-# sim.str.nt:     entero, 1           - cantidad de instantes de tiempo
-# sim.str.u_raw:  reales, ngl x nt    - matriz con desplazamientos a lo largo del tiempo, el vector u para un instante se guarda en una columna - como se obtienen de Simpact/curvas (si existen GL rotacionales, se expresan con ángulos de Euler y no se puede usar para hacer descomposición modal)
-# sim.str.u_avr:  reales, ngl x nt    - como sim.str.u_raw pero transformando los GL rotacionales de ángulos de Euler a vector axial (avr: axial vector rotations)
-
-
-class sim(): #Más fácil definir una clase que contenga todo lo de interés
-    def __init__(self):
-        self.name = "SIM_TESTS" #Nombre de la simulación (se usa luego para guardar archivos y demás)
-    #subclase para análisis estructural
-    class stru:
-        
-        def __init__(self):
-            self.nodes = [200001,200003]  #etiquetas de nodos de interés - lista de enteros
-            self.nnode = 2       #cantidad de nodos considerados
-            self.ndof = 0        #cantidad de GL considerados (incluyendo los que son restringidos por condiciones de borde)
-            self.strurdOpt = 'bin'  #bandera para leer datos: 
-                    #'raw' desde archivos provenientes de Simpact y delta1
-                    #'bin' a partir de archivo binario guardado previamente
-            self.rdof= True     #bandera que indique si hay GL rotacinales
-            self.strueigOpt = True   #bandera para hacer (o no) descomposición modal
-            self.loadsrdOpt = 'bin' #bandera para leer datos de cargas
-            self.loadseigOpt = True #bandera para descomponer cargas
-
-        def resultados_loads(clase_aero, steps, t, fzas):
-            clase_aero.steps = steps
-            clase_aero.loads_t = t
-            clase_aero.fzas = fzas
-            clase_aero.loads_nt = int(steps[-1])
-            clase_aero.loads_q = []
-
-        def resultados(clase,mass, phi, om, refer, u_raw,u_avr,t,nt):
-            clase.mass = mass
-            clase.phi = phi
-            clase.om = om
-            clase.refer = refer
-            clase.u_raw = u_raw
-            clase.u_avr = u_avr
-            clase.t = t
-            clase.nt = nt
-            clase.q = []
-            
-            
-        def plot(self): #Pruebas para plotear
-            fig, ax = plt.subplots()
-            ax.plot(self.t,self.u_raw[:,0])
-
-"""
-------------------------------------------------------------------------------
-Código Principal
-------------------------------------------------------------------------------
-"""
-
-if __name__ == '__main__':
-    #Vemos si calcular y exportar o directamente cargar análisis previo
-    #generamos una clase para trabajar. Podríamos generar varias y analizar en serie.
-    loc_sim = sim()
-    loc_sim.stru = sim.stru()    
-    #hacemos los cálculos, si corresponde:
-    if loc_sim.stru.strurdOpt == 'raw':
-        loc_sim.stru.resultados(*rd_rawData(data_folder+"red_pcolgante_2_modos.txt", loc_sim.stru.nodes))
-        save_bin(bin_folder+"SIM_BN", loc_sim.stru) #Exportamos la info
-    if loc_sim.stru.strurdOpt=='bin':
-        f = open(bin_folder+"SIM_BN",'rb')
-        loc_sim.stru = pickle.load(f)
-        loc_sim.stru.strueigOpt = True
-        print("Data loaded - BIN file")
-        f.close()   
-        
-    #nuevamente, si corresponde:
-    if loc_sim.stru.loadsrdOpt == 'raw':
-        loc_sim.stru.resultados_loads(*ae_Ftable(data_folder+"AeroFcsOnStruc.dat",loc_sim.stru.refer))
-        save_bin(bin_folder+"SIM_BN", loc_sim.stru) #Exportamos la info
-    
-    elif loc_sim.stru.loadsrdOpt =='bin':
-        f = open(bin_folder+"SIM_BN",'rb')
-        loc_sim.stru = pickle.load(f)
-        loc_sim.stru.eigOpt = True
-        print("Data loaded - BIN file")
-        f.close()  
-    
-    
-    #Ya tenemos la info cargada y lista. Ahora ver si corresponde hacer la descomposición, en sendos casos:
-    if loc_sim.stru.strueigOpt:
-        #Versión más eficiente (sirve luego p/descomponer cargas)
-        aux = np.zeros((len(loc_sim.stru.phi[0,:]),len(loc_sim.stru.mass)))
-        for i in range(len(aux)):
-            aux[i] = np.multiply(loc_sim.stru.mass,loc_sim.stru.phi[:,i])
-            
-        #Descomponemos tiempo a tiempo
-        for i in range(loc_sim.stru.nt):
-            loc_sim.stru.q.append(np.matmul(aux, loc_sim.stru.u_avr[:,i]))
-        
-        loc_sim.stru.q = np.transpose(np.array(loc_sim.stru.q))
-        
-    #Idem para la descomposición de fzas
-    if loc_sim.stru.loadseigOpt:
-        if not aux.any(): #Repetir cálculo, si no reutilizamos
-            aux = np.zeros((len(loc_sim.stru.phi[0,:]),len(loc_sim.stru.mass)))
-            for i in range(len(aux)):
-                aux[i] = np.multiply(loc_sim.stru.mass,loc_sim.stru.phi[:,i])
-            #Descomponemos tiempo a tiempo
-        for i in range(loc_sim.stru.loads_nt):
-            loc_sim.stru.loads_q.append(np.matmul(aux, loc_sim.stru.fzas[:,i]))
-        
-        loc_sim.stru.loads_q = np.transpose(np.array(loc_sim.stru.loads_q))
-  
-def test_aux_vs_norm(n_times, stru_nt):
+def test_aux_vs_norm(n_times, Stru_nt):
     '''Función para testear diferencia de tiempo de cálculo entre los dos métodos propuestos para la descomp. modal'''
     glob_t_full = []
     glob_t_aux = []
@@ -387,20 +264,20 @@ def test_aux_vs_norm(n_times, stru_nt):
         listado_size = np.linspace(30,15e3,5)
         t_full = []
         t_aux = []
-        loc_sim.stru.nt = stru_nt
+        loc_sim.Stru.nt = Stru_nt
         for j in range(len(listado_size)):
             size = int(listado_size[j])
-            loc_sim.stru.mass = np.random.rand(size)
-            loc_sim.stru.u_avr = np.random.rand(size,loc_sim.stru.nt)
-            loc_sim.stru.phi = np.random.rand(size,size)
+            loc_sim.Stru.mass = np.random.rand(size)
+            loc_sim.Stru.u_avr = np.random.rand(size,loc_sim.Stru.nt)
+            loc_sim.Stru.phi = np.random.rand(size,size)
     
             import time
             t_i_full = time.time()
             q_full = []
-            for i in range(loc_sim.stru.nt):
-                loc_u = loc_sim.stru.u_avr[:,i]
-                loc_prod = np.matmul(np.diag(loc_sim.stru.mass),loc_u)
-                loc_prod = np.matmul(np.transpose(loc_sim.stru.phi),loc_prod)
+            for i in range(loc_sim.Stru.nt):
+                loc_u = loc_sim.Stru.u_avr[:,i]
+                loc_prod = np.matmul(np.diag(loc_sim.Stru.mass),loc_u)
+                loc_prod = np.matmul(np.transpose(loc_sim.Stru.phi),loc_prod)
                 q_full.append(loc_prod)
               
             q_full = np.array(q_full)
@@ -409,17 +286,17 @@ def test_aux_vs_norm(n_times, stru_nt):
             t_i_aux = time.time()
             q_aux = []
             #Versión más eficiente (sirve luego p/descomponer cargas)
-            # aux = np.multiply(np.transpose(loc_sim.stru.phi),loc_sim.stru.mass)
+            # aux = np.multiply(np.transpose(loc_sim.Stru.phi),loc_sim.Stru.mass)
             
             #Alternativa con loop, pero es menos eficiente que usar NumPy:
                 
-            aux = np.zeros((len(loc_sim.stru.phi[0,:]),len(loc_sim.stru.mass)))
+            aux = np.zeros((len(loc_sim.Stru.phi[0,:]),len(loc_sim.Stru.mass)))
             # Calculamos producto auxiliar
             for i in range(len(aux)):
-                    aux[i] = np.multiply(loc_sim.stru.mass,loc_sim.stru.phi[:,i])
+                    aux[i] = np.multiply(loc_sim.Stru.mass,loc_sim.Stru.phi[:,i])
             #Descomponemos tiempo a tiempo
-            for i in range(loc_sim.stru.nt):
-                q_aux.append(np.matmul(aux, loc_sim.stru.u_avr[:,i]))
+            for i in range(loc_sim.Stru.nt):
+                q_aux.append(np.matmul(aux, loc_sim.Stru.u_avr[:,i]))
             
             q_aux = np.transpose(np.array(q_aux))
     
@@ -441,8 +318,133 @@ def test_aux_vs_norm(n_times, stru_nt):
     fig.suptitle('Comparativa entre métodos de descomposición modal')
     # ax.set_yscale('log')
     ax.legend(title='Promedio entre ' + str(n_times) +' corridas')
-    ax.set_title('Cálculo para u_avr con '+str(loc_sim.stru.nt)+' instantes de tiempo')
+    ax.set_title('Cálculo para u_avr con '+str(loc_sim.Stru.nt)+' instantes de tiempo')
     ax.grid()
     return(t_full, t_aux)
 
-t_full, t_par = test_aux_vs_norm(4,15)
+"""
+------------------------------------------------------------------------------
+Zona para definir opciones y clases
+------------------------------------------------------------------------------
+"""
+
+#Definición modelo propuesta por consigna
+
+# sim.str.mass:   reales, ngl         - matriz de masa diagonal del modelo
+# sim.str.om:     reales, nm          - vector de frecuencias naturales ordeandas de menor a mayor
+# sim.str.phi:    reales, ngl x nm    - matriz modal (cada columna es un modo)
+# sim.str.q:      reales, nm=ngl x nt    - matriz con coordenadas modales a lo largo del tiempo, cada columna tiene el vector q de un instante
+# sim.str.t:      reales, nt          - vector con instantes donde se conoce la solución (malla o grilla temporal)
+# sim.str.nt:     entero, 1           - cantidad de instantes de tiempo
+# sim.str.u_raw:  reales, ngl x nt    - matriz con desplazamientos a lo largo del tiempo, el vector u para un instante se guarda en una columna - como se obtienen de Simpact/curvas (si existen GL rotacionales, se expresan con ángulos de Euler y no se puede usar para hacer descomposición modal)
+# sim.str.u_avr:  reales, ngl x nt    - como sim.str.u_raw pero transformando los GL rotacionales de ángulos de Euler a vector axial (avr: axial vector rotations)
+
+
+class Sim(): #Más fácil definir una clase que contenga todo lo de interés
+    def __init__(self, name):
+        self.name = name #Nombre de la simulación (se usa luego para guardar archivos y demás)
+        
+    #Subclase para análisis eStructural
+    class Stru():
+        def __init__(self, StrurdOpt, loadsrdOpt):
+            self.nodes = [200001,200003]  #etiquetas de nodos de interés - lista de enteros
+            self.nnode = 2       #cantidad de nodos considerados
+            self.ndof = 0        #cantidad de GL considerados (incluyendo los que son restringidos por condiciones de borde)
+            self.StrurdOpt = StrurdOpt  #bandera para leer datos
+            self.loadsrdOpt = loadsrdOpt #bandera para leer datos de cargas
+                    #'raw' desde archivos provenientes de Simpact y delta1
+                    #'bin' a partir de archivo binario guardado previamente
+            self.rdof= True     #bandera que indique si hay GL rotacionales
+            self.StrueigOpt = True   #bandera para hacer (o no) descomposición modal
+            self.loadseigOpt = True #bandera para descomponer cargas
+
+        def resultados_loads(clase_aero, steps, t, fzas):
+            clase_aero.steps = steps
+            clase_aero.loads_t = t
+            clase_aero.fzas = fzas
+            clase_aero.loads_nt = int(steps[-1])
+            clase_aero.loads_q = []
+
+        def resultados(clase,mass, phi, om, refer, u_raw,u_avr,t,nt):
+            clase.mass = mass
+            clase.phi = phi
+            clase.om = om
+            clase.refer = refer
+            clase.u_raw = u_raw
+            clase.u_avr = u_avr
+            clase.t = t
+            clase.nt = nt
+            clase.q = []
+            
+        def plot(self): #Pruebas para plotear
+            fig, ax = plt.subplots()
+            ax.plot(self.t,self.u_raw[:,0])
+            ax.set_xlabel('t [s]')
+            ax.set_ylabel('u_0')
+
+"""
+------------------------------------------------------------------------------
+Código Principal
+------------------------------------------------------------------------------
+"""
+
+if __name__ == '__main__':
+    
+    ##Info por default y archivos a utilizar
+    
+    #Archivos
+    data_folder = 'data/'
+    bin_folder = 'ie_data/'
+    files = {'Stru_glob':'red_pcolgante_2_modos.txt', 'BN_glob':'SIM_BN', 'loads_glob':'AeroFcsOnStruc.dat'}
+    
+    #Print output
+    glob_print_output = False #Opción para print de cálculos raw intermedios
+    
+    ## Inicio de ejecución
+    
+    #Se genera una clase para trabajar
+    loc_sim = Sim('test_sim')
+    #Iniciamos la subclase STRU
+    loc_sim.Stru = loc_sim.Stru(StrurdOpt='raw',loadsrdOpt='raw')
+    
+    if loc_sim.Stru.StrurdOpt == 'raw':
+        loc_sim.Stru.resultados(*rd_rawData(data_folder+files['Stru_glob'], loc_sim.Stru.nodes))
+        save_load_bin(1, bin_folder+files['BN_glob'], loc_sim.Stru)
+    if loc_sim.Stru.StrurdOpt=='bin':
+        loc_sim.Stru = save_load_bin(0, bin_folder + files['BN_glob'], 0)
+        loc_sim.Stru.StrueigOpt = True 
+        
+    #nuevamente, si corresponde:
+    if loc_sim.Stru.loadsrdOpt == 'raw':
+        loc_sim.Stru.resultados_loads(*ae_Ftable(data_folder+files['loads_glob'],loc_sim.Stru.refer))
+        save_load_bin(1, bin_folder+files['BN_glob'], loc_sim.Stru)
+    
+    elif loc_sim.Stru.loadsrdOpt =='bin':
+        loc_sim.Stru = save_load_bin(0,bin_folder+files['BN_glob'])
+        loc_sim.Stru.eigOpt = True
+
+    #Ya tenemos la info cargada y lista. Ahora ver si corresponde hacer la descomposición, en sendos casos:
+    if loc_sim.Stru.StrueigOpt:
+        aux = np.zeros((len(loc_sim.Stru.phi[0,:]),len(loc_sim.Stru.mass)))
+        for i in range(len(aux)):
+            aux[i] = np.multiply(loc_sim.Stru.mass,loc_sim.Stru.phi[:,i]) 
+            
+        #Descomponemos tiempo a tiempo
+        for i in range(loc_sim.Stru.nt):
+            loc_sim.Stru.q.append(np.matmul(aux, loc_sim.Stru.u_avr[:,i]))
+        
+        loc_sim.Stru.q = np.transpose(np.array(loc_sim.Stru.q))
+        save_load_bin(1,bin_folder+files['BN_glob'],loc_sim.Stru)
+        
+    #Idem para la descomposición de fzas
+    if loc_sim.Stru.loadseigOpt:
+        if not aux.any(): #Repetir cálculo, si no reutilizamos
+            aux = np.zeros((len(loc_sim.Stru.phi[0,:]),len(loc_sim.Stru.mass)))
+            for i in range(len(aux)):
+                aux[i] = np.multiply(loc_sim.Stru.mass,loc_sim.Stru.phi[:,i])
+            #Descomponemos tiempo a tiempo
+        for i in range(loc_sim.Stru.loads_nt):
+            loc_sim.Stru.loads_q.append(np.matmul(aux, loc_sim.Stru.fzas[:,i]))
+        
+        loc_sim.Stru.loads_q = np.transpose(np.array(loc_sim.Stru.loads_q))
+        save_load_bin(1,bin_folder+files['BN_glob'],loc_sim.Stru)
