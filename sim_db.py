@@ -29,6 +29,7 @@ importing zone
 import numpy as np
 import pickle
 import os
+from time import gmtime, strftime
 import re
 
 
@@ -52,7 +53,8 @@ class stru:
         self.iLabl  = np.array([], dtype=int)       # nnode     - label of nodes considered (internal)
         self.ndof   = 0                             # 1         - number of DoF considered (including those where BCs are applied)
         self.nt     = 0                             # 1         - number of time steps
-        self.t      = np.array([], dtype=float)     # nt        - temporal grid
+        self.t      = np.array([], dtype=float)     # nt        - Response temporal grid
+        self.t_Loads = np.array([],dtype = float)   # nt        - Loads temporal grid
         self.u_raw  = np.array([], dtype=float)     # ndof x nt - generalized displacements as functions of time - as read from "curvas"
                                                     #           - rotational DoFs (if exist) are expresed as 3-1-3 Euler angles rotations [rad]
         self.u_avr  = np.array([], dtype=float)     # ndof x nt - generalized displacements as functions of time - avr: axial vector rotations
@@ -71,6 +73,7 @@ class stru:
         self.p11FN  = ''                            # binary *.p11 file name (without extension - Simpact output) from wich extract generalized displacements (and/or other data)
         self.rsnSi  = ''                            # ASCII *.rsn file name (without extension) - Simpact output
         self.rsnDe  = ''                            # ASCII *.rsn file name (without extension) - Delta output
+        self.loadsFN = ''                           # ASCII *. ??? file name (without extension) - Loads on stru
         
         self.eqInfo = np.array([], dtype=float)     # Information Relative to the Equations Numbers
         
@@ -78,12 +81,12 @@ class stru:
         self.struRdOpt  = 'bin'  # reading data flag for structural response: 
                                  #   'raw': from ASCII data files
                                  #   'bin': from binary file with preprocessed data
-        self.loadRdOpt  = 'non'  # reading data flag for external loading: 
+        self.loadRdOpt  = 'raw'  # reading data flag for external loading: 
                                  #   'raw': from ASCII data files
                                  #   'bin': from binary file with preprocessed data
                                  #   'non': no external load data available
-        self.struEigOpt = False  # True if modal decomposition should be done over generalized displacements
-        self.loadEigOpt = False  # True if modal decomposition should be done over external loads
+        self.struEigOpt = True  # True if modal decomposition should be done over generalized displacements
+        self.loadEigOpt = True  # True if modal decomposition should be done over external loads
 
 
 class aero:
@@ -129,7 +132,7 @@ functions
 
 def callbat(file_data, nodo, dof, name_otp):
     """
-    extracts generalized displacements data from *.p11 bin file
+    Extracts generalized displacements data from *.p11 bin file
     """
     cmd = "(echo " + file_data + " 1 0 && echo d && echo " + nodo + " " + dof + " " + name_otp + " && echo s) | curvas"  
     os.system(cmd)
@@ -137,7 +140,7 @@ def callbat(file_data, nodo, dof, name_otp):
 
 def line_spliter(line):
     """
-    splits a line... how??? why???
+    Splits a string line. For general use with SimpactTable. 
     """
     ret = []
     local_start = 0
@@ -159,23 +162,23 @@ def line_spliter(line):
 
 
 def search_string(x_dat, frase):
-    # NOTA: agregar descripción y traducir comentarios
-    lin_count = 0  # contador de lineas
-    locs = []  # ubicaciones donde encuentra (line number python = -1 realidad)
+    '''
+    Searchs for a keyword or string ('frase') in a list of strings (x_dat). Returns index
+    '''
+    lin_count = 0  #Line count
+    locs = []  #Index. In Python, first = [0]
     for txt in x_dat:
         lin_count = lin_count + 1
         x = re.search(frase, txt)
         if x != None:
-            locs.append(lin_count)
-            #print(lin_count)
-    # devolvemos la lista con las lineas de x_dat que tienen la coincidencia
-    
+            locs.append(lin_count) #Save the local match
+    #Index return
     return(locs)
 
 
 def rd_SimpactTable(x_dat, start_line, **kwargs):
     """
-    locates and reads a table from *.rsn ASCII Simpact and Alpha files
+    Locates and reads a table from *.rsn ASCII Simpact and Alpha files
     """
     
     if 'glob_print_output' in kwargs:
@@ -188,39 +191,33 @@ def rd_SimpactTable(x_dat, start_line, **kwargs):
     while stop_flag:
         loc_arr = line_spliter(x_dat[start_line+counter])
         b_cond = np.isnan(loc_arr)
-        # print(b_cond)
         if b_cond.any():
             stop_flag = False
-            if glob_print_output:
-                print("Nan encontrado")
-                # NOTA: en general, todos los resultados desde que aparece un NaN en adelante no sirver,
-                #       así que el tratamiento de esos casos debería ser borrar todos los datos que existan con t>=t_NaN
-                #       habría que avisar tmb que se encontró un NaN y en qué tiempo y en qué variable y decir que todo se va a borrar desde ahí en adelante
-            # break
+            print('NaN found after ', counter, ' timesteps')
         else:
-            # print(loc_arr)
-            if counter == 0:  # primer ciclo
+            if counter == 0:  #First cycle
                 table_gen = np.array([loc_arr])
-                # print(loc_arr)
             else:
-                # print(loc_arr)
                 table_gen = np.append(table_gen, [loc_arr], axis=0)
                 
             counter = counter+1
-            # print(len(x_dat))
-            # print(loc_arr)
+
             try: 
                 if x_dat[start_line + counter] == '\n':
                     stop_flag = False
             except:
                 stop_flag=False
-    
+    if glob_print_output:
+        print(' ')
+        print('Table:')
+        print(table_gen)
+        print(' ')
     return(table_gen)
 
 
 def euler2axial(cols):
     """
-    converts rotations expresed as 3-1-3 Euler Angles
+    Converts rotations expresed as 3-1-3 Euler Angles
     to axial vector form using SciPy class Rotation
     """
     
@@ -234,7 +231,7 @@ def euler2axial(cols):
 
 def rd_u(struCase, **kwargs):
     """
-    extracts generalized displacements data from *.p11 bin file
+    Extracts generalized displacements data from *.p11 bin file
     and imports data to "stru" class object
     also creates "u_avr" field if necessary
     
@@ -278,7 +275,7 @@ def rd_u(struCase, **kwargs):
 
 def rd_eqInfo(struCase, **kwargs):
     """
-    extracts Information Relative to the Equations Numbers from ASCII *.rsn file
+    Extracts Information Relative to the Equations Numbers from ASCII *.rsn file
     (Simpact or Delta output, default Delta)
     
     struCase: "stru" class object
@@ -314,7 +311,7 @@ def rd_eqInfo(struCase, **kwargs):
 
 def rd_mass(struCase, **kwargs):
     """
-    extracts lumped mass matrix from ASCII *.rsn file
+    Extracts lumped mass matrix from ASCII *.rsn file
     (Simpact or Delta output, default Delta)
     
     struCase: "stru" class object
@@ -352,11 +349,11 @@ def rd_mass(struCase, **kwargs):
     raw_lumped_matrix = rd_SimpactTable(x_dat, locs_lumped[0]+c_lumped_m)
     struCase.mass = []
     struCase.iLabl = []
-    for j in range(0, len(struCase.eqInfo[:, 0])): #desplazamos fila a fila
-        for a in range(0, struCase.nnode): #desplazamos nodo a nodo (de interés)
+    for j in range(0, len(struCase.eqInfo[:, 0])): #File to file
+        for a in range(0, struCase.nnode): #Node to node (of interest)
             if struCase.eqInfo[j, 0] == struCase.nodes[a]:
                 # save data
-                struCase.iLabl.append([struCase.nodes[a], struCase.eqInfo[j,-1],struCase.eqInfo[j,-2]]) # NOTA: hay que modificar esto para que lea solo la última columna, así queda funcionando también apra leer los *.rsn de Simpact
+                struCase.iLabl.append([struCase.nodes[a], struCase.eqInfo[j,-1]]) # NOTA: hay que modificar esto para que lea solo la última columna, así queda funcionando también apra leer los *.rsn de Simpact
                 struCase.mass = np.append(struCase.mass, raw_lumped_matrix[j])
                 if glob_print_output:
                     print("Lumped Mass Matrix")
@@ -372,7 +369,7 @@ def rd_mass(struCase, **kwargs):
 
 def rd_eig(struCase, **kwargs):
     """
-    extracts eigen modes and eigen frequencies from ASCII *.rsn file
+    Extracts eigen modes and eigen frequencies from ASCII *.rsn file
     (Delta output)
     
     struCase: "stru" class object
@@ -411,16 +408,15 @@ def rd_eig(struCase, **kwargs):
         struCase.om[i] = line_spliter(x_dat[locs_modes[i]])
         raw_mode_table = rd_SimpactTable(x_dat, locs_modes[i]+c_modes)
         if glob_print_output:
-            print("tabla modo full")
+            print("Full mode table")
             print(raw_mode_table)
-            print(" modos------------------------------")
         local_mode_row = []
         for j in range(0, len(raw_mode_table[:, 0])): # number of rows in modes' table
             for a in range(0, struCase.nnode):
                 if raw_mode_table[j, 0] == struCase.nodes[a]:
                     local_mode_row = np.append(local_mode_row, raw_mode_table[j,1:])
                     if glob_print_output:
-                        print("aporte local ---------------")
+                        print("Local mode row ---------------")
                         print(local_mode_row)
         struCase.phi[i] = local_mode_row
     
@@ -432,11 +428,52 @@ def rd_eig(struCase, **kwargs):
     return struCase
 
 
-"""
-def ae_Ftable(fname, noderefs):
-    # NOTA: esta sólo la copié, pero no la revisé ni actualicé - hay que hacerlo - por eso está todo comentado
-    x = open(fname, 'r')
-    x_dat = x.readlines()
+def check_BN_files(case, **kwargs):
+    '''
+    Check BN files
+    '''
+    if 'data_folder' in kwargs:
+        data_folder = kwargs.get('data_folder')
+    else:
+        data_folder=''
+    
+    if 'glob_print_output' in kwargs:
+        glob_print_output = kwargs.get('glob_print_output')
+    else:
+        glob_print_output = False
+    
+    av_files = os.listdir(data_folder)
+    if case.fName+'.sim' in av_files:
+        print('Warning: ',case.fName,' already exists')
+        print('act: Update info, new: Save new file, ov: Overwrite') #NOTA: Agregar más opciones
+        acp_inpt = ['act','new','ov']
+        acp_cond = True
+        while acp_cond:
+            var_inpt = input('Select an option: ')
+            if var_inpt in acp_inpt:
+                acp_cond = False
+        if var_inpt == 'act':
+            print('Updating file')
+            case.fName = case.fName+'_upd_'+strftime('%H%M_%d%b%Y')
+        elif var_inpt == 'ov':
+            print('Overwriting file')
+        elif var_inpt == 'new':
+            print('Saving new file')
+            case.fName = case.fName+'_new'
+    return case.fName
+
+def ae_Ftable(struCase, **kwargs):
+    if 'data_folder' in kwargs:
+        data_folder = kwargs.get('data_folder')
+    else:
+        data_folder=''
+    if 'glob_print_output' in kwargs:
+        glob_print_output = kwargs.get('glob_print_output')
+    else:
+        glob_print_output = False
+    
+    x = open(data_folder+struCase.loadsFN+'.dat','r') #Read file
+    x_dat = x.readlines() #Read lines
     init_line = 0
     init_cond = True
     while init_cond:
@@ -462,19 +499,19 @@ def ae_Ftable(fname, noderefs):
             act_line = act_line + n_nods + 4
         except:
             if glob_print_output:
-                print("Fin de tabla fzas, line: ", act_line)
+                print("End of table, line: ", act_line)
             tab_cond = False
-    #Ahora se guarda solamente lo que interesa de los nodos de refs:
-    #Agrego manualmente para test. Pruebas con F y RSN que no se cruzan.
-    noderefs[0,1] = 27
-    noderefs[1,1] = 35
-
+    #Now, keep only the info associated to the nodes of interest
+    #Agrego manualmente BORRAR LUEGO
+    struCase.iLabl[0,1] = 27
+    struCase.iLabl[1,1] = 35
+    ######################### BORRAR LUEGO
     counter = 0
-    for a in loc_ftab: #por cada instante tiempo
+    for a in loc_ftab: #For each \Delta t
         loc_frow_filt = np.array([])
-        for i in range(len(a)): #por cada fila de tabla fzas (nodos)
-           for j in range(len(noderefs[:,0])): #por cada nodo de interés
-               if a[i,0] == noderefs[j,1]:
+        for i in range(len(a)): #For each row
+           for j in range(len(struCase.iLabl[:,0])): #For each label (node of interest)
+               if a[i,0] == struCase.iLabl[j,1]:
                    loc_frow_filt = np.append(loc_frow_filt, a[i,1:])
         if counter == 0:
            loc_ftab_filt = np.array([loc_frow_filt])
@@ -483,10 +520,9 @@ def ae_Ftable(fname, noderefs):
         counter = counter + 1
     loc_ftab_filt = np.transpose(loc_ftab_filt)
     loc_ittab = np.array(loc_ittab)
-    #Devolvemos la info
+    
     #step, instante, tabla fuerza
-    return(loc_ittab[:,0], loc_ittab[:,1], loc_ftab_filt)
-"""
+    return(loc_ittab[:,1], loc_ftab_filt)
 
 
 # handle postprocessed data files --------------------------------------------
@@ -513,8 +549,10 @@ def read_bin(file, msg:bool=False):
     data: variable read
     msg: bool - True if printing message
     """
-    
-    f = open(file+'.sim','rb')
+    try:
+        f = open(file+'.sim','rb')
+    except:
+        raise NameError('File not found: '+file)
     data = pickle.load(f)
     f.close()
     if msg:
@@ -535,7 +573,7 @@ def uTest1():
     """
     
     # create str object and populate
-    a=str()
+    a=stru()
     a.nnode=2
     a.nodes=[200001,200003]
     a.ndof=6

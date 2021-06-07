@@ -42,6 +42,8 @@ case1.stru.nodes=[200000, 200010] # nodes of interest - only information relativ
 case1.stru.struRdOpt='raw' # set flag for reading ASCII file - default 'bin'
 case1.stru.p11FN='pcolgante.@1' # binary *.p11 file name (without extension - Simpact output) from wich extract generalized displacements
 case1.stru.rsnDe='pcolgante' # ASCII *.rsn file name (without extension) - Delta output
+case1.stru.loadsFN = 'AeroFcsOnStruc' #ASCII *.dat file name - Loads
+case1.loadRdOpt  = 'raw'
 
 # eigen modes postprocess
 #   call the function
