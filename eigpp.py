@@ -24,7 +24,7 @@ importing zone
 """
 import numpy as np
 from sim_db import ae_Ftable, rd_mass, rd_eig, rd_u, save_bin, read_bin, sim, check_BN_files #NOTA RV: Clases con mayuscula
-
+import sim_db
 
 """
 ------------------------------------------------------------------------------
@@ -66,6 +66,7 @@ def rd_rawLoadData(struCase, **kwargs):
     struCase: "stru" class object
     """
     struCase.t_Loads, struCase.eLoad = ae_Ftable(struCase, **kwargs)
+    #NOTA: Es mejor así o seguir pasando los objetos completos?
     
     return struCase
 
@@ -97,13 +98,8 @@ def rd_data(case, **kwargs):
         case.fName = check_BN_files(case, **kwargs) #NOTA: Ver si usar un nombre loc o cambiarlo en case
 
         #Check if available:
-        if case.stru.nodes == []:
-            print('Warning, empty nodes')
-        if case.stru.p11FN == '':
-            print('Warning, empty p11 FileName')
-            
-        if case.stru.rsnDe == '':
-            print('Warning, empty rsnDe FileName')
+        ##NOTA: Ahora desde una función, para ahorrar líneas
+        sim_db.check_case_attris(case) #Esto debería imprimir alertas si falta algo
 
         case.stru = rd_rawRespData(case.stru, **kwargs)
         save_bin(data_folder+case.fName, case, glob_print_output)
@@ -113,9 +109,10 @@ def rd_data(case, **kwargs):
     #elif from bin file
     elif case.stru.struRdOpt == 'bin':
         if case.fName == '':
-            print('Warning: FName empty!')
-        case = read_bin(data_folder+case.fName, glob_print_output) # expects "sim" class object
-        if type(case) != sim:
+            print('Warning: fName empty!') ##NOTA: Esto podría hacerse con un 'kit' de opciones a verificar desde check_attris
+        temp_case = read_bin(data_folder+case.fName, glob_print_output) # expects "sim" class object
+        case = sim_db.update_BN_objs(case, temp_case, modo='preserve') #Se compara y actualiza para no perder info
+        if type(case) != sim: ##NOTA: Idem
             print('Warning: Not a sim class obj')
         if glob_print_output:
             print("Response data read from binary preprocessed file")
@@ -123,8 +120,7 @@ def rd_data(case, **kwargs):
     # read external load data
     if case.stru.loadRdOpt == 'raw':
         case.fName = check_BN_files(case, **kwargs) #NOTA: Ver si usar un nombre loc o cambiarlo en case
-        if case.stru.nodes == []:
-            print('Warning, empty nodes')
+        sim_db.check_case_attris(case) #Esto debería imprimir alertas si falta algo
         case.stru = rd_rawLoadData(case.stru, **kwargs)
         save_bin(data_folder+case.fName, case, glob_print_output)
         if glob_print_output:
@@ -132,7 +128,8 @@ def rd_data(case, **kwargs):
     elif case.stru.loadRdOpt == 'bin':
         if case.fName == '':
             print('Warning, empty Filename')
-        case = read_bin(data_folder+case.fName, glob_print_output) # expects "sim" class object
+        temp_case = read_bin(data_folder+case.fName, glob_print_output) # expects "sim" class object
+        case = sim_db.update_BN_objs(case,temp_case,modo='preserve') #Nuevamente
         if type(case) != sim:
             print('Warning: Not a sim class obj')
         if glob_print_output:
@@ -143,13 +140,16 @@ def rd_data(case, **kwargs):
     return case
 
 
-def modalDecomp(case):
+def modalDecomp(case,**kwargs):
     """
     Applies modal decomposition
     
     case: "sim" class object
     """
-    
+    if 'data_folder' in kwargs:
+        data_folder = kwargs.get('data_folder')
+    else:
+        data_folder=''
     if len(case.stru.auxMD) == 0: ##NOTA: ¿Por qué si 0??
         case.stru.auxMD = np.zeros((len(case.stru.phi[0,:]),len(case.stru.mass)))
         #NOTA: Else, la recuperamos de la clase?
@@ -162,7 +162,8 @@ def modalDecomp(case):
     if case.stru.loadEigOpt:
         case.stru.Q = np.matmul(case.stru.auxMD, case.stru.eLoad)
     
-    save_bin(case.fName, case)
+    case.fName = check_BN_files(case, **kwargs)
+    save_bin(data_folder+case.fName, case) #Se exporta todo, finalmente.
     return case
 
 """
@@ -190,7 +191,7 @@ def epp(case, **kwargs):
     case = rd_data(case, **kwargs)
     # apply modal decomposition
     if case.stru.struEigOpt or case.stru.loadEigOpt:
-        case = modalDecomp(case)
+        case = modalDecomp(case,**kwargs)
         
     ##NOTA: ¿Dejar para hacer la descomposición separada?
     

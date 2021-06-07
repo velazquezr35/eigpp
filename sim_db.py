@@ -85,8 +85,8 @@ class stru:
                                  #   'raw': from ASCII data files
                                  #   'bin': from binary file with preprocessed data
                                  #   'non': no external load data available
-        self.struEigOpt = True  # True if modal decomposition should be done over generalized displacements
-        self.loadEigOpt = True  # True if modal decomposition should be done over external loads
+        self.struEigOpt = False  # True if modal decomposition should be done over generalized displacements
+        self.loadEigOpt = False  # True if modal decomposition should be done over external loads
 
 
 class aero:
@@ -427,6 +427,74 @@ def rd_eig(struCase, **kwargs):
     
     return struCase
 
+def update_BN_objs(act_case, new_case, **kwargs):
+    '''
+    Compare and update sim objs. Keep info from the actual case
+    act_case, new_case: sim objs
+    kwargs: {modo}
+    returns: new_case, from BN file. Updated as req.
+    '''
+    try:
+        modo = kwargs.get('modo')
+    except:
+        raise NameError('Ingresar modo de comparación')
+    #Use dict for future expansions???
+    if modo == 'pass':
+        #Just the new case
+        return(new_case)
+    elif modo == 'preserve':
+        #Keep important things
+        new_case.stru.struRdOpt = act_case.stru.struRdOpt
+        new_case.stru.loadRdOpt = act_case.stru.loadRdOpt
+        new_case.stru.loadEigOpt = act_case.stru.loadEigOpt
+        new_case.stru.struEigOpt = act_case.stru.struEigOpt
+        return(new_case)
+        #NOTA: Qué más?
+    elif modo == 'choose':
+        #Choose step by step
+        new_case.stru.struRdOpt = compare_BN_atri(act_case.stru.struRdOpt, new_case.stru.struRdOpt, 'struRdOpt')
+        new_case.stru.loadRdOpt = compare_BN_atri(act_case.stru.loadRdOpt, new_case.stru.loadRdOpt, 'loadRdOpt')
+        new_case.stru.loadEigOpt = compare_BN_atri(act_case.stru.loadEigOpt, new_case.stru.loadEigOpt, 'Loads descomp')
+        new_case.stru.struEigOpt = compare_BN_atri(act_case.stru.struEigOpt,new_case.stru.struEigOpt, 'Disp descomp')
+        return(new_case)
+        
+def compare_BN_atri(act_atri, new_atri, name, **kwargs):
+    '''
+    Compare sim objs attributes
+    kwargs: options, list [opt1, opt2]
+    returns: updated obj attribute
+    '''
+    if 'options' in kwargs:
+        options = kwargs.get('options')
+    else:
+        options = ['act','new']
+    if act_atri != new_atri:
+            print('Warning: ', name, ' mismatch')
+            loc_ingreso = 0
+            while loc_ingreso != 'act' or loc_ingreso != 'new':
+                loc_ingreso = input(prompt='Ingresar opción: '+options[0] + ' or ' +options[1])
+    if loc_ingreso == 'act':
+        return(act_atri)
+    elif loc_ingreso == 'new':
+        return(new_atri)
+    else:
+        raise NameError('Input error. Try again!')
+
+def check_case_attris(case,**kwargs): #Expects SIM obj
+    '''
+    Simple check for important attributes
+    case: sim obj
+    '''
+    try: ##NOTA: Una opción a futuro sería implementar un 'kit' de atributos a verificar, y hacer todo desde esta función
+        if case.stru.nodes == []:
+            print('Warning, empty nodes')
+        if case.stru.p11FN == '':
+            print('Warning, empty p11 FileName')
+            
+        if case.stru.rsnDe == '':
+            print('Warning, empty rsnDe FileName')
+    except:
+        pass
 
 def check_BN_files(case, **kwargs):
     '''
@@ -462,7 +530,13 @@ def check_BN_files(case, **kwargs):
             case.fName = case.fName+'_new'
     return case.fName
 
-def ae_Ftable(struCase, **kwargs):
+def ae_Ftable(struCase, **kwargs): ##NOTA: Si el nombre no gusta, lo cambio
+    '''
+    Extracts loads from .DAT files
+    struCase: stru obj
+    kwargs:
+    returns: stru obj, with some attributes updated (t_Loads, eLoad)
+    '''   
     if 'data_folder' in kwargs:
         data_folder = kwargs.get('data_folder')
     else:
@@ -502,7 +576,8 @@ def ae_Ftable(struCase, **kwargs):
                 print("End of table, line: ", act_line)
             tab_cond = False
     #Now, keep only the info associated to the nodes of interest
-    #Agrego manualmente BORRAR LUEGO
+    ######################### BORRAR LUEGO
+    #Agrego manualmente
     struCase.iLabl[0,1] = 27
     struCase.iLabl[1,1] = 35
     ######################### BORRAR LUEGO
@@ -521,7 +596,7 @@ def ae_Ftable(struCase, **kwargs):
     loc_ftab_filt = np.transpose(loc_ftab_filt)
     loc_ittab = np.array(loc_ittab)
     
-    #step, instante, tabla fuerza
+    #step, instant, loads
     return(loc_ittab[:,1], loc_ftab_filt)
 
 
