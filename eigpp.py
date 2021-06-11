@@ -5,8 +5,9 @@ Created on Thu Feb 25 17:52:06 2021
 @author:    Rodrigo Velazquez
             Mauro Maza
 
-Ayudantía 2021 - Departamento de Estructuras FCEFyN
+Ayudantía 2021 - Departamento de EStructuras FCEFyN
 """
+
 
 """
 ------------------------------------------------------------------------------
@@ -25,6 +26,7 @@ importing zone
 import numpy as np
 from sim_db import ae_Ftable, rd_mass, rd_eig, rd_u, save_bin, read_bin, sim, check_BN_files #NOTA RV: Clases con mayuscula
 import sim_db
+
 
 """
 ------------------------------------------------------------------------------
@@ -143,6 +145,7 @@ def rd_data(case, **kwargs):
 def modalDecomp(case,**kwargs):
     """
     Applies modal decomposition
+
     
     case: "sim" class object
     """
@@ -165,6 +168,7 @@ def modalDecomp(case,**kwargs):
     case.fName = check_BN_files(case, **kwargs)
     save_bin(data_folder+case.fName, case) #Se exporta todo, finalmente.
     return case
+
 
 """
 ------------------------------------------------------------------------------
@@ -200,6 +204,7 @@ def epp(case, **kwargs):
     # hay que pensarlo una vez que tengamos algo de salida (gráficos o cosas por el estilo) andando, porqeu recién ahí nos vamos a dar cuenta qué es lo mejor
     return(case)
 
+
 """
 ------------------------------------------------------------------------------
 runing things
@@ -208,3 +213,4 @@ runing things
 if __name__ == '__main__':
     
     pass
+
