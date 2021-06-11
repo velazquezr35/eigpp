@@ -45,3 +45,5 @@ La información se guarda bajo las siguientes variables, pertenecientes a la sub
 - sim.stru.fzas: Cargas sobre nodos considerados.
 - sim.stru.loads_nt: Cantidad total de instantes de tiempo.
 - sim.stru.loads_q: Descomposición de fzas. sobre modos considerados.
+
+
