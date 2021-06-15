@@ -55,12 +55,12 @@ class stru:
         self.nt     = 0                             # 1         - number of time steps
         self.t      = np.array([], dtype=float)     # nt        - Response temporal grid
         self.t_Loads = np.array([],dtype = float)   # nt        - Loads temporal grid
-        self.u_raw  = np.array([], dtype=float)     # ndof x nt - generalized displacements as functions of time - as read from "curvas"
-                                                    #           - rotational DoFs (if exist) are expresed as 3-1-3 Euler angles rotations [rad]
-        self.u_avr  = np.array([], dtype=float)     # ndof x nt - generalized displacements as functions of time - avr: axial vector rotations
-                                                    #           - rotational DoFs (if exist) are expresed as axial vector rotations
-        self.eLoad  = np.array([], dtype=float)     # ndof x nt - external loads as functions of time
-                                                    #           - NOTA: qué onda con los momentos leídos acá? necesitan un tratamiento especial?
+        self.u_raw  = np.array([], dtype=float)     # nnode*ndof x nt - generalized displacements as functions of time - as read from "curvas"
+                                                    #                 - rotational DoFs (if exist) are expresed as 3-1-3 Euler angles rotations [rad]
+        self.u_avr  = np.array([], dtype=float)     # nnode*ndof x nt - generalized displacements as functions of time - avr: axial vector rotations
+                                                    #                 - rotational DoFs (if exist) are expresed as axial vector rotations
+        self.eLoad  = np.array([], dtype=float)     # nnode*ndof x nt - external loads as functions of time
+                                                    #                 - NOTA: qué onda con los momentos leídos acá? necesitan un tratamiento especial?
                     
         self.mass   = np.array([], dtype=float)     # ndof      - lumped mass matrix
         self.nm     = 0                             # 1         - number of modes read
