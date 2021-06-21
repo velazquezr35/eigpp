@@ -67,8 +67,7 @@ def rd_rawLoadData(struCase, **kwargs):
     
     struCase: "stru" class object
     """
-    struCase.t_Loads, struCase.eLoad = ae_Ftable(struCase, **kwargs)
-    #NOTA: Es mejor así o seguir pasando los objetos completos?
+    struCase = ae_Ftable(struCase, **kwargs)
     
     return struCase
 

@@ -53,6 +53,8 @@ class stru:
         self.iLabl  = np.array([], dtype=int)       # nnode     - label of nodes considered (internal)
         self.ndof   = 0                             # 1         - Total number of DoF considered (including those where BCs are applied)
         self.nt     = 0                             # 1         - number of time steps
+        self.dt_Loads = 0                           # 1         - Loads time step
+        self.dt     = 0                             # 1         - Stru time step
         self.t      = np.array([], dtype=float)     # nt        - Response temporal grid
         self.t_Loads = np.array([],dtype = float)   # nt        - Loads temporal grid
         self.u_raw  = np.array([], dtype=float)     # ndof x nt - generalized displacements as functions of time - as read from "curvas"
@@ -74,6 +76,8 @@ class stru:
         self.rsnSi  = ''                            # ASCII *.rsn file name (without extension) - Simpact output
         self.rsnDe  = ''                            # ASCII *.rsn file name (without extension) - Delta output
         self.loadsFN = ''                           # ASCII *. ??? file name (without extension) - Loads on stru
+        self.t_Nan = np.inf                         # inf       - NaN minimum time
+        
         
         self.eqInfo = np.array([], dtype=float)     # Information Relative to the Equations Numbers
         
@@ -87,7 +91,15 @@ class stru:
                                  #   'non': no external load data available
         self.struEigOpt = False  # True if modal decomposition should be done over generalized displacements
         self.loadEigOpt = False  # True if modal decomposition should be done over external loads
-
+        
+    #methods
+    def Nan_clean(self): #NOTA: ¿Tomar otro nombre?
+        '''
+        Delete all values with index > earliest Nan´s
+        '''
+        #Aprovechar la función definida más abajo para el caso local, y reutilizarla con un factor step correspondiente al mismo tiempo (diferencia de dt entre loads y desp)
+        #No sé si es útil de momento, dado que para tener todo en arrays cada fila (o info asociada a X cosa) debe tener la misma longitud.
+        pass
 
 class aero:
     """
@@ -186,14 +198,21 @@ def rd_SimpactTable(x_dat, start_line, **kwargs):
     else:
         glob_print_output = False
         
+    if 'STable_mode' in kwargs:
+        S_mode = kwargs.get('STable_mode')
+    else:
+        S_mode = 'normal'
+        
     stop_flag = True
     counter = 0
+    loc_Nan_counter = 0
     while stop_flag:
         loc_arr = line_spliter(x_dat[start_line+counter])
         b_cond = np.isnan(loc_arr)
         if b_cond.any():
             stop_flag = False
             print('NaN found after ', counter, ' timesteps')
+            loc_Nan_counter = counter
         else:
             if counter == 0:  #First cycle
                 table_gen = np.array([loc_arr])
@@ -212,8 +231,11 @@ def rd_SimpactTable(x_dat, start_line, **kwargs):
         print('Table:')
         print(table_gen)
         print(' ')
-    return(table_gen)
-
+    
+    if S_mode == 'normal':
+        return table_gen
+    elif S_mode == 'with_counter':
+        return table_gen, loc_Nan_counter
 
 def euler2axial(cols):
     """
@@ -237,6 +259,10 @@ def rd_u(struCase, **kwargs):
     
     struCase: "stru" class object
     """
+    if 'glob_print_output' in kwargs:
+        glob_print_output = kwargs.get('glob_print_output')
+    else:
+        glob_print_output = False
     if 'data_folder' in kwargs:
         data_folder = kwargs.get('data_folder')
     else:
@@ -244,16 +270,29 @@ def rd_u(struCase, **kwargs):
     
     glob_u_raw = []
     glob_u_avr = []
+    loc_unf_raw = []
+    
+    glob_step_Nan = 0
     for node_name in struCase.nodes:
         callbat( data_folder+struCase.p11FN, str(node_name), "0", data_folder+"temp_file")
         loc_lines = open(data_folder+"temp_file",'r')
         loc_x_dat = loc_lines.readlines()
-        loc_table_raw = rd_SimpactTable(loc_x_dat,0)
+        loc_table_raw, loc_step_Nan = rd_SimpactTable(loc_x_dat,0, STable_mode='with_counter')
+        if loc_step_Nan > glob_step_Nan:
+            glob_step_Nan = loc_step_Nan
+            if glob_print_output:
+                print('t_Nan update:', loc_step_Nan,', for node: ',node_name)
+        #Save all before NaN filter
+        loc_unf_raw.append(loc_table_raw)
+        loc_lines.close()
+    
+    loc_unf_raw = NaN_filter(loc_unf_raw, glob_step_Nan, **kwargs) #Delete all t>t_Nan data
+    for a in range(len(struCase.nodes)): #Continue. Esto debería reproducir nuevamente el bucle interrumpido por el filtrado
+        loc_table_raw = loc_unf_raw[a]
         loc_table_avr = np.copy(loc_table_raw)
         if struCase.rdof: # if rotational DoFs, create field u_avr
             loc_table_avr[:,4:]= euler2axial(loc_table_avr[:,4:])
-        if struCase.nodes.index(node_name) == 0:
-            #Acomodar posibilidad de que el tiempo de 1 nodo sea menor (NaN antes q resto)???
+        if a == 0:
             glob_time = loc_table_raw[:,0]
             total_ntime = len(glob_time)
             glob_u_raw = np.transpose(loc_table_raw)[1:,:]
@@ -262,7 +301,7 @@ def rd_u(struCase, **kwargs):
             glob_u_raw = np.append(glob_u_raw,np.transpose(loc_table_raw)[1:,:],axis=0)
             glob_u_avr = np.append(glob_u_avr,np.transpose(loc_table_avr)[1:,:],axis=0)
     
-    loc_lines.close()
+    
     os.remove(data_folder+"temp_file")
     
     struCase.nt = total_ntime
@@ -272,7 +311,28 @@ def rd_u(struCase, **kwargs):
     
     return struCase
 
-
+def NaN_filter(full_data, Nan_step, **kwargs):
+    """
+    Deletes all data with index > earliest NaN
+    
+    bulk_data: list of numpy arrays, each one is a stru displacements case from *.p11 bin file
+    Nan_step: Nan´s first index
+    """
+    if 'glob_print_output' in kwargs:
+        glob_print_output = kwargs.get('glob_print_output')
+    else:
+        glob_print_output = False
+    
+    for i in range(len(full_data)):
+        if Nan_step < len(full_data[i]):
+            full_data[i] = np.delete(full_data[i],range(Nan_step,len(full_data[i])))
+            if glob_print_output:
+                print(len(full_data[i])-Nan_step, ' steps deleted')
+        else:
+            if glob_print_output:
+                print('No data was deleted')
+    return full_data
+    
 def rd_eqInfo(struCase, **kwargs):
     """
     Extracts Information Relative to the Equations Numbers from ASCII *.rsn file
@@ -596,8 +656,11 @@ def ae_Ftable(struCase, **kwargs): ##NOTA: Si el nombre no gusta, lo cambio
     loc_ftab_filt = np.transpose(loc_ftab_filt)
     loc_ittab = np.array(loc_ittab)
     
-    #step, instant, loads
-    return(loc_ittab[:,1], loc_ftab_filt)
+    #step, instants, loads
+    struCase.t_Loads = loc_ittab[:,1]
+    struCase.eLoad = loc_ftab_filt
+    struCase.dt_Loads = loc_ittab[1][1]-loc_ittab[0][1]
+    return struCase
 
 
 # handle postprocessed data files --------------------------------------------
