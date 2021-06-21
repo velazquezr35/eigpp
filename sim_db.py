@@ -92,11 +92,24 @@ class stru:
         self.struEigOpt = False  # True if modal decomposition should be done over generalized displacements
         self.loadEigOpt = False  # True if modal decomposition should be done over external loads
         
-    #methods
-    def Nan_clean(self): #NOTA: ¿Tomar otro nombre?
+    #Methods
+    def time_slice(self): #NOTA: ¿Tomar otro nombre?
         '''
-        Delete all values with index > earliest Nan´s
+        Delete all values with time > min(max(tf_stru),max(tf_loads))
         '''
+        if self.t[-1] > self.t_Loads[-1]:
+            chg_index = int(self.dt/self.dt)
+            self.u_raw = self.u_raw[:,0:chg_index+1]
+            self.u_avr = self.u_avr[:,0:chg_index+1]
+            self.t = self.t[:chg_index+1]
+        
+        elif self.t_Loads[-1] > self.t[-1]:
+            chg_index = int(self.t/self.dt_Loads)
+            self.eLoad = self.eLoad[:,0:chg_index+1]
+            self.t_Loads = self.t_Loads[:chg_index+1]
+        #Comentarios extra:
+        #Conviene hacer slice que recorrer fila a fila y recortar
+            
         #Aprovechar la función definida más abajo para el caso local, y reutilizarla con un factor step correspondiente al mismo tiempo (diferencia de dt entre loads y desp)
         #No sé si es útil de momento, dado que para tener todo en arrays cada fila (o info asociada a X cosa) debe tener la misma longitud.
         pass
@@ -139,6 +152,28 @@ class sim:
 functions
 ------------------------------------------------------------------------------
 """
+
+# handle data indexes
+
+def nodeDof2idx(struCase, nodeDOFs):
+    """
+    Returns indexes for the nodes and nodes DOFs of interest
+    struCase: sim.stru obj
+    nodeDOFs: dict, keys: nodes, values: list of DOFs per node
+    returns: list of ints (indexes) in order
+    """
+    loc_indexes = []
+    nodes = list(nodeDOFs.keys())
+    dofs = list(nodeDOFs.values())
+    for i in range(len(nodes)):
+        for j in range(len(dofs[i])):
+            try:
+                loc_indexes.append(5*struCase.nodes.index(int(nodes[i]))+dofs[i][j])
+            except:
+                print('Revisar datos: Error para el nodo:', nodes[i], ', DOF: ', dofs[i][j])
+    return loc_indexes
+    
+    
 
 # read Simpact and Delta output files ----------------------------------------
 
@@ -305,6 +340,7 @@ def rd_u(struCase, **kwargs):
     os.remove(data_folder+"temp_file")
     
     struCase.nt = total_ntime
+    struCase.dt = glob_time[1]-glob_time[0]
     struCase.t  = glob_time
     struCase.u_raw = glob_u_raw
     struCase.u_avr = glob_u_avr
@@ -573,7 +609,7 @@ def check_BN_files(case, **kwargs):
     av_files = os.listdir(data_folder)
     if case.fName+'.sim' in av_files:
         print('Warning: ',case.fName,' already exists')
-        print('act: Update info, new: Save new file, ov: Overwrite') #NOTA: Agregar más opciones
+        print('act: Update info (new file w/timestamp), new: Save new file, ov: Overwrite') #NOTA: Agregar más opciones
         acp_inpt = ['act','new','ov']
         acp_cond = True
         while acp_cond:
@@ -585,6 +621,7 @@ def check_BN_files(case, **kwargs):
             case.fName = case.fName+'_upd_'+strftime('%H%M_%d%b%Y')
         elif var_inpt == 'ov':
             print('Overwriting file')
+            #Por ahora es lo mismo
         elif var_inpt == 'new':
             print('Saving new file')
             case.fName = case.fName+'_new'
