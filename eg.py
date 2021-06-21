@@ -50,7 +50,7 @@ case1.stru.loadRdOpt  = 'bin'
 #   asking for
 #       work over data in a subfolder called "subF"
 #       print status messages
-case1 = epp(case1, **{'data_folder': 'subF/', 'glob_print_output': True})
+case1 = epp(case1, **{'data_folder': 'subF/', 'glob_print_output': True, 'BN_mode':'pass'})
 
 
 

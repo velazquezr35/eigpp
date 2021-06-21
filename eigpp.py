@@ -113,7 +113,7 @@ def rd_data(case, **kwargs):
         if case.fName == '':
             print('Warning: fName empty!') ##NOTA: Esto podría hacerse con un 'kit' de opciones a verificar desde check_attris
         temp_case = read_bin(data_folder+case.fName, glob_print_output) # expects "sim" class object
-        case = sim_db.update_BN_objs(case, temp_case, modo='preserve') #Se compara y actualiza para no perder info
+        case = sim_db.update_BN_objs(case, temp_case, **kwargs) #Se compara y actualiza para no perder info
         if type(case) != sim: ##NOTA: Idem
             print('Warning: Not a sim class obj')
         if glob_print_output:
@@ -131,7 +131,7 @@ def rd_data(case, **kwargs):
         if case.fName == '':
             print('Warning, empty Filename')
         temp_case = read_bin(data_folder+case.fName, glob_print_output) # expects "sim" class object
-        case = sim_db.update_BN_objs(case,temp_case,modo='preserve') #Nuevamente
+        case = sim_db.update_BN_objs(case,temp_case,**kwargs) #Nuevamente
         if type(case) != sim:
             print('Warning: Not a sim class obj')
         if glob_print_output:

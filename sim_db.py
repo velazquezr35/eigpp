@@ -434,10 +434,10 @@ def update_BN_objs(act_case, new_case, **kwargs):
     kwargs: {modo}
     returns: new_case, from BN file. Updated as req.
     '''
-    try:
-        modo = kwargs.get('modo')
-    except:
-        raise NameError('Ingresar modo de comparación')
+    if 'BN_mode' in kwargs:
+        modo = kwargs.get('BN_mode')
+    else:
+        modo = 'preserve'
     #Use dict for future expansions???
     if modo == 'pass':
         #Just the new case
