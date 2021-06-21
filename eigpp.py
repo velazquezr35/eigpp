@@ -125,7 +125,7 @@ def rd_data(case, **kwargs):
         case.stru = rd_rawLoadData(case.stru, **kwargs)
         save_bin(data_folder+case.fName, case, glob_print_output)
         if glob_print_output:
-            print("Raw external load data read")
+            print("Raw external load data used")
     elif case.stru.loadRdOpt == 'bin':
         if case.fName == '':
             print('Warning, empty Filename')
