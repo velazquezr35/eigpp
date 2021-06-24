@@ -27,6 +27,8 @@ importing zone
 from sim_db import sim, nodeDof2idx
 from eigpp  import epp
 
+import plotter
+import matplotlib.pyplot as plt
 
 """
 ------------------------------------------------------------------------------
@@ -52,9 +54,11 @@ case1.stru.loadRdOpt  = 'bin'
 #       print status messages
 case1 = epp(case1, **{'data_folder': 'subF/', 'glob_print_output': True, 'BN_mode':'preserve'})
 
-#Ejemplo de uso de ubicar nodos con nodeDof2idx
+#Ejemplo de uso de ubicar nodos con nodeDof2idx y ploteo BORRAR LUEGO
 #Usar un dict resultó más limpio para el end-user, aunque internamente se hagan 2 pasos extras.
-desired = {'200000':[0,3],'200010':[1]}
+desired = {'200010':[1,2,3]}
 indexes_listados = nodeDof2idx(case1.stru,desired)
 
-
+fig, ax = plt.subplots()
+plotter.plt_ut(case1.stru, desired, ax)
+ax.legend()
