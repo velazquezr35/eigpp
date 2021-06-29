@@ -47,7 +47,7 @@ def plt_ut(struCase, dofDict, ax, **kwargs):
     Plot DOFs as f(t), u_avr as default.
     
     Inputs: struCase is a Stru Class Obj
-            dof_lst is a dict (o lista, ver cual dejar), {node:[DOFs]}
+            dof_Dict is a dict (o lista, ver cual dejar), {node:[DOFs]}
             ax is a matplotlib.pyplot Axes obj
             kwargs: 'u_type': raw or avr (default)
                     'vel': False (default) or True (in order to calculate and plot velocities)
@@ -65,20 +65,21 @@ def plt_ut(struCase, dofDict, ax, **kwargs):
 
     t=struCase.t
     desired_inds = nodeDof2idx(struCase, dofDict)
-    for loc_ind in desired_inds:
+    original_inds = flatten_values_list(dofDict.values())
+    node_labels = label_asoc(dofDict) #OJO. No contempla posibles errores (q pida algo que no tengo) y esto daría problemas. Parece no importar.
+    for i in range(len(desired_inds)):
         if u_type=='avr':
-            u = struCase.u_avr[loc_ind,:]
+            u = struCase.u_avr[desired_inds[i],:]
         elif u_type=='raw':
-            u = struCase.u_raw[loc_ind,:]
+            u = struCase.u_raw[desired_inds[i],:]
         else:
             print('Warning: Bad u_type def')
             
         if vel:
-            u=np.gradient(u,struCase.t)
-        ax.plot(t,u, label=str(loc_ind)) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
-        
+            u=np.gradient(u,struCase.t) #NOTA: Agregar al plot que es una velocidad
+        ax.plot(t,u, label= node_labels[i] +' - DOF: ' + str(original_inds[i])) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
+    ax.legend(title='Node(s): ' + keys_to_str(dofDict)) #NOTA: ¿Quiero esta info como titulo?
     return(ax) #NOTA: ¿Necesito hacer el return? Quizá para actualizar
-    #NOTA: Ver si directamente plotear las leyendas acá o devolverlas y agregarlas luego manualmente (no recomiendo). Creo que lo mejor es plotearlas acá directo.
     
 #Plot q data
 
@@ -103,12 +104,11 @@ def plt_qt(struCase, modeList, ax, **kwargs):
         if vel:
             u=np.gradient(u,struCase.t)
         ax.plot(t,u, label=str(loc_ind)) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
+
+    ax.legend(title='COMPLETAME')
         
     return(ax) #NOTA: ¿Necesito hacer el return? Quizá para actualizar
-    #NOTA: Ver si directamente plotear las leyendas acá o devolverlas y agregarlas luego manualmente (no recomiendo). Creo que lo mejor es plotearlas acá directo.
     
-
-
 
 def plt_us(struCase, t_lst,ax,**kwargs):
     
@@ -122,6 +122,9 @@ def plt_us(struCase, t_lst,ax,**kwargs):
                     'vel': False (default) or True (in order to calculate and plot velocities)
                     
     """
+    
+    print('Coming soon...')
+    
     return()
 
 def plt_qs(struCase, t_lst,ax,**kwargs):
@@ -136,6 +139,7 @@ def plt_qs(struCase, t_lst,ax,**kwargs):
                     'vel': False (default) or True (in order to calculate and plot velocities)
                     
     """
+    print('Coming soon...')
     return()
 
 
@@ -287,42 +291,112 @@ def fig_ut(struCase, dofLIST, **kwargs):
     Arranges plots of u(t)
     
     struCase:   stru class object
-    dofLIST:    list (level 3) of lists (level 2 - called dofList) of lists (level 1 - pairs [node,DoF])
-                e.g.:   dofLIST = [ dofList1, dofList2, dofList3 ]
-                            dofList1 = [ [node1,3] ]
-                            dofList2 = [ [node1,3], [node1,1] ]
-                            dofList3 = [ [node2,1], [node3,1] ]
-                            node1, node2 and node3 being integers (external labels of nodes included in struCase.nodes)
-                        the figure will have 3 axes arranged on a column
-                            top axes will have one curve (time evolution of the 3rd DoF of node node1)
-                            mid axes will have two curves (time evolution of the 3rd and the 1st DoF of node node1)
-                            bot axes will have two curves (time evolution of the 1st DoF of node node2 and node3)
+    dofLIST:    list of dofDicts or dofDict {NODE: [DOFs]} 
     kwargs: may contain
+        #General:
         sharex: matplotlib.pyplot.subplots() argument - default 'col'
+        p_prow: plots per row for the global figure - default 1
+        #Plot customization:
+            fig_title
+            x_label
+            y_label
+            legend_title
     '''
     
     if 'sharex' in kwargs:
         sharex = kwargs.get('sharex')
     else:
         sharex = "col"
+        
+    if 'p_prow' in kwargs:
+        p_prow = kwargs.get('p_prows')
+    else:
+        p_prow = 1
+        
+    graphs_pack = handle_graph_info(**kwargs)
     
+    if type(dofLIST) == dict: #Para comodidad end-user
+        dofLIST = [dofLIST]
+
+    n = len(dofLIST)
     
-    fig, axs = plt.subplots( len(dofLIST), 1, sharex=sharex ) # esta llamada podría generalizarse con más especificaciones que vengan en kwargs, pero creo que esta es la única interesante para esta función - tal vez para otras puede ser interesante usar otros argumentos - lo veremos cuando lo estemos usando
-    for ax,lst in zip(axs,dofLIST):
-        ax = plt_ut( struCase, lst, ax, **kwargs)
+    fig, axs = plt.subplots(n, p_prow, sharex = sharex)
     
+    if n == 1: #Esto falla si ax no es un iterable (cuando n = 1 es sólo ax, no ax[:])
+        axs = plt_ut(struCase, dofLIST[0], axs, **kwargs)
+        axs.set_xlabel(graphs_pack['x_label'])
+        axs.set_ylabel(graphs_pack['y_label'])
+        axs.grid()
+    else:
+        for ax, dof_dict in zip(axs, dofLIST):
+            ax = plt_ut(struCase, dof_dict, ax)
+            ax.set_xlabel(graphs_pack['x_label'])
+            ax.set_ylabel(graphs_pack['y_label'])
+            ax.grid()
+    fig.suptitle(graphs_pack['fig_title'])
     return(fig)
 
+#TEST VERSION. Creo que no será necesaria, y también creo que no hace exactamente lo solicitado en el Issue con su pseudocódigo
+#IDEM PARA fig_one
+def fig_ut_col(struCase, dofDict, **kwargs):
+    """
+    Arranges plots of u(t)
+    
+    struCase:   stru class object
+    dofDict:    dict (o lista, ver cual dejar), {node:[DOFs]}
+    kwargs: may contain
+        sharex: matplotlib.pyplot.subplots() argument - default 'col'
+        p_prow: plots per row for the global figure - default 1
+    """
+    if 'sharex' in kwargs:
+        sharex = kwargs.get('sharex')
+    else:
+        sharex = "col"
+        
+    if 'p_prow' in kwargs:
+        p_prow = kwargs.get('p_prows')
+    else:
+        p_prow = 1
+        
+    graphs_pack = handle_graph_info(**kwargs)
+
+    #n subplots for n lists in dofLIST
+    if len(dofDict) > 1:
+        raise ValueError('Warning: More than 1 node(?) in dofDict. Use fig_ut instead')
+    else:
+        
+        n = len(flatten_values_list(dofDict.values()))
+        key = list(dofDict.keys())[0]
+        fig, axs = plt.subplots(n, p_prow, sharex = sharex)
+        
+        if n == 1: #El zip falla si axs no es iterable, nuevamente.
+            axs = plt_ut(struCase, dofDict, axs,**kwargs)
+            axs.set_xlabel(graphs_pack['x_label'])
+            axs.set_ylabel(graphs_pack['y_label'])
+            axs.grid()
+        else:
+            for ax, i in zip(axs, range(n)):
+                ax = plt_ut(struCase,{key:[flatten_values_list(dofDict.values())[i]]},ax,**kwargs)
+                ax.set_xlabel(graphs_pack['x_label'])
+                ax.set_ylabel(graphs_pack['y_label'])
+                ax.grid()
+        fig.suptitle(graphs_pack['fig_title'])
+        return(fig)
+
 def fig_qt():
+    print('Coming soon...')
     pass
 
 def fig_u_FFT():
+    print('Coming soon...')
     pass
 
 def fig_ut_spect():
+    print('Coming soon...')
     pass
 
 def fig_ut_vt_pp():
+    print('Coming soon...')
     pass
 
 
@@ -336,6 +410,8 @@ GENERAL TOOLS functions
 def tldxs(struCase, desired_t):
     """
     Generates a list of indexes for the closest struCase.t time values in t arg (list, floats)
+    input: struCase, a sim.stru obj and desired_t, a desired time [s]
+    output: closest struCase.t index
     """
     des_ind = []
     for loc_t in desired_t:
@@ -343,8 +419,77 @@ def tldxs(struCase, desired_t):
 
     return(des_ind)
 
+def keys_to_str(dct_keys):
+    """
+    Simple tool for str generation from dict_keys data
+    input: dict.keys
+    output: str
+    """
+    word = ''
+    for loc_nam in list(dct_keys):
+        word+=loc_nam
+        word+='-'
+    return(word[:-1])
 
+def flatten_values_list(dct_values):
+    """
+    Simple tool for fusion nested lists (coming from dicts_values)
+    input: dict.values
+    output: list (dim 1)
+    """
+    flat_values = []
+    if type(dct_values) == list:
+        for sub in dct_values:
+            for item in sub:
+                flat_values.append(item)
+    else:
+        for sub in list(dct_values):
+            for item in sub:
+                flat_values.append(item)
+    return(flat_values)
 
+def label_asoc(dct):
+    """
+    Simple tool for generate a list of labels from dict keys
+    input: dict {key:list}
+    output: list of str
+    """
+    label_list = []
+    for i in dct:
+        label_list.append(len(dct[i])*[str(i)])
+    label_list = flatten_values_list(label_list)
+    return(label_list)
+    
+def handle_graph_info(**kwargs):
+    """
+    Prepares labels, titles and general things for plots
+    input: just the kwargs
+    output: graphs_info, dict
+    """
+    #General basic pack
+    if 'graphs_pack' in kwargs:
+        graphs_pack = kwargs.get('graphs_pack')
+    else:
+        graphs_pack = {'fig_title':'Default title', 'x_label': 'Eje x', 'y_label': 'Eje y', 'legend_title':'default'}
+        
+    #Also, add custom things:
+    if 'fig_title' in kwargs:
+        graphs_pack['fig_title'] = kwargs.get('fig_title')
+    
+    if 'x_label' in kwargs:
+        graphs_pack['x_label'] = kwargs.get('x_label')
+        
+    if 'y_label' in kwargs:
+        graphs_pack['y_label'] = kwargs.get('y_label')
+        
+    if 'legend_title' in kwargs:
+        graphs_pack['legend_title'] = kwargs.get('legend_title')
+        
+    return(graphs_pack)
+    
+    
+    
+    
 ###################################################################################################################
 ###################################################################################################################
 

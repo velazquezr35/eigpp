@@ -24,12 +24,9 @@ get_ipython().magic('reset -sf')
 importing zone
 ------------------------------------------------------------------------------
 """
-from sim_db import sim, nodeDof2idx
+from sim_db import sim
 from eigpp  import epp
-
 import plotter
-import matplotlib.pyplot as plt
-
 """
 ------------------------------------------------------------------------------
 runing things
@@ -54,11 +51,16 @@ case1.stru.loadRdOpt  = 'bin'
 #       print status messages
 case1 = epp(case1, **{'data_folder': 'subF/', 'glob_print_output': True, 'BN_mode':'preserve'})
 
-#Ejemplo de uso de ubicar nodos con nodeDof2idx y ploteo BORRAR LUEGO
+#Ejemplo de uso de ubicar nodos con nodeDof2idx y ploteo
 #Usar un dict resultó más limpio para el end-user, aunque internamente se hagan 2 pasos extras.
-desired = {'200010':[1,2,3]}
-indexes_listados = nodeDof2idx(case1.stru,desired)
+#Por ejemplo:
+desired = {'200000':[1,2,3]}
+desired2 = {'200010':[1,2,3]} 
 
-fig, ax = plt.subplots()
-plotter.plt_ut(case1.stru, desired, ax)
-ax.legend()
+#Plot normal fig_ut
+plotter.fig_ut(case1.stru,[desired,desired2], fig_title = 'Normal fig_ut')
+#Plot as fig_ut_col 
+plotter.fig_ut(case1.stru, [{'200000':[1]},{'200010':[1]}], fig_title = 'Plot as fig_ut_col´s style')
+
+#Plot as fig_ut_one
+plotter.fig_ut(case1.stru, desired, fig_title = 'Plot as fig_ut_one´s style')
