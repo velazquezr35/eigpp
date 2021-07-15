@@ -93,26 +93,7 @@ class stru:
         self.loadEigOpt = False  # True if modal decomposition should be done over external loads
         
     #Methods
-    def time_slice(self): #NOTA: ¿Tomar otro nombre?
-        '''
-        Delete all values with time > min(max(tf_stru),max(tf_loads))
-        '''
-        if self.t[-1] > self.t_Loads[-1]:
-            chg_index = int(self.dt/self.dt)
-            self.u_raw = self.u_raw[:,0:chg_index+1]
-            self.u_avr = self.u_avr[:,0:chg_index+1]
-            self.t = self.t[:chg_index+1]
-        
-        elif self.t_Loads[-1] > self.t[-1]:
-            chg_index = int(self.t/self.dt_Loads)
-            self.eLoad = self.eLoad[:,0:chg_index+1]
-            self.t_Loads = self.t_Loads[:chg_index+1]
-        #Comentarios extra:
-        #Conviene hacer slice que recorrer fila a fila y recortar
-            
-        #Aprovechar la función definida más abajo para el caso local, y reutilizarla con un factor step correspondiente al mismo tiempo (diferencia de dt entre loads y desp)
-        #No sé si es útil de momento, dado que para tener todo en arrays cada fila (o info asociada a X cosa) debe tener la misma longitud.
-        pass
+    #Coming soon...
 
 class aero:
     """
@@ -152,6 +133,34 @@ class sim:
 functions
 ------------------------------------------------------------------------------
 """
+
+# handle time indexes
+
+def time_slice(struCase,**kwargs): #NOTA: ¿Tomar otro nombre?
+    '''
+    Delete all values with time > min(max(tf_stru),max(tf_loads))
+    inputs:
+            struCase stru class obj
+    kwargs may contain:
+        
+    returns: none
+    '''
+    if struCase.t[-1] > struCase.t_Loads[-1]:
+        chg_index = int(struCase.dt/struCase.dt)
+        struCase.u_raw = struCase.u_raw[:,0:chg_index+1]
+        struCase.u_avr = struCase.u_avr[:,0:chg_index+1]
+        struCase.t = struCase.t[:chg_index+1]
+    
+    elif struCase.t_Loads[-1] > struCase.t[-1]:
+        chg_index = int(struCase.t/struCase.dt_Loads)
+        struCase.eLoad = struCase.eLoad[:,0:chg_index+1]
+        struCase.t_Loads = struCase.t_Loads[:chg_index+1]
+    #Comentarios extra:
+    #Conviene hacer slice que recorrer fila a fila y recortar
+        
+    #Aprovechar la función definida más abajo para el caso local, y reutilizarla con un factor step correspondiente al mismo tiempo (diferencia de dt entre loads y desp)
+    #No sé si es útil de momento, dado que para tener todo en arrays cada fila (o info asociada a X cosa) debe tener la misma longitud.
+    return()
 
 # handle data indexes
 
