@@ -93,12 +93,12 @@ def plt_ut(struCase, dofDict, ax, **kwargs):
     
 #Plot q data
 
-def plt_qt(struCase, modeList, ax, **kwargs):
+def plt_qt(struCase, modeDict, ax, **kwargs):
     """
     Plot modal coordinates as f(t).
     
     Inputs: struCase is a Stru Class Obj
-            dof_lst is a dict (o lista, ver cual dejar), {node:[DOFs]}
+            mode_Dict is a dict {'key':[MODEs]}
             ax is a matplotlib.pyplot Axes obj
             kwargs: 'vel': False (default) or True (in order to calculate and plot modal velocities)
                     'env': False (default) or True (in order to plot the envelope)
@@ -113,7 +113,8 @@ def plt_qt(struCase, modeList, ax, **kwargs):
         env = False
 
     t=struCase.t
-    for loc_ind in modeList:
+    modal_inds = flatten_values_list(modeDict.values())
+    for loc_ind in modal_inds:
         u = struCase.q[loc_ind,:]
         if vel:
             u=np.gradient(u,struCase.t)
@@ -122,7 +123,7 @@ def plt_qt(struCase, modeList, ax, **kwargs):
             high_idx, low_idx = hl_envelopes_idx(u)
             ax.plot(t[high_idx], u[high_idx])
             ax.plot(t[low_idx], u[low_idx])
-    ax.legend(title='COMPLETAME')
+    ax.legend(title='plt_q')
     return(ax) #NOTA: ¿Necesito hacer el return? Quizá para actualizar
     
 
@@ -204,7 +205,11 @@ def plt_uFFT(struCase, dofDict, ax, **kwargs):
         if vel:
             u=np.gradient(u,struCase.t) #NOTA: Agregar al plot que es una velocidad
         y_f = abs(fft(u))
-        y_f = y_f/max(y_f)
+        loc_m = max(y_f)
+        if not loc_m== 0:
+            y_f = y_f/loc_m
+        else:
+            print('Warning: 1/0 found')
         x_f = np.arange(0,fDef*(len(t)-1),fDef)
         x_f = x_f*2*np.pi
         ax.plot(x_f[:(len(t)-1)//2],y_f[:(len(t)-1)//2], label= node_labels[i] +' - DOF: ' + str(original_inds[i])) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
@@ -215,6 +220,53 @@ def plt_uFFT(struCase, dofDict, ax, **kwargs):
     ax.legend(title=graphs_pack['legend_title'])
     return(ax)
     
+def plt_qFFT(struCase, modeDict, ax, **kwargs):
+    """
+    Plot the FFT of (a) q-signal(s)
+    inputs: struCase stru class obj
+            modeDict dict {'key': [MODEs]}
+            ax matplotlib.pyplot Axes obj
+    kwargs (may contain):
+            vel, for in order to calculate and plot the FFT of the modal velocities
+            graphs_pack, standard dict for plot customization
+        
+    returns:
+            ax obj
+    """
+        
+    if 'vel' in kwargs:
+        vel = kwargs.get('vel')
+    else:
+        vel = False
+    if 'graphs_pack' in kwargs:
+        graphs_pack = kwargs.get('graphs_pack')
+    else:
+        graphs_pack = handle_graph_info(**kwargs)
+    
+    t = struCase.t
+
+    fDef = 1/(t[-1]-t[0])
+    modal_inds = flatten_values_list(modeDict.values())
+    for i in modal_inds:
+        q = struCase.q[i,:]
+        if vel:
+            q=np.gradient(q,struCase.t) #NOTA: Agregar al plot que es una velocidad
+        y_f = abs(fft(q))
+        loc_m = max(y_f)
+        if not loc_m== 0:
+            y_f = y_f/loc_m
+        else:
+            print('Warning: 1/0 found')
+        
+        x_f = np.arange(0,fDef*(len(t)-1),fDef)
+        x_f = x_f*2*np.pi
+        ax.plot(x_f[:(len(t)-1)//2],y_f[:(len(t)-1)//2], label=' - MODO: ' + str(i)) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
+
+    ax.legend(title='plt_qFFT') #NOTA: ¿Quiero esta info como titulo?
+    ax.set_xlabel(graphs_pack['x_label'])
+    ax.set_ylabel(graphs_pack['y_label'])
+    ax.legend(title=graphs_pack['legend_title'])
+    return(ax)
 
 #Retratos de fase
 
@@ -246,24 +298,163 @@ def plt_uPP(struCase, dofDict,ax,**kwargs):
         
     return(ax) #NOTA: ¿Necesito hacer el return? Quizá para actualizar
 
-def plt_qPP(struCase, modeList,ax,**kwargs):
+def plt_qPP(struCase, modeDict,ax,**kwargs):
     """
     Plots phase-plane portraits, u vs du/dt
     Inputs: struCase is a Stru Class Obj
-            modeList
+            modeDict is a dict {'key':[MODEs]}
             ax is a matplotlib.pyplot Axes obj
             kwargs: 'u_type': raw or avr (default)
     """
-
-    for loc_ind in modeList:
+    modal_inds = flatten_values_list(modeDict.values())
+    for loc_ind in modal_inds:
         #NOTA: Esto se puede mejorar tomando u = todos y luego plot(u[desired])
         dq = np.gradient(struCase.q[loc_ind,:],struCase.t)
         ax.plot(struCase.q[loc_ind,:],dq, label=str(loc_ind)) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
-        
+    ax.legend(title='plt_qPP')
     return(ax) #NOTA: ¿Necesito hacer el return? Quizá para actualizar
 
 #Spectrogram
 
+def plt_uspectr(struCase, dofDict, fig, ax, **kwargs):
+    """
+    Plots spectrogram
+    Inputs: struCase is a Stru Class Obj
+            dof_lst is a dict (o lista, ver cual dejar), {node:[DOFs]}
+            ax is a matplotlib.pyplot Axes obj
+            kwargs: 'u_type': raw or avr (default)
+    """
+    if 'u_type' in kwargs:
+        u_type = kwargs.get('u_type')
+    else:
+        u_type = 'avr'
+    if 'vel' in kwargs:
+        vel = kwargs.get('vel')
+    else:
+        vel = False
+    if 'graphs_pack' in kwargs:
+        graphs_pack = kwargs.get('graphs_pack')
+    else:
+        graphs_pack = handle_graph_info(**kwargs)
+    t = struCase.t
+    D_t = t[-1] - t[0] #NOTA: Esto asume un único t para el struCase
+    if 'SP_Winsize' in kwargs:
+        WinSize = kwargs.get('SP_Winsize')
+    else:
+        WinSize = len(t)/20 #NOTA: Esto asume un único winsize para el struCase. Ver si agregar info en un dict aparte para más customización
+    if 'SP_OvrLapFactor' in kwargs:
+        OverLapFactor = kwargs.get('SP_OvrLapFactor')
+    else:
+        OverLapFactor = 80 #NOTA: Default 80%
+        
+    if 'SP_WinType' in kwargs:
+        WinType = kwargs.get('SP_WinType')
+    else:
+        WinType = 'hann' #NOTA: Default Hann's window. ¿Sirve?
+        
+    if 'SP_normalize' in kwargs:
+        b_norm = kwargs.get('SP_normalize')
+    else:
+        b_norm = True #NOTA: Default normalizar el spectrogram
+        
+    OverLap = np.round(WinSize*OverLapFactor/100)
+    fDef = len(t)/D_t
+    desired_inds = nodeDof2idx(struCase,dofDict)
+    original_inds = flatten_values_list(dofDict.values())
+    node_labels = label_asoc(dofDict) #OJO. No contempla posibles errores
+    for i in range(len(desired_inds)):
+        if u_type=='avr':
+            u = struCase.u_avr[desired_inds[i],:]
+        elif u_type=='raw':
+            u = struCase.u_raw[desired_inds[i],:]
+        else:
+            print('Warning: Bad u_type def')
+        if vel:
+            u=np.gradient(u,struCase.t) #NOTA: Agregar al plot que es una velocidad
+
+        F, T, S = signal.spectrogram(u, fDef,window=WinType, noverlap=OverLap)
+        if b_norm:
+            loc_m = 0
+            for j in range(len(S)):
+                if max(S[j,:]) > loc_m:
+                    loc_m = max(S[j,:])
+            if not loc_m == 0:
+                S = abs(S)/loc_m
+            else:
+                print('Warning: 1/0 found')
+        c = ax.pcolormesh(T,F*2*np.pi,S,shading = 'auto', cmap='gray_r')
+        fig.colorbar(c, ax = ax, label= 'DOF: ' + str(original_inds[i]))
+        ax.set_title('Node(s): ' + keys_to_str(dofDict))
+    ax.set_xlabel(graphs_pack['x_label'])
+    ax.set_ylabel(graphs_pack['y_label'])
+    return(ax)
+
+def plt_qspectr(struCase, modeDict, fig, ax, **kwargs):
+    """
+    Plots spectrogram
+    Inputs: struCase is a Stru Class Obj
+            dof_lst is a dict (o lista, ver cual dejar), {node:[DOFs]}
+            ax is a matplotlib.pyplot Axes obj
+            kwargs may contain:
+                'vel': bool, default False - In order to calculate and plot the modal vel's spectrogram
+                'SP_Winsize': str, default Dt/20 
+                'SP_OvrLapFactor': int, detault 80 (%)
+                'SP_WinType': str, default 'Hann' - Check supported FFT-Windows in scipy.signal
+                'SP_Normalize': bool, default True - In order to normalize the spectrogram
+    """
+    if 'vel' in kwargs:
+        vel = kwargs.get('vel')
+    else:
+        vel = False
+    if 'graphs_pack' in kwargs:
+        graphs_pack = kwargs.get('graphs_pack')
+    else:
+        graphs_pack = handle_graph_info(**kwargs)
+    t = struCase.t
+    D_t = t[-1] - t[0] #NOTA: Esto asume un único t para el struCase
+    if 'SP_Winsize' in kwargs:
+        WinSize = kwargs.get('SP_Winsize')
+    else:
+        WinSize = len(t)/20 #NOTA: Esto asume un único winsize para el struCase. Ver si agregar info en un dict aparte para más customización
+    if 'SP_OvrLapFactor' in kwargs:
+        OverLapFactor = kwargs.get('SP_OvrLapFactor')
+    else:
+        OverLapFactor = 80 #NOTA: Default 80%
+        
+    if 'SP_WinType' in kwargs:
+        WinType = kwargs.get('SP_WinType')
+    else:
+        WinType = 'hann' #NOTA: Default Hann's window. ¿Sirve?
+        
+    if 'SP_Normalize' in kwargs:
+        b_norm = kwargs.get('SP_Normalize')
+    else:
+        b_norm = True #NOTA: Default normalizar el spectrogram
+        
+    OverLap = np.round(WinSize*OverLapFactor/100)
+    fDef = len(t)/D_t
+    
+    modal_inds = flatten_values_list(modeDict.values())
+
+    for i in modal_inds:
+        q = struCase.q[i,:]
+        if vel:
+            q=np.gradient(q,struCase.t) #NOTA: Agregar al plot que es una velocidad
+        F, T, S = signal.spectrogram(q, fDef,window=WinType, noverlap=OverLap)
+        if b_norm:
+            loc_m = 0
+            for j in range(len(S)):
+                if max(S[j,:]) > loc_m:
+                    loc_m = max(S[j,:])
+            if not loc_m == 0:
+                S = abs(S)/loc_m
+            else:
+                print('Warning: 1/0 found')
+        c = ax.pcolormesh(T,F*2*np.pi,S,shading = 'auto', cmap='gray_r')
+        fig.colorbar(c, ax = ax, label= 'MODE: ' + str(i))
+    ax.set_xlabel(graphs_pack['x_label'])
+    ax.set_ylabel(graphs_pack['y_label'])
+    return(ax)
 
 """
 ------------------------------------------------------------------------------
@@ -321,9 +512,56 @@ def fig_ut(struCase, dofLIST, **kwargs):
     fig.suptitle(graphs_pack['fig_title'])
     return(fig)
 
-def fig_qt():
-    print('Coming soon...')
-    pass
+def fig_qt(struCase, modeLIST, **kwargs):
+    '''
+    Arranges plots of q(t)
+    
+    struCase:   stru class object
+    dofLIST:    list of modeDicts or modeDict {number: [MODEs]} (per graph)
+    kwargs: may contain
+        #General:
+        sharex: matplotlib.pyplot.subplots() argument - default 'col'
+        p_prow: plots per row for the global figure - default 1
+        #Plot customization:
+            fig_title
+            x_label
+            y_label
+            legend_title
+    '''
+    
+    if 'sharex' in kwargs:
+        sharex = kwargs.get('sharex')
+    else:
+        sharex = "col"
+        
+    if 'p_prow' in kwargs:
+        p_prow = kwargs.get('p_prows')
+    else:
+        p_prow = 1
+        
+    graphs_pack = handle_graph_info(**kwargs)
+    
+    if type(modeLIST) == dict: #Para comodidad end-user
+        modeLIST = [modeLIST]
+
+    n = len(modeLIST)
+    
+    fig, axs = plt.subplots(n, p_prow, sharex = sharex)
+    
+    if n == 1: #Esto falla si ax no es un iterable (cuando n = 1 es sólo ax, no ax[:])
+        axs = plt_qt(struCase, modeLIST[0], axs, **kwargs)
+        axs.set_xlabel(graphs_pack['x_label'])
+        axs.set_ylabel(graphs_pack['y_label'])
+        axs.grid()
+    else:
+        for ax, dof_dict in zip(axs, modeLIST):
+            ax = plt_qt(struCase, dof_dict, ax)
+            ax.set_xlabel(graphs_pack['x_label'])
+            ax.set_ylabel(graphs_pack['y_label'])
+            ax.grid()
+    fig.suptitle(graphs_pack['fig_title'])
+    return(fig)
+
 
 def fig_u_FFT(struCase, dofLIST, **kwargs):
     '''
@@ -370,6 +608,52 @@ def fig_u_FFT(struCase, dofLIST, **kwargs):
     fig.suptitle(graphs_pack['fig_title'])
     return(fig)
 
+def fig_q_FFT(struCase, modeLIST, **kwargs):
+    '''
+    Arranges plots of FFT(q(t))
+    
+    struCase: stru class obj
+    dofLIST: list of ModeDicts or a single modeDict: {'key':[MODEs]}
+    kwargs: may contain
+        #General:
+        sharex: matplotlib.pyplot.subplots() argument - default 'col'
+        p_prow: plots per row for the global figure - default 1
+        #Plot customization:
+            fig_title
+            x_label
+            y_label
+            legend_title
+    '''
+    if 'sharex' in kwargs:
+        sharex = kwargs.get('sharex')
+    else:
+        sharex = "col"
+        
+    if 'p_prow' in kwargs:
+        p_prow = kwargs.get('p_prows')
+    else:
+        p_prow = 1
+        
+    graphs_pack = handle_graph_info(**kwargs)
+    if type(modeLIST) == dict: #Para comodidad end-user
+        modeLIST = [modeLIST]
+    n = len(modeLIST)
+    fig, axs = plt.subplots(n,p_prow, sharex=sharex)
+    if n == 1: #Esto falla si ax no es un iterable (cuando n = 1 es sólo ax, no ax[:])
+        axs = plt_qFFT(struCase, modeLIST[0], axs, **kwargs)
+        axs.set_xlabel(graphs_pack['x_label'])
+        axs.set_ylabel(graphs_pack['y_label'])
+        axs.grid()
+    else:
+        for ax, mode_dict in zip(axs, modeLIST):
+            ax = plt_qFFT(struCase, mode_dict, ax)
+            ax.set_xlabel(graphs_pack['x_label'])
+            ax.set_ylabel(graphs_pack['y_label'])
+            ax.grid()
+    fig.suptitle(graphs_pack['fig_title'])
+    return(fig)
+
+
 def fig_u_spect(struCase, dofLIST, **kwargs):
     '''
     Arranges plots of Spectrogram(u(t))
@@ -415,14 +699,129 @@ def fig_u_spect(struCase, dofLIST, **kwargs):
     fig.suptitle(graphs_pack['fig_title'])
     return(fig)
 
-def fig_ut_vt_pp(struCase, dofDict, **kwargs):
+def fig_q_spect(struCase, modeLIST, **kwargs):
+    '''
+    Arranges plots of Spectrogram(q(t))
+    
+    struCase: stru class obj
+    dofLIST: list of modeDicts or a single modeDict: {'key':[MODEs]}
+    kwargs: may contain
+        #General:
+        sharex: matplotlib.pyplot.subplots() argument - default 'col'
+        p_prow: plots per row for the global figure - default 1
+        #Plot customization:
+            fig_title
+            x_label
+            y_label
+            legend_title
+    '''
+    if 'sharex' in kwargs:
+        sharex = kwargs.get('sharex')
+    else:
+        sharex = "col"
+        
+    if 'p_prow' in kwargs:
+        p_prow = kwargs.get('p_prows')
+    else:
+        p_prow = 1
+        
+    graphs_pack = handle_graph_info(**kwargs)
+    if type(modeLIST) == dict: #Para comodidad end-user
+        modeLIST = [modeLIST]
+    n = len(modeLIST)
+    fig, axs = plt.subplots(n,p_prow, sharex=sharex)
+    if n == 1: #Esto falla si ax no es un iterable (cuando n = 1 es sólo ax, no ax[:])
+        axs = plt_qspectr(struCase, modeLIST[0], fig, axs, **kwargs)
+        axs.set_xlabel(graphs_pack['x_label'])
+        axs.set_ylabel(graphs_pack['y_label'])
+        axs.grid()
+    else:
+        for ax, mode_dict in zip(axs, modeLIST):
+            ax = plt_qspectr(struCase, mode_dict, fig, ax)
+            ax.set_xlabel(graphs_pack['x_label'])
+            ax.set_ylabel(graphs_pack['y_label'])
+            ax.grid()
+    fig.suptitle(graphs_pack['fig_title'])
+    return(fig)
+
+def fig_ut_vt_pp(struCase, dofDict, **kwargs): #NOTA: No sé si esto refleja lo solicitado en el repo.
     """
-    Doc coming soon...
+    Arranges plots of u(t), v(t) and PP
+    
+    struCase: stru class obj
+    dofLIST: a single dofDict: {'NODE':[DOFs]}
+    kwargs: may contain
+        #General:
+        sharex: matplotlib.pyplot.subplots() argument - default 'col'
+        p_prow: plots per row for the global figure - default 1
+        #Plot customization:
+            fig_title
+            x_label
+            y_label
+            legend_title
     """  
-    fig, ax = plt.subplots()
-    plt_uPP(struCase,dofDict,ax,**kwargs)
-    ax.grid()
-    print('IN PROGRESS')
+    
+    if 'sharex' in kwargs:
+        sharex = kwargs.get('sharex')
+    else:
+        sharex = "col"
+        
+    if 'p_prow' in kwargs:
+        p_prow = kwargs.get('p_prows')
+    else:
+        p_prow = 1
+        
+    graphs_pack = handle_graph_info(**kwargs)
+    n = 3
+    fig, axs = plt.subplots(n, p_prow, sharex = sharex)
+    
+    plt_ut(struCase, dofDict, axs[0],**kwargs)
+    kwargs['vel'] = True
+    plt_ut(struCase,dofDict, axs[1], **kwargs)
+    kwargs['vel'] = False
+    plt_uPP(struCase, dofDict, axs[2],**kwargs)
+    for ax in axs:
+        ax.grid()
+    return(fig)
+
+def fig_qt_vt_pp(struCase, modeDict, **kwargs): #NOTA: No sé si esto refleja lo solicitado en el repo.
+    """
+    Arranges plots of q(t), q_dot(t) and PP
+    
+    struCase: stru class obj
+    dofLIST: a single modeDict: {'key':[MODEs]}
+    kwargs: may contain
+        #General:
+        sharex: matplotlib.pyplot.subplots() argument - default 'col'
+        p_prow: plots per row for the global figure - default 1
+        #Plot customization:
+            fig_title
+            x_label
+            y_label
+            legend_title
+    """  
+    
+    if 'sharex' in kwargs:
+        sharex = kwargs.get('sharex')
+    else:
+        sharex = "col"
+        
+    if 'p_prow' in kwargs:
+        p_prow = kwargs.get('p_prows')
+    else:
+        p_prow = 1
+        
+    graphs_pack = handle_graph_info(**kwargs)
+    n = 3
+    fig, axs = plt.subplots(n, p_prow, sharex = sharex)
+    
+    plt_qt(struCase, modeDict, axs[0],**kwargs)
+    kwargs['vel'] = True
+    plt_qt(struCase,modeDict, axs[1], **kwargs)
+    kwargs['vel'] = False
+    plt_qPP(struCase, modeDict, axs[2],**kwargs)
+    for ax in axs:
+        ax.grid()
     return(fig)
 
 
@@ -544,89 +943,6 @@ def hl_envelopes_idx(y, dmin=1, dmax=1, split=False):
     lmax = lmax[[i+np.argmax(y[lmax[i:i+dmax]]) for i in range(0,len(lmax),dmax)]]
     
     return lmin,lmax
-
-    
-    
-    
-    
-###################################################################################################################
-###################################################################################################################
-
-"""
-------------------------------------------------------------------------------
-OLD functions PRE REUNIÓN
-------------------------------------------------------------------------------
-"""
-
-def plt_uspectr(struCase, dofDict, fig, ax, **kwargs):
-    """
-    Plots spectrogram
-    Inputs: struCase is a Stru Class Obj
-            dof_lst is a dict (o lista, ver cual dejar), {node:[DOFs]}
-            ax is a matplotlib.pyplot Axes obj
-            kwargs: 'u_type': raw or avr (default)
-    """
-    if 'u_type' in kwargs:
-        u_type = kwargs.get('u_type')
-    else:
-        u_type = 'avr'
-    if 'vel' in kwargs:
-        vel = kwargs.get('vel')
-    else:
-        vel = False
-    if 'graphs_pack' in kwargs:
-        graphs_pack = kwargs.get('graphs_pack')
-    else:
-        graphs_pack = handle_graph_info(**kwargs)
-    t = struCase.t
-    D_t = t[-1] - t[0] #NOTA: Esto asume un único t para el struCase
-    if 'SP_Winsize' in kwargs:
-        WinSize = kwargs.get('SP_Winsize')
-    else:
-        WinSize = len(t)/20 #NOTA: Esto asume un único winsize para el struCase. Ver si agregar info en un dict aparte para más customización
-    if 'SP_OvrLapFactor' in kwargs:
-        OverLapFactor = kwargs.get('SP_OvrLapFactor')
-    else:
-        OverLapFactor = 80 #NOTA: Default 80%
-        
-    if 'SP_WinType' in kwargs:
-        WinType = kwargs.get('SP_WinType')
-    else:
-        WinType = 'hann' #NOTA: Default Hann's window. ¿Sirve?
-        
-    if 'SP_normalize' in kwargs:
-        b_norm = kwargs.get('SP_normalize')
-    else:
-        b_norm = True #NOTA: Default normalizar el spectrogram
-        
-    OverLap = np.round(WinSize*OverLapFactor/100)
-    fDef = len(t)/D_t
-    desired_inds = nodeDof2idx(struCase,dofDict)
-    original_inds = flatten_values_list(dofDict.values())
-    node_labels = label_asoc(dofDict) #OJO. No contempla posibles errores
-    for i in range(len(desired_inds)):
-        if u_type=='avr':
-            u = struCase.u_avr[desired_inds[i],:]
-        elif u_type=='raw':
-            u = struCase.u_raw[desired_inds[i],:]
-        else:
-            print('Warning: Bad u_type def')
-        if vel:
-            u=np.gradient(u,struCase.t) #NOTA: Agregar al plot que es una velocidad
-
-        F, T, S = signal.spectrogram(u, fDef,window=WinType, noverlap=OverLap)
-        if b_norm:
-            loc_m = 0
-            for j in range(len(S)):
-                if max(S[j,:]) > loc_m:
-                    loc_m = max(S[j,:])
-            S = abs(S)/loc_m
-        c = ax.pcolormesh(T,F*2*np.pi,S,shading = 'auto', cmap='gray_r')
-        fig.colorbar(c, ax = ax, label= 'DOF: ' + str(original_inds[i]))
-        ax.set_title('Node(s): ' + keys_to_str(dofDict))
-    ax.set_xlabel(graphs_pack['x_label'])
-    ax.set_ylabel(graphs_pack['y_label'])
-    return(ax)
 
 """
 ------------------------------------------------------------------------------

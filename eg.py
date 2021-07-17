@@ -51,26 +51,27 @@ case1.stru.loadRdOpt  = 'bin'
 #       print status messages
 case1 = epp(case1, **{'data_folder': 'subF/', 'glob_print_output': True, 'BN_mode':'preserve'})
 
-#Ejemplo de uso de ubicar nodos con nodeDof2idx y ploteo
+###############################################################################################################
+
+# Tests
+
+###############################################################################################################
+
 #Usar un dict resultó más limpio para el end-user, aunque internamente se hagan 2 pasos extras.
 #Por ejemplo:
 desired = {'200000':[1]}
 
-
-# #Plot normal fig_ut
-# plotter.fig_ut(case1.stru,[desired,desired,desired,desired], fig_title = 'Normal fig_ut')
-# #Plot as fig_ut_col 
-# plotter.fig_ut(case1.stru, [{'200000':[1]},{'200010':[1]}], fig_title = 'Plot as fig_ut_col´s style')
-
-# #Plot as fig_ut_one
-# plotter.fig_ut(case1.stru, desired, fig_title = 'Plot as fig_ut_one´s style')
-
 #Tests
 import numpy as np
-from sim_db import nodeDof2idx
-import matplotlib.pyplot as plt
 case1.stru.t = np.linspace(0,100,5000)
 case1.stru.u_avr = np.zeros((2,5000))
+case1.stru.q = np.copy(case1.stru.u_avr)
 case1.stru.u_avr[1] = np.sin(8*case1.stru.t)
-plotter.fig_ut_vt_pp(case1.stru,desired,fig_title='gg')
-plotter.fig_u_spect(case1.stru, desired, fig_title = 'FFT')
+case1.stru.q = np.copy(case1.stru.u_avr)
+
+# # plotter.fig_ut_vt_pp(case1.stru,desired,fig_title='gg')
+# # plotter.fig_u_spect(case1.stru, desired, fig_title = 'FFT')
+
+# # plotter.fig_qt(case1.stru, [{'1':[0,1]},{'2':[0]}])
+# # plotter.fig_qPP(case1.stru, [{'1':[0,1]},{'2':[0]}])
+# plotter.fig_qt_vt_pp(case1.stru,{'a':[1]})
