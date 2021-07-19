@@ -120,7 +120,7 @@ def rd_data(case, **kwargs):
     
     # read external load data
     if case.stru.loadRdOpt == 'raw':
-        case.fName = check_BN_files(case, **kwargs) #NOTA: Ver si usar un nombre loc o cambiarlo en case
+        case = check_BN_files(case, **kwargs) #NOTA: Ver si usar un nombre loc o cambiarlo en case
         sim_db.check_case_attris(case) #Esto debería imprimir alertas si falta algo
         case.stru = rd_rawLoadData(case.stru, **kwargs)
         save_bin(data_folder+case.fName, case, glob_print_output)
@@ -164,7 +164,7 @@ def modalDecomp(case,**kwargs):
     if case.stru.loadEigOpt:
         case.stru.Q = np.matmul(case.stru.auxMD, case.stru.eLoad)
     
-    case.fName = check_BN_files(case, **kwargs)
+    case = check_BN_files(case, **kwargs)
     save_bin(data_folder+case.fName, case) #Se exporta todo, finalmente.
     return case
 

@@ -627,7 +627,7 @@ def check_BN_files(case, **kwargs):
                 acp_cond = False
         if var_inpt == 'act':
             print('Updating file')
-            case.fName = case.fName+'_upd_'+strftime('%H%M_%d%b%Y')
+            case.fName = case.fName+'_upd_'+strftime('%H%M%d%b%Y')
         elif var_inpt == 'ov':
             print('Overwriting file')
             #Mismo archivo
