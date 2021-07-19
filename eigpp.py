@@ -193,9 +193,9 @@ def epp(case, **kwargs):
     case = rd_data(case, **kwargs)
     # apply modal decomposition
     #pero si ya la leí de antes...?
-    if case.stru.struRdOpt == 'raw' or case.stru.loadRdOpt == 'raw':
-        if case.stru.struEigOpt or case.stru.loadEigOpt:
-            case = modalDecomp(case,**kwargs)
+    # if case.stru.struRdOpt == 'raw' or case.stru.loadRdOpt == 'raw':
+    if case.stru.struEigOpt or case.stru.loadEigOpt:
+        case = modalDecomp(case,**kwargs)
         
 
     # NOTA: acá va todo lo que sigue, si es que ponemos algo más, como graficar cosas o imprimir un informe de algún tipo

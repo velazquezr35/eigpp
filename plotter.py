@@ -93,7 +93,7 @@ def plt_ut(struCase, dofDict, ax, **kwargs):
     
 #Plot q data
 
-def plt_qt(struCase, modeDict, ax, **kwargs):
+def plt_qt(struCase, modal_inds, ax, **kwargs):
     """
     Plot modal coordinates as f(t).
     
@@ -113,7 +113,6 @@ def plt_qt(struCase, modeDict, ax, **kwargs):
         env = False
 
     t=struCase.t
-    modal_inds = flatten_values_list(modeDict.values())
     for loc_ind in modal_inds:
         u = struCase.q[loc_ind,:]
         if vel:
@@ -220,11 +219,11 @@ def plt_uFFT(struCase, dofDict, ax, **kwargs):
     ax.legend(title=graphs_pack['legend_title'])
     return(ax)
     
-def plt_qFFT(struCase, modeDict, ax, **kwargs):
+def plt_qFFT(struCase, modal_inds, ax, **kwargs):
     """
     Plot the FFT of (a) q-signal(s)
     inputs: struCase stru class obj
-            modeDict dict {'key': [MODEs]}
+            modal_inds list of modal indexes
             ax matplotlib.pyplot Axes obj
     kwargs (may contain):
             vel, for in order to calculate and plot the FFT of the modal velocities
@@ -246,7 +245,6 @@ def plt_qFFT(struCase, modeDict, ax, **kwargs):
     t = struCase.t
 
     fDef = 1/(t[-1]-t[0])
-    modal_inds = flatten_values_list(modeDict.values())
     for i in modal_inds:
         q = struCase.q[i,:]
         if vel:
@@ -298,15 +296,14 @@ def plt_uPP(struCase, dofDict,ax,**kwargs):
         
     return(ax) #NOTA: ¿Necesito hacer el return? Quizá para actualizar
 
-def plt_qPP(struCase, modeDict,ax,**kwargs):
+def plt_qPP(struCase, modal_inds,ax,**kwargs):
     """
     Plots phase-plane portraits, u vs du/dt
     Inputs: struCase is a Stru Class Obj
-            modeDict is a dict {'key':[MODEs]}
+            modal_inds list of modal indexes
             ax is a matplotlib.pyplot Axes obj
             kwargs: 'u_type': raw or avr (default)
     """
-    modal_inds = flatten_values_list(modeDict.values())
     for loc_ind in modal_inds:
         #NOTA: Esto se puede mejorar tomando u = todos y luego plot(u[desired])
         dq = np.gradient(struCase.q[loc_ind,:],struCase.t)
@@ -389,7 +386,7 @@ def plt_uspectr(struCase, dofDict, fig, ax, **kwargs):
     ax.set_ylabel(graphs_pack['y_label'])
     return(ax)
 
-def plt_qspectr(struCase, modeDict, fig, ax, **kwargs):
+def plt_qspectr(struCase, modal_inds, fig, ax, **kwargs):
     """
     Plots spectrogram
     Inputs: struCase is a Stru Class Obj
@@ -434,7 +431,6 @@ def plt_qspectr(struCase, modeDict, fig, ax, **kwargs):
     OverLap = np.round(WinSize*OverLapFactor/100)
     fDef = len(t)/D_t
     
-    modal_inds = flatten_values_list(modeDict.values())
 
     for i in modal_inds:
         q = struCase.q[i,:]
@@ -517,7 +513,7 @@ def fig_qt(struCase, modeLIST, **kwargs):
     Arranges plots of q(t)
     
     struCase:   stru class object
-    dofLIST:    list of modeDicts or modeDict {number: [MODEs]} (per graph)
+    dofLIST:    list of modal_inds or modal_inds list of modal indexes
     kwargs: may contain
         #General:
         sharex: matplotlib.pyplot.subplots() argument - default 'col'
@@ -540,9 +536,7 @@ def fig_qt(struCase, modeLIST, **kwargs):
         p_prow = 1
         
     graphs_pack = handle_graph_info(**kwargs)
-    
-    if type(modeLIST) == dict: #Para comodidad end-user
-        modeLIST = [modeLIST]
+
 
     n = len(modeLIST)
     
@@ -613,7 +607,7 @@ def fig_q_FFT(struCase, modeLIST, **kwargs):
     Arranges plots of FFT(q(t))
     
     struCase: stru class obj
-    dofLIST: list of ModeDicts or a single modeDict: {'key':[MODEs]}
+    dofLIST: list of modal_inds or modal_inds list of modal indexes
     kwargs: may contain
         #General:
         sharex: matplotlib.pyplot.subplots() argument - default 'col'
@@ -704,7 +698,7 @@ def fig_q_spect(struCase, modeLIST, **kwargs):
     Arranges plots of Spectrogram(q(t))
     
     struCase: stru class obj
-    dofLIST: list of modeDicts or a single modeDict: {'key':[MODEs]}
+    dofLIST: list of modal_indexes or modal_inds list of modal indexes
     kwargs: may contain
         #General:
         sharex: matplotlib.pyplot.subplots() argument - default 'col'
@@ -784,12 +778,12 @@ def fig_ut_vt_pp(struCase, dofDict, **kwargs): #NOTA: No sé si esto refleja lo 
         ax.grid()
     return(fig)
 
-def fig_qt_vt_pp(struCase, modeDict, **kwargs): #NOTA: No sé si esto refleja lo solicitado en el repo.
+def fig_qt_vt_pp(struCase, modal_inds, **kwargs): #NOTA: No sé si esto refleja lo solicitado en el repo.
     """
     Arranges plots of q(t), q_dot(t) and PP
     
     struCase: stru class obj
-    dofLIST: a single modeDict: {'key':[MODEs]}
+    dofLIST: a single modal_inds list of modal indexes
     kwargs: may contain
         #General:
         sharex: matplotlib.pyplot.subplots() argument - default 'col'
@@ -811,15 +805,18 @@ def fig_qt_vt_pp(struCase, modeDict, **kwargs): #NOTA: No sé si esto refleja lo
     else:
         p_prow = 1
         
+    if type(modal_inds[0]) == list:
+        print('qt_vt_pp plot > Warning: 1D list only!')
+        return()
     graphs_pack = handle_graph_info(**kwargs)
     n = 3
     fig, axs = plt.subplots(n, p_prow, sharex = sharex)
     
-    plt_qt(struCase, modeDict, axs[0],**kwargs)
+    plt_qt(struCase, modal_inds, axs[0],**kwargs)
     kwargs['vel'] = True
-    plt_qt(struCase,modeDict, axs[1], **kwargs)
+    plt_qt(struCase,modal_inds, axs[1], **kwargs)
     kwargs['vel'] = False
-    plt_qPP(struCase, modeDict, axs[2],**kwargs)
+    plt_qPP(struCase, modal_inds, axs[2],**kwargs)
     for ax in axs:
         ax.grid()
     return(fig)
