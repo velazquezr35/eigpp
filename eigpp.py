@@ -96,7 +96,7 @@ def rd_data(case, **kwargs):
     
     #If raw
     if case.stru.struRdOpt == 'raw':
-        case.fName = check_BN_files(case, **kwargs) #NOTA: Ver si usar un nombre loc o cambiarlo en case
+        case = check_BN_files(case, **kwargs) #NOTA: Ver si usar un nombre loc o cambiarlo en case
 
         #Check if available:
         ##NOTA: Ahora desde una función, para ahorrar líneas
@@ -188,16 +188,16 @@ def epp(case, **kwargs):
                                 info printing flag
                                 default: False
     """
-    # NOTA: no lo tengo claro, pero creo que data_folder y bin_folder deberían ser lo mismo
-    
+
     # read data
     case = rd_data(case, **kwargs)
     # apply modal decomposition
-    if case.stru.struEigOpt or case.stru.loadEigOpt:
-        case = modalDecomp(case,**kwargs)
+    #pero si ya la leí de antes...?
+    if case.stru.struRdOpt == 'raw' or case.stru.loadRdOpt == 'raw':
+        if case.stru.struEigOpt or case.stru.loadEigOpt:
+            case = modalDecomp(case,**kwargs)
         
-    ##NOTA: ¿Dejar para hacer la descomposición separada?
-    
+
     # NOTA: acá va todo lo que sigue, si es que ponemos algo más, como graficar cosas o imprimir un informe de algún tipo
     # si es qeu lo ponemos acá o si hacemos otra "end-user funct" para hacer un reporte de algo
     # hay que pensarlo una vez que tengamos algo de salida (gráficos o cosas por el estilo) andando, porqeu recién ahí nos vamos a dar cuenta qué es lo mejor

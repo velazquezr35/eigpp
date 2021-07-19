@@ -89,8 +89,8 @@ class stru:
                                  #   'raw': from ASCII data files
                                  #   'bin': from binary file with preprocessed data
                                  #   'non': no external load data available
-        self.struEigOpt = False  # True if modal decomposition should be done over generalized displacements
-        self.loadEigOpt = False  # True if modal decomposition should be done over external loads
+        self.struEigOpt = True  # True if modal decomposition should be done over generalized displacements
+        self.loadEigOpt = True  # True if modal decomposition should be done over external loads
         
     #Methods
     #Coming soon...
@@ -618,7 +618,7 @@ def check_BN_files(case, **kwargs):
     av_files = os.listdir(data_folder)
     if case.fName+'.sim' in av_files:
         print('Warning: ',case.fName,' already exists')
-        print('act: Update info (new file w/timestamp), new: Save new file, ov: Overwrite') #NOTA: Agregar más opciones
+        print('act: Update info (new file w/timestamp), ov: Overwrite') #NOTA: Agregar más opciones
         acp_inpt = ['act','new','ov']
         acp_cond = True
         while acp_cond:
@@ -630,11 +630,8 @@ def check_BN_files(case, **kwargs):
             case.fName = case.fName+'_upd_'+strftime('%H%M_%d%b%Y')
         elif var_inpt == 'ov':
             print('Overwriting file')
-            #Por ahora es lo mismo
-        elif var_inpt == 'new':
-            print('Saving new file')
-            case.fName = case.fName+'_new'
-    return case.fName
+            #Mismo archivo
+    return case
 
 def ae_Ftable(struCase, **kwargs): ##NOTA: Si el nombre no gusta, lo cambio
     '''
