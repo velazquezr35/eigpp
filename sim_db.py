@@ -134,6 +134,93 @@ functions
 ------------------------------------------------------------------------------
 """
 
+# searchs for specific time value
+
+def search_time(t_array, t_values, **kwargs):
+    '''
+    Searchs for indexes (equal or max) in t_array corresponding to t_values
+    
+    inputs:
+        t_array, numpy ndarray 1D
+        t_values, list [start, end]
+    
+    returns:
+        [ind_start, ind_end]
+    '''
+    ind_start = -2
+    ind_end = -2
+    
+    #Idea ¿eficiente?
+    dt = t_array[1]-t_array[0]
+    
+    guess = int(t_values[0]/dt - t_array[0]/dt - 2)
+    try:
+        t_array[guess]
+    except:
+        guess = 0
+    
+    for i in range(guess, len(t_array)):
+        if t_array[i] >= t_values[0]:
+            ind_start = i
+            break
+
+    guess = int(t_values[1]/dt - t_array[0]/dt - 2)
+    try:
+        t_array[guess]
+    except:
+        guess = 0
+    
+    for i in range(guess, len(t_array)):
+        if t_array[i] >= t_values[1]:
+            ind_end = i
+            break
+    
+    if ind_end < 0: #No encuentra, vamos completo
+        ind_end = -1
+    if ind_start < 0: #No encuentra, vamos desde 0
+        ind_start = 0
+    
+    return([ind_start, ind_end])
+
+# handle sim objs for specific time plotting
+
+def sph_time(struCase, **kwargs):
+    '''
+    Deletes all time values but the indicated in a time/indexes set
+    inputs:
+        struCase stru class obj
+    kwargs:
+        must contain:
+                indexes, list, time indexes [start, end] for struCase.t
+            or
+                time_vals, list, time values [start, end] for struCase.t
+    
+    returns: struCase
+    '''
+    if 'indexes' in kwargs:
+        time_inds = kwargs.get('indexes') #NOTA: El default por ahora es para los u
+        
+        struCase.t = struCase.t[time_inds[0]:time_inds[1]]
+        struCase.u_avr = struCase.u_avr[:,time_inds[0]:time_inds[1]]
+        struCase.u_raw = struCase.u_raw[:,time_inds[0]:time_inds[1]]
+        struCase.u_raw = struCase.q[:,time_inds[0]:time_inds[1]]
+        return(struCase)
+    
+    elif 'time_vals' in kwargs:
+        
+        time_inds = search_time(struCase.t,kwargs.get('time_vals'))
+        struCase.t = struCase.t[time_inds[0]:time_inds[1]]
+        struCase.u_avr = struCase.u_avr[:,time_inds[0]:time_inds[1]]
+        struCase.u_raw = struCase.u_raw[:,time_inds[0]:time_inds[1]]
+        struCase.u_raw = struCase.q[:,time_inds[0]:time_inds[1]]
+        return(struCase)
+    else:
+        print('Warning: Time interval not set')
+        return()
+    
+    
+    
+
 # handle time indexes
 
 def time_slice(struCase,**kwargs): #NOTA: ¿Tomar otro nombre?
@@ -141,12 +228,11 @@ def time_slice(struCase,**kwargs): #NOTA: ¿Tomar otro nombre?
     Delete all values with time > min(max(tf_stru),max(tf_loads))
     inputs:
             struCase stru class obj
-    kwargs may contain:
-        
+    kwargs may contain: none
     returns: none
     '''
     if struCase.t[-1] > struCase.t_Loads[-1]:
-        chg_index = int(struCase.dt/struCase.dt)
+        chg_index = int(struCase.dt_Loads/struCase.dt)
         struCase.u_raw = struCase.u_raw[:,0:chg_index+1]
         struCase.u_avr = struCase.u_avr[:,0:chg_index+1]
         struCase.t = struCase.t[:chg_index+1]
@@ -155,12 +241,11 @@ def time_slice(struCase,**kwargs): #NOTA: ¿Tomar otro nombre?
         chg_index = int(struCase.t/struCase.dt_Loads)
         struCase.eLoad = struCase.eLoad[:,0:chg_index+1]
         struCase.t_Loads = struCase.t_Loads[:chg_index+1]
-    #Comentarios extra:
-    #Conviene hacer slice que recorrer fila a fila y recortar
-        
+
+    #NOTAS (viejas)    
     #Aprovechar la función definida más abajo para el caso local, y reutilizarla con un factor step correspondiente al mismo tiempo (diferencia de dt entre loads y desp)
     #No sé si es útil de momento, dado que para tener todo en arrays cada fila (o info asociada a X cosa) debe tener la misma longitud.
-    return()
+    return(struCase)
 
 # handle data indexes
 

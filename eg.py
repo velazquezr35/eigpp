@@ -24,7 +24,7 @@ get_ipython().magic('reset -sf')
 importing zone
 ------------------------------------------------------------------------------
 """
-from sim_db import sim
+from sim_db import sim, search_time, sph_time
 from eigpp  import epp
 import plotter
 """
@@ -38,11 +38,11 @@ case1=sim() # this will contain data corresponding to a particular simulation (a
 case1.fName='eg' # output binary file name (without extension)
 case1.stru.name='str ex raw data'
 case1.stru.nodes=[200000, 200010] # nodes of interest - only information relative to these nodes is going to be read
-case1.stru.struRdOpt = 'raw' # set flag for reading ASCII file - default 'bin'
+case1.stru.struRdOpt = 'bin' # set flag for reading ASCII file - default 'bin'
 case1.stru.p11FN='pcolgante.@1' # binary *.p11 file name (without extension - Simpact output) from wich extract generalized displacements
 case1.stru.rsnDe='pcolgante' # ASCII *.rsn file name (without extension) - Delta output
 case1.stru.loadsFN = 'AeroFcsOnStruc' #ASCII *.dat file name - Loads
-case1.stru.loadRdOpt = 'raw'
+case1.stru.loadRdOpt = 'bin'
 
 # eigen modes postprocess
 #   call the function
@@ -63,11 +63,19 @@ desired = {'200000':[1]}
 
 #Tests
 import numpy as np
-# case1.stru.t = np.linspace(0,100,5000)
-# case1.stru.u_avr = np.zeros((2,5000))
-# case1.stru.q = np.copy(case1.stru.u_avr)
-# case1.stru.u_avr[1] = np.sin(8*case1.stru.t)
-# case1.stru.q = np.copy(case1.stru.u_avr)
+case1.stru.t = np.linspace(0,200,5000)
+case1.stru.u_avr = np.zeros((2,5000))
+case1.stru.q = np.copy(case1.stru.u_avr)
+case1.stru.u_avr[1] = np.sin(8*case1.stru.t)
+case1.stru.q = np.copy(case1.stru.u_avr)
+
+# Test recortar
+#por valor
+case1.stru = sph_time(case1.stru, **{'time_vals':[100,180]})
+#por indice
+case1.stru = sph_time(case1.stru, **{'indexes':[0,5]})
+
+#Tests ploteos
 
 # # plotter.fig_ut_vt_pp(case1.stru,desired,fig_title='gg')
 # # plotter.fig_u_spect(case1.stru, desired, fig_title = 'FFT')
