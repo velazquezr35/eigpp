@@ -82,7 +82,7 @@ class stru:
         self.eqInfo = np.array([], dtype=float)     # Information Relative to the Equations Numbers
         
         self.rdof       = True   # True if rotational DoFs exist
-        self.struRdOpt  = 'bin'  # reading data flag for structural response: 
+        self.struRdOpt  = 'raw'  # reading data flag for structural response: 
                                  #   'raw': from ASCII data files
                                  #   'bin': from binary file with preprocessed data
         self.loadRdOpt  = 'raw'  # reading data flag for external loading: 
