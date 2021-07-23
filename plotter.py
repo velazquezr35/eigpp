@@ -114,7 +114,7 @@ def plt_qt(struCase, modal_inds, ax, **kwargs):
 
     t=struCase.t
     for loc_ind in modal_inds:
-        u = struCase.q[loc_ind,:]
+        u = struCase.q[loc_ind-1,:]
         if vel:
             u=np.gradient(u,struCase.t)
         ax.plot(t,u, label=str(loc_ind)) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
@@ -243,10 +243,9 @@ def plt_qFFT(struCase, modal_inds, ax, **kwargs):
         graphs_pack = handle_graph_info(**kwargs)
     
     t = struCase.t
-
     fDef = 1/(t[-1]-t[0])
     for i in modal_inds:
-        q = struCase.q[i,:]
+        q = struCase.q[i-1,:]
         if vel:
             q=np.gradient(q,struCase.t) #NOTA: Agregar al plot que es una velocidad
         y_f = abs(fft(q))
@@ -306,8 +305,8 @@ def plt_qPP(struCase, modal_inds,ax,**kwargs):
     """
     for loc_ind in modal_inds:
         #NOTA: Esto se puede mejorar tomando u = todos y luego plot(u[desired])
-        dq = np.gradient(struCase.q[loc_ind,:],struCase.t)
-        ax.plot(struCase.q[loc_ind,:],dq, label=str(loc_ind)) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
+        dq = np.gradient(struCase.q[loc_ind-1,:],struCase.t)
+        ax.plot(struCase.q[loc_ind-1,:],dq, label=str(loc_ind)) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
     ax.legend(title='plt_qPP')
     return(ax) #NOTA: ¿Necesito hacer el return? Quizá para actualizar
 
@@ -433,7 +432,7 @@ def plt_qspectr(struCase, modal_inds, fig, ax, **kwargs):
     
 
     for i in modal_inds:
-        q = struCase.q[i,:]
+        q = struCase.q[i-1,:]
         if vel:
             q=np.gradient(q,struCase.t) #NOTA: Agregar al plot que es una velocidad
         F, T, S = signal.spectrogram(q, fDef,window=WinType, noverlap=OverLap)
