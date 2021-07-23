@@ -24,7 +24,7 @@ get_ipython().magic('reset -sf')
 importing zone
 ------------------------------------------------------------------------------
 """
-from sim_db import sim, search_time, sph_time
+from sim_db import sim, search_time, sfti_time
 from eigpp  import epp
 import plotter
 """
@@ -69,7 +69,7 @@ import numpy as np
 case1.stru.t = np.linspace(0,200,5000)
 case1.stru.u_avr = np.zeros((2,5000))
 case1.stru.q = np.copy(case1.stru.u_avr)
-case1.stru.u_avr[1] = np.sin(8*case1.stru.t)
+case1.stru.u_avr[1] = np.sin(0.05*case1.stru.t)
 case1.stru.q = np.copy(case1.stru.u_avr)
 
 

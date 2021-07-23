@@ -79,19 +79,20 @@ class stru:
         self.t_Nan = np.inf                         # inf       - NaN minimum time
         
         
-        self.eqInfo = np.array([], dtype=float)     # Information Relative to the Equations Numbers
+        self.eqInfo = np.array([], dtype=float)             # Information Relative to the Equations Numbers
         
-        self.rdof       = True   # True if rotational DoFs exist
-        self.struRdOpt  = 'raw'  # reading data flag for structural response: 
-                                 #   'raw': from ASCII data files
-                                 #   'bin': from binary file with preprocessed data
-        self.loadRdOpt  = 'raw'  # reading data flag for external loading: 
-                                 #   'raw': from ASCII data files
-                                 #   'bin': from binary file with preprocessed data
-                                 #   'non': no external load data available
-        self.struEigOpt = True  # True if modal decomposition should be done over generalized displacements
-        self.loadEigOpt = True  # True if modal decomposition should be done over external loads
-        
+        self.rdof       = True                              # True if rotational DoFs exist
+        self.struRdOpt  = 'raw'                             # reading data flag for structural response: 
+                                                            #   'raw': from ASCII data files
+                                                            #   'bin': from binary file with preprocessed data
+        self.loadRdOpt  = 'raw'                             #reading data flag for external loading: 
+                                                            #   'raw': from ASCII data files
+                                                            #   'bin': from binary file with preprocessed data
+                                                            #   'non': no external load data available
+        self.struEigOpt = True                              # True if modal decomposition should be done over generalized displacements
+        self.loadEigOpt = True                              # True if modal decomposition should be done over external loads
+        self.plot_timeInds = np.array([0,-2])               # desired plot indexes
+        self.plot_timeVals = np.array([np.inf,np.inf])      # desired plot time values
     #Methods
     #Coming soon...
 
@@ -147,46 +148,17 @@ def search_time(t_array, t_values, **kwargs):
     returns:
         [ind_start, ind_end]
     '''
-    ind_start = -2
-    ind_end = -2
-    
-    #Idea ¿eficiente?
-    dt = t_array[1]-t_array[0]
-    
-    guess = int(t_values[0]/dt - t_array[0]/dt)
-    try:
-        t_array[guess]
-    except:
-        guess = 0
-    
-    for i in range(guess, len(t_array)):
-        if t_array[i] >= t_values[0]:
-            ind_start = i
-            break
-
-    guess = int(t_values[1]/dt - t_array[0]/dt)
-    try:
-        t_array[guess]
-    except:
-        guess = 0
-    
-    for i in range(guess, len(t_array)):
-        if t_array[i] >= t_values[1]:
-            ind_end = i
-            break
-    
-    if ind_end < 0: #No encuentra, vamos completo
-        ind_end = -1
-    if ind_start < 0: #No encuentra, vamos desde 0
-        ind_start = 0
-    
-    return([ind_start, ind_end])
+    t_abs = abs(t_array-t_values[0])
+    ind_start = list(t_abs).index(min(t_abs))
+    t_abs = abs(t_array-t_values[1])
+    ind_end = list(t_abs).index(min(t_abs))
+    return([ind_start,ind_end])
 
 # handle sim objs for specific time plotting
 
-def sph_time(struCase, **kwargs):
+def sfti_time(struCase, **kwargs):
     '''
-    Deletes all time values but the indicated in a time/indexes set
+    Searchs for time indexes - Updates the desired indexes for plotting purposes
     inputs:
         struCase stru class obj
     kwargs:
@@ -199,20 +171,14 @@ def sph_time(struCase, **kwargs):
     '''
     if 'indexes' in kwargs:
         time_inds = kwargs.get('indexes') #NOTA: El default por ahora es para los u
-        
-        struCase.t = struCase.t[time_inds[0]:time_inds[1]]
-        struCase.u_avr = struCase.u_avr[:,time_inds[0]:time_inds[1]]
-        struCase.u_raw = struCase.u_raw[:,time_inds[0]:time_inds[1]]
-        struCase.u_raw = struCase.q[:,time_inds[0]:time_inds[1]]
+        struCase.plot_timeInds[:] = time_inds[:]
         return(struCase)
-    
     elif 'time_vals' in kwargs:
-        
-        time_inds = search_time(struCase.t,kwargs.get('time_vals'))
-        struCase.t = struCase.t[time_inds[0]:time_inds[1]]
-        struCase.u_avr = struCase.u_avr[:,time_inds[0]:time_inds[1]]
-        struCase.u_raw = struCase.u_raw[:,time_inds[0]:time_inds[1]]
-        struCase.u_raw = struCase.q[:,time_inds[0]:time_inds[1]]
+        time_vals = kwargs.get('time_vals')
+        time_inds = search_time(struCase.t,time_vals)
+        struCase.plot_timeInds[:] = time_inds[:]
+        struCase.plot_timeVals[0] = struCase.t[time_inds[0]]
+        struCase.plot_timeVals[1] = struCase.t[time_inds[1]]
         return(struCase)
     else:
         print('Warning: Time interval not set')
