@@ -21,7 +21,7 @@ importing zone
 import numpy as np
 from scipy import signal
 import matplotlib.pyplot as plt
-from sim_db import nodeDof2idx, sfti_time
+from sim_db import nodeDof2idx, sfti_time, search_time
 from scipy.fft import fft
 plt.rcParams.update({'font.size': 15})
 
@@ -124,42 +124,82 @@ def plt_qt(struCase, modal_inds, ax, **kwargs):
             ax.plot(t[low_idx], u[low_idx])
     ax.legend(title='plt_q')
     return(ax) #NOTA: ¿Necesito hacer el return? Quizá para actualizar
-    
 
-def plt_us(struCase, t_lst,ax,**kwargs):
+#Plot one dof for all nodes for a single t val
+
+def plt_us(struCase, tdof_dict,ax,**kwargs):
     
     """
     Plot all DOFs in particular instants of time, u_avr as default.
     
     Inputs: struCase is a Stru Class Obj
-            t_lst is a Stru.t index list
+            tdof_dict is a dict ['DOF':[t_vals]]
             ax is a matplotlib.pyplot Axes obj
             kwargs: 'u_type': raw or avr (default)
                     'vel': False (default) or True (in order to calculate and plot velocities)
                     
     """
+    if 'u_type' in kwargs:
+        u_type = kwargs.get('u_type')
+    else:
+        u_type = 'avr'
     
-    print('Coming soon...')
+    if 'vel' in kwargs:
+        vel = kwargs.get('vel')
+    else:
+        vel = False
+
+    desired_t = flatten_values_list(tdof_dict.values())
+    inds_t = []
+    for des_t in desired_t:
+        inds_t.append(search_time(struCase.t,[des_t,0])[0])
+    dofDict = tdof2dofDict(struCase,tdof_dict)
+    stru_inds = np.array(nodeDof2idx(struCase, dofDict))
+    node_labels = list(dofDict.keys())
     
-    return()
+    for i in range(len(inds_t)):
+        if u_type=='avr':
+            u = struCase.u_avr[stru_inds,inds_t[i]]
+        elif u_type=='raw':
+            u = struCase.u_raw[stru_inds,inds_t[i]]
+        else:
+            print('Warning: Bad u_type def')
+            
+        ax.plot(node_labels,u, label= '{0:.2f}, {1:.3f}'.format(desired_t[i],struCase.t[inds_t[i]])) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
+
+    ax.legend(title='Time instants (des vs act):') #NOTA: ¿Quiero esta info como titulo?
+    return(ax) #NOTA: ¿Necesito hacer el return? Quizá para actualizar
+
+#Plot all modes for a single t val
 
 def plt_qs(struCase, t_lst,ax,**kwargs):
     
     """
-    Plot all DOFs in particular instants of time, u_avr as default.
+    Plot all modal DOFs in particular instants of time, u_avr as default.
     
     Inputs: struCase is a Stru Class Obj
-            t_lst is a Stru.t index list
+            tmode_dict is a dict, ['MODE':[t_vals]]
             ax is a matplotlib.pyplot Axes obj
             kwargs: 'u_type': raw or avr (default)
                     'vel': False (default) or True (in order to calculate and plot velocities)
                     
     """
-    print('Coming soon...')
-    return()
+    if 'vel' in kwargs:
+        vel = kwargs.get('vel')
+    else:
+        vel = False
+    
+    modal_inds = np.linspace(1,len(struCase.q),len(struCase.q))
+    inds_t = []
+    for des_t in t_lst:
+        inds_t.append(search_time(struCase.t,[des_t,0])[0])
+    for i in range(len(inds_t)):
+        u = struCase.q[:,inds_t[i]]
+        ax.plot(modal_inds,u, label= '{0:.2f}, {1:.3f}'.format(t_lst[i],struCase.t[inds_t[i]])) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
 
-
-
+    ax.legend(title='Time instants (des vs act):') #NOTA: ¿Quiero esta info como titulo?
+    return(ax) #NOTA: ¿Necesito hacer el return? Quizá para actualizar
+    
 #Fourier 
 
 def plt_uFFT(struCase, dofDict, ax, **kwargs):
@@ -451,11 +491,187 @@ def plt_qspectr(struCase, modal_inds, fig, ax, **kwargs):
     ax.set_ylabel(graphs_pack['y_label'])
     return(ax)
 
+#Vs DOFs
+
+def plt_uxuy(struCase, vsDict, ax, **kwargs):
+    '''
+    Plots two DOFs for all struCase nodes for a single t val (one per plot)
+    inputs:
+        struCase, stru class obj - 
+        vsDict, dict - Contains the two DOFs info and the time vals ['DOFs':[indexes],'t_vals':[t]]
+        ax, ax obj
+    kwargs:
+    returns:
+        ax obj
+    '''
+    
+    if 'u_type' in kwargs:
+        u_type = kwargs.get('u_type')
+    else:
+        u_type = 'avr'
+    if u_type=='avr':
+        u = struCase.u_avr
+    elif u_type=='raw':
+        u = struCase.u_raw
+    else:
+        print('Warning: Bad u_type def')
+        
+    desired_t = vsDict['t_vals']
+    inds_t = []
+    for des_t in desired_t:
+        inds_t.append(search_time(struCase.t,[des_t,0])[0])
+    ux_Dict = dof2dofDict(struCase,vsDict['DOFs'][0])
+    ux_inds = np.array(nodeDof2idx(struCase,ux_Dict))
+    uy_Dict = dof2dofDict(struCase,vsDict['DOFs'][1])
+    uy_inds = np.array(nodeDof2idx(struCase,uy_Dict))
+    
+    for i in range(len(inds_t)):
+        ax.plot(u[ux_inds,inds_t[i]],u[uy_inds,inds_t[i]],label='{0:.2f}, {1:.3f}'.format(desired_t[i],struCase.t[inds_t[i]]))
+        
+    ax.legend(title='Time (des vs act)')
+    return(ax)
 """
 ------------------------------------------------------------------------------
 HIGH LEVEL PLOT functions
 ------------------------------------------------------------------------------
 """
+
+def fig_uxuy(struCase,vsLIST, **kwargs):
+    '''
+    Arranges plots of DOF vs DOF @t fixed
+    
+    inputs:
+        struCase, stru class obj
+        vsLIST, list of vsDicts or a single vsDict {'DOFs':[ux,uy],'t_vals':[t]}
+    kwargs:
+    returns:
+        fig, fig obj
+    '''
+    if 'sharex' in kwargs:
+        sharex = kwargs.get('sharex')
+    else:
+        sharex = "col"
+        
+    if 'p_prow' in kwargs:
+        p_prow = kwargs.get('p_prows')
+    else:
+        p_prow = 1
+    graphs_pack = handle_graph_info(**kwargs)
+    
+    if type(vsLIST) == dict: #Para comodidad end-user
+        vsLIST = [vsLIST]
+
+    n = len(vsLIST)
+    
+    fig, axs = plt.subplots(n, p_prow, sharex = sharex)
+    if n == 1: #Esto falla si ax no es un iterable (cuando n = 1 es sólo ax, no ax[:])
+        axs = plt_uxuy(struCase, vsLIST[0], axs, **kwargs)
+        axs.set_xlabel(graphs_pack['x_label'])
+        axs.set_ylabel(graphs_pack['y_label'])
+        axs.grid()
+    else:
+        for ax, vs_dict in zip(axs, vsLIST):
+            ax = plt_uxuy(struCase, vs_dict, ax)
+            ax.set_xlabel(graphs_pack['x_label'])
+            ax.set_ylabel(graphs_pack['y_label'])
+            ax.grid()
+    fig.suptitle(graphs_pack['fig_title'])
+    return(fig)
+
+def fig_us(struCase, tdofLIST, **kwargs):
+    '''
+    Arranges plots of DOF(nodes) @t fixed
+    
+    struCase:   stru class object
+    dofLIST:    list of tdofDicts or tdofDict {DOF: [t_instants]} 
+    kwargs: may contain
+        #General:
+        sharex: matplotlib.pyplot.subplots() argument - default 'col'
+        p_prow: plots per row for the global figure - default 1
+        limit_tvals or limit_tinds: list or ndarray - time limits for plotting, values or indexes
+        #Plot customization:
+            fig_title
+            x_label
+            y_label
+            legend_title
+    '''
+    
+    if 'sharex' in kwargs:
+        sharex = kwargs.get('sharex')
+    else:
+        sharex = "col"
+        
+    if 'p_prow' in kwargs:
+        p_prow = kwargs.get('p_prows')
+    else:
+        p_prow = 1
+    graphs_pack = handle_graph_info(**kwargs)
+    
+    if type(tdofLIST) == dict: #Para comodidad end-user
+        tdofLIST = [tdofLIST]
+
+    n = len(tdofLIST)
+    
+    fig, axs = plt.subplots(n, p_prow, sharex = sharex)
+    if n == 1: #Esto falla si ax no es un iterable (cuando n = 1 es sólo ax, no ax[:])
+        axs = plt_us(struCase, tdofLIST[0], axs, **kwargs)
+        axs.set_xlabel(graphs_pack['x_label'])
+        axs.set_ylabel(graphs_pack['y_label'])
+        axs.grid()
+    else:
+        for ax, tdof_dict in zip(axs, tdofLIST):
+            ax = plt_us(struCase, tdof_dict, ax)
+            ax.set_xlabel(graphs_pack['x_label'])
+            ax.set_ylabel(graphs_pack['y_label'])
+            ax.grid()
+    fig.suptitle(graphs_pack['fig_title'])
+    return(fig)
+
+def fig_qs(struCase, tmodeLIST, **kwargs):
+    '''
+    Arranges plots of mode(nodes) @t fixed
+    
+    struCase:   stru class object
+    dofLIST:    list of tmodeDicts or a sigle tmodeDict {MODE: [t_instants]} 
+    kwargs: may contain
+        #General:
+        sharex: matplotlib.pyplot.subplots() argument - default 'col'
+        p_prow: plots per row for the global figure - default 1
+        limit_tvals or limit_tinds: list or ndarray - time limits for plotting, values or indexes
+        #Plot customization:
+            fig_title
+            x_label
+            y_label
+            legend_title
+    '''
+    
+    if 'sharex' in kwargs:
+        sharex = kwargs.get('sharex')
+    else:
+        sharex = "col"
+        
+    if 'p_prow' in kwargs:
+        p_prow = kwargs.get('p_prows')
+    else:
+        p_prow = 1
+    graphs_pack = handle_graph_info(**kwargs)
+
+    n = len(tmodeLIST)
+    
+    fig, axs = plt.subplots(n, p_prow, sharex = sharex)
+    if n == 1: #Esto falla si ax no es un iterable (cuando n = 1 es sólo ax, no ax[:])
+        axs = plt_qs(struCase, tmodeLIST[0], axs, **kwargs)
+        axs.set_xlabel(graphs_pack['x_label'])
+        axs.set_ylabel(graphs_pack['y_label'])
+        axs.grid()
+    else:
+        for ax, tmode_dict in zip(axs, tmodeLIST):
+            ax = plt_qs(struCase, tmode_dict, ax)
+            ax.set_xlabel(graphs_pack['x_label'])
+            ax.set_ylabel(graphs_pack['y_label'])
+            ax.grid()
+    fig.suptitle(graphs_pack['fig_title'])
+    return(fig)
 
 def fig_ut(struCase, dofLIST, **kwargs):
     '''
@@ -891,6 +1107,38 @@ def fig_qt_vt_pp(struCase, modal_inds, **kwargs): #NOTA: No sé si esto refleja 
 GENERAL TOOLS functions
 ------------------------------------------------------------------------------
 """
+
+#tDofDict to dofDict
+def dof2dofDict(struCase, dof):
+    '''
+    Generates a dofDict for a desired DOF using all the available nodes in struCase
+    inputs: 
+        struCase, stru class obj -
+        dof, int - desired dof to look for
+    returns:
+        dofdict, dict
+    '''
+    dofdict = {}
+    for a in struCase.nodes:
+        dofdict[str(a)]=[dof]
+    return(dofdict)
+    
+def tdof2dofDict(struCase, tdof_dict):
+    '''Generates a dofDict for a desired DOF using all the available nodes in struCase
+    inputs:
+        struCase, stru class obj -
+        tdofDict, dict - contains the desired dof as key and some time instants {DOF:[t_vals]}
+    returns:
+        dofDict, dict 
+    '''
+    dofdict = {}
+    loc_lst = []
+    for j in list(tdof_dict.keys()):
+            loc_lst.append(int(j))
+    for a in struCase.nodes:
+        dofdict[str(a)]=loc_lst
+    return(dofdict)
+
 #Search closest t index
 
 def tldxs(struCase, desired_t):

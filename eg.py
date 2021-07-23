@@ -67,14 +67,17 @@ desired = {'200000':[1]}
 #Tests
 import numpy as np
 case1.stru.t = np.linspace(0,200,5000)
-case1.stru.u_avr = np.zeros((2,5000))
-case1.stru.q = np.copy(case1.stru.u_avr)
+case1.stru.u_avr = np.zeros((20,5000))
+# case1.stru.q = np.copy(case1.stru.u_avr)
 case1.stru.u_avr[1] = np.sin(0.05*case1.stru.t)
-case1.stru.q = np.copy(case1.stru.u_avr)
+case1.stru.u_avr[6] = np.sin(0.05*case1.stru.t)
+# case1.stru.q = np.copy(case1.stru.u_avr)
 
 
 #Tests ploteos
-plotter.fig_ut_vt_pp(case1.stru,desired,fig_title='gg')
-plotter.fig_u_spect(case1.stru, desired, fig_title = 'FFT')
-plotter.fig_qt(case1.stru, [[0,1],[1]])
-plotter.fig_qt_vt_pp(case1.stru,[[0,1],[1]])
+# plotter.fig_qs(case1.stru,[[100,50],[0]])
+plotter.fig_uxuy(case1.stru,{'DOFs':[1,6],'t_vals':[100,50]})
+# plotter.fig_ut_vt_pp(case1.stru,desired,fig_title='gg')
+# plotter.fig_u_spect(case1.stru, desired, fig_title = 'FFT')
+# plotter.fig_qt(case1.stru, [[0,1],[1]])
+# plotter.fig_qt_vt_pp(case1.stru,[[0,1],[1]])
