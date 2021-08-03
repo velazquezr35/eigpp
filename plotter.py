@@ -1278,8 +1278,12 @@ def dte_ut(struCase, dofDict, **kwargs):
     if 't_pref' in kwargs:
         t_pref = kwargs.get('t_pref')
         if t_pref[0] == 'index':
-            t = struCase.t[t_pref[1]:t_pref[2]]
             plt_t_inds = t_pref[1:]
+            if plt_t_inds[1] == -1:
+                plt_t_inds[1] = None
+            else:
+                plt_t_inds[1] += 1
+            t = struCase.t[plt_t_inds[0]:plt_t_inds[1]]   
         elif t_pref[0] == 'vals':
             plt_t_inds = search_time(struCase.t,t_pref[1:])
             if plt_t_inds[1] == -1:
@@ -1327,9 +1331,13 @@ def dte_qt(struCase, modal_inds, **kwargs):
     if 't_pref' in kwargs:
         t_pref = kwargs.get('t_pref')
         if t_pref[0] == 'index':
-            t = struCase.t[t_pref[1]:t_pref[2]]
             plt_t_inds = t_pref[1:]
-        # elif t_pref[0] == 'vals':
+            if plt_t_inds[1] == -1:
+                plt_t_inds[1] = None
+            else:
+                plt_t_inds[1] += 1
+            t = struCase.t[plt_t_inds[0]:plt_t_inds[1]]  
+        elif t_pref[0] == 'vals':
             plt_t_inds = search_time(struCase.t,t_pref[1:])
             if plt_t_inds[1] == -1:
                 plt_t_inds[1] = None
