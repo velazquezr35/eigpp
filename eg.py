@@ -62,12 +62,12 @@ case1 = epp(case1, **{'data_folder': 'subF/', 'glob_print_output': True, 'BN_mod
 
 #Usar un dict resultó más limpio para el end-user, aunque internamente se hagan 2 pasos extras.
 #Por ejemplo:
-desired = {'200000':[1,2]}
+desired = {'200000':[1]}
 
 #Tests
 import numpy as np
-# case1.stru.t = np.linspace(0,200,5000)
-# case1.stru.u_avr = np.zeros((20,5000))
+# case1.stru.t = np.linspace(0,200,10)
+# case1.stru.u_avr = np.zeros((20,10))
 # case1.stru.u_avr[1] = np.sin(0.05*case1.stru.t)
 # case1.stru.u_avr[6] = np.sin(0.05*case1.stru.t)
 # case1.stru.q = np.copy(case1.stru.u_avr)
