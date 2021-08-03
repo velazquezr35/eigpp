@@ -98,7 +98,7 @@ def plt_qt(struCase, modal_inds, ax, **kwargs):
     Plot modal coordinates as f(t).
     
     Inputs: struCase is a Stru Class Obj
-            mode_Dict is a dict {'key':[MODEs]}
+            modal_inds is a list (indexes)
             ax is a matplotlib.pyplot Axes obj
             kwargs: 'vel': False (default) or True (in order to calculate and plot modal velocities)
                     'env': False (default) or True (in order to plot the envelope)
@@ -1252,6 +1252,93 @@ def hl_envelopes_idx(y, dmin=1, dmax=1, split=False):
     lmax = lmax[[i+np.argmax(y[lmax[i:i+dmax]]) for i in range(0,len(lmax),dmax)]]
     
     return lmin,lmax
+
+def dte_ut(struCase, dofDict, **kwargs):
+    """
+    Dof temporal evolution - Search & handle DOFs as f(t)
+    
+    Inputs: struCase Stru Class Obj
+            dof_Dict dofDict dict {'NODE': [DOFs]}
+            kwargs: 'u_type': str, raw or avr (default)
+                    'vel': bool, False (default) or True (in order to calculate and plot velocities)
+                    't_pref': list, ['type',t_in, t_f] (type:str, 'index' or 'vals')
+    returns:
+            ndarray
+    """
+    if 'u_type' in kwargs:
+        u_type = kwargs.get('u_type')
+    else:
+        u_type = 'avr'
+    
+    if 'vel' in kwargs:
+        vel = kwargs.get('vel')
+    else:
+        vel = False
+    
+    if 't_pref' in kwargs:
+        t_pref = kwargs.get('t_pref')
+        if t_pref[0] == 'index':
+            t = struCase.t[t_pref[1]:t_pref[2]]
+            plt_t_inds = t_pref[1:]
+        elif t_pref[0] == 'vals':
+            plt_t_inds = search_time(struCase.t,t_pref[1:])
+            t = struCase.t[plt_t_inds[0]:plt_t_inds[1]+1]            
+    else:
+        t = struCase.t
+        plt_t_inds = [0,-2]
+
+    desired_inds = nodeDof2idx(struCase, dofDict)
+    desired_u = []
+    for i in range(len(desired_inds)):
+        if u_type=='avr':
+            u = struCase.u_avr[desired_inds[i],plt_t_inds[0]:plt_t_inds[1]+1]
+        elif u_type=='raw':
+            u = struCase.u_raw[desired_inds[i],plt_t_inds[0]:plt_t_inds[1]+1]
+        else:
+            print('Warning: Bad u_type def')
+            
+        if vel:
+            u=np.gradient(u,t) #NOTA: Agregar al plot que es una velocidad
+        desired_u.append(u)
+    desired_u=np.array(desired_u)
+    return(desired_u)
+
+def dte_qt(struCase, modal_inds, **kwargs):
+    """
+    Dof temporal evolution - Search & handle MODALs as f(t)
+    
+    Inputs: struCase Stru Class Obj
+            modal_inds, list: Modal indexes (WARNING: Use normal indexes, not Python´s)
+            kwargs: 'vel': bool, False (default) or True (in order to calculate and plot modal velocities)
+                    't_pref': list, ['type',t_in, t_f] (type:str, 'index' or 'vals')
+    returns:
+            ndarray
+    """
+    if 'vel' in kwargs:
+        vel = kwargs.get('vel')
+    else:
+        vel = False
+    
+    if 't_pref' in kwargs:
+        t_pref = kwargs.get('t_pref')
+        if t_pref[0] == 'index':
+            t = struCase.t[t_pref[1]:t_pref[2]]
+            plt_t_inds = t_pref[1:]
+        elif t_pref[0] == 'vals':
+            plt_t_inds = search_time(struCase.t,t_pref[1:])
+            t = struCase.t[plt_t_inds[0]:plt_t_inds[1]+1]            
+    else:
+        t = struCase.t
+        plt_t_inds = [0,-2]
+
+    desired_q = []
+    for loc_ind in modal_inds:
+        q = struCase.q[loc_ind-1,plt_t_inds[0]:plt_t_inds[1]+1]
+        if vel:
+            q=np.gradient(q,t) #NOTA: Agregar al plot que es una velocidad
+        desired_q.append(q)
+    desired_q=np.array(desired_q)
+    return(desired_q)
 
 """
 ------------------------------------------------------------------------------
