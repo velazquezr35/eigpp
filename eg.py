@@ -62,7 +62,7 @@ case1 = epp(case1, **{'data_folder': 'subF/', 'glob_print_output': True, 'BN_mod
 
 #Usar un dict resultó más limpio para el end-user, aunque internamente se hagan 2 pasos extras.
 #Por ejemplo:
-desired = {'200000':[1,2,3]}
+desired = {'200000':[1,2]}
 
 #Tests
 import numpy as np
@@ -80,7 +80,7 @@ a = plotter.dte_ut(case1.stru,desired,t_pref=['index',0,1])
 b = plotter.dte_ut(case1.stru,desired,t_pref=['vals',100, 500])
 c = plotter.dte_ut(case1.stru,desired)
 #para la parte modal (idem forrma de uso con kwarg t_pref)
-d = plotter.dte_qt(case1.stru, [0],t_pref=['index',0,3])
+d = plotter.dte_qt(case1.stru, [0])
 
 #Tests ploteos
 # plotter.fig_qs(case1.stru,[[0,1]])

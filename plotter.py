@@ -1282,18 +1282,19 @@ def dte_ut(struCase, dofDict, **kwargs):
             plt_t_inds = t_pref[1:]
         elif t_pref[0] == 'vals':
             plt_t_inds = search_time(struCase.t,t_pref[1:])
-            t = struCase.t[plt_t_inds[0]:plt_t_inds[1]+1]            
+            t = struCase.t[plt_t_inds[0]:plt_t_inds[1]]     
     else:
         t = struCase.t
-        plt_t_inds = [0,-2]
+        plt_t_inds = [0,None]
 
     desired_inds = nodeDof2idx(struCase, dofDict)
     desired_u = []
+    desired_u.append(t)
     for i in range(len(desired_inds)):
         if u_type=='avr':
-            u = struCase.u_avr[desired_inds[i],plt_t_inds[0]:plt_t_inds[1]+1]
+            u = struCase.u_avr[desired_inds[i],plt_t_inds[0]:plt_t_inds[1]]
         elif u_type=='raw':
-            u = struCase.u_raw[desired_inds[i],plt_t_inds[0]:plt_t_inds[1]+1]
+            u = struCase.u_raw[desired_inds[i],plt_t_inds[0]:plt_t_inds[1]]
         else:
             print('Warning: Bad u_type def')
             
@@ -1326,14 +1327,15 @@ def dte_qt(struCase, modal_inds, **kwargs):
             plt_t_inds = t_pref[1:]
         elif t_pref[0] == 'vals':
             plt_t_inds = search_time(struCase.t,t_pref[1:])
-            t = struCase.t[plt_t_inds[0]:plt_t_inds[1]+1]            
+            t = struCase.t[plt_t_inds[0]:plt_t_inds[1]]
     else:
         t = struCase.t
-        plt_t_inds = [0,-2]
+        plt_t_inds = [0,None]
 
     desired_q = []
+    desired_q.append(t)
     for loc_ind in modal_inds:
-        q = struCase.q[loc_ind-1,plt_t_inds[0]:plt_t_inds[1]+1]
+        q = struCase.q[loc_ind-1,plt_t_inds[0]:plt_t_inds[1]]
         if vel:
             q=np.gradient(q,t) #NOTA: Agregar al plot que es una velocidad
         desired_q.append(q)
