@@ -93,6 +93,7 @@ class stru:
         self.loadEigOpt = True                              # True if modal decomposition should be done over external loads
         self.plot_timeInds = np.array([0,-1])               # desired plot indexes
         self.plot_timeVals = np.array([np.inf,np.inf])      # desired plot time values
+        self.intLabOffset = 6                              # offset node labels
     #Methods
     #Coming soon...
 
@@ -522,7 +523,7 @@ def rd_mass(struCase, **kwargs):
     # close file
     y.close()
     
-    struCase.iLabl = np.array(struCase.iLabl)
+    struCase.iLabl = np.array(struCase.iLabl) + struCase.intLabOffset
     
     return struCase
 
@@ -735,10 +736,6 @@ def ae_Ftable(struCase, **kwargs): ##NOTA: Si el nombre no gusta, lo cambio
                 print("End of table, line: ", act_line)
             tab_cond = False
     counter = 0
-    ##INGRESO MANUAL##
-    struCase.iLabl[0,1] = 7
-    struCase.iLabl[1,1] = 8
-    ##BORRAR LUEGO
     for a in loc_ftab: #For each \Delta t
         loc_frow_filt = np.array([])
         for i in range(len(a)): #For each row
