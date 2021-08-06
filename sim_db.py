@@ -734,13 +734,11 @@ def ae_Ftable(struCase, **kwargs): ##NOTA: Si el nombre no gusta, lo cambio
             if glob_print_output:
                 print("End of table, line: ", act_line)
             tab_cond = False
-    #Now, keep only the info associated to the nodes of interest
-    ######################### BORRAR LUEGO
-    #Agrego manualmente
-    struCase.iLabl[0,1] = 27
-    struCase.iLabl[1,1] = 35
-    ######################### BORRAR LUEGO
     counter = 0
+    ##INGRESO MANUAL##
+    struCase.iLabl[0,1] = 7
+    struCase.iLabl[1,1] = 8
+    ##BORRAR LUEGO
     for a in loc_ftab: #For each \Delta t
         loc_frow_filt = np.array([])
         for i in range(len(a)): #For each row
