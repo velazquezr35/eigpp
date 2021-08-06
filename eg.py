@@ -24,9 +24,40 @@ get_ipython().magic('reset -sf')
 importing zone
 ------------------------------------------------------------------------------
 """
-from sim_db import sim, nodeDof2idx
+from sim_db import sim, search_time, sfti_time
 from eigpp  import epp
+import plotter
 
+"""
+------------------------------------------------------------------------------
+functions
+------------------------------------------------------------------------------
+"""
+def basic_general_plots(case1, **kwargs):
+    '''
+    General plots...
+    
+    inputs:
+        case1, sim class obj
+    
+    '''
+    desired = {'200000':[2]}
+    modes = [0]
+    modes_2 = [1]
+    
+
+    plotter.fig_us(case1.stru, {'2':[100]})
+    plotter.fig_qs(case1.stru,{'1':[150]})
+    plotter.fig_uxuy(case1.stru,{'DOFs':[2,3],'t_vals':[150,200]}, fig_title = 'Simple versus plot')
+    plotter.fig_q_FFT(case1.stru,modes,fig_title = 'Simple FFT(q) plot')
+    plotter.fig_qt_vt_pp(case1.stru,modes,fig_title='Simple comb. qt, vqt, phase p.')
+    plotter.fig_ut(case1.stru, [desired,desired], fig_title='Simple u(t) plot',x_label ='t',y_label='u', limit_tinds = [0,10])
+    plotter.fig_u_FFT(case1.stru, desired, fig_title='Simple FFT(u) plot', limit_tinds=[0,-1])
+    plotter.fig_ut_vt_pp(case1.stru,desired, fig_title='Simple comb. ut,vt, phase p.')
+    plotter.fig_u_spect(case1.stru,desired, fig_title = 'Simple spectrogram', x_label = 't', y_label='f')
+    plotter.fig_qt(case1.stru, [modes, modes_2],fig_title='Simple q(t) plot')
+    plotter.fig_q_spect(case1.stru,modes, fig_title='Simple q spectrogram')
+    return('Done!')
 
 """
 ------------------------------------------------------------------------------
@@ -38,23 +69,14 @@ runing things
 case1=sim() # this will contain data corresponding to a particular simulation (a "study case") under analysis
 case1.fName='eg' # output binary file name (without extension)
 case1.stru.name='str ex raw data'
-case1.stru.nodes=[200000, 200010] # nodes of interest - only information relative to these nodes is going to be read
-case1.stru.struRdOpt='bin' # set flag for reading ASCII file - default 'bin'
+case1.stru.nodes=[200000, 200001] # nodes of interest - only information relative to these nodes is going to be read
+case1.stru.struRdOpt = 'bin' # set flag for reading ASCII file - default 'bin'
 case1.stru.p11FN='pcolgante.@1' # binary *.p11 file name (without extension - Simpact output) from wich extract generalized displacements
 case1.stru.rsnDe='pcolgante' # ASCII *.rsn file name (without extension) - Delta output
 case1.stru.loadsFN = 'AeroFcsOnStruc' #ASCII *.dat file name - Loads
-case1.stru.loadRdOpt  = 'bin'
-
-# eigen modes postprocess
-#   call the function
-#   asking for
-#       work over data in a subfolder called "subF"
-#       print status messages
+case1.stru.loadRdOpt = 'non'
+case1.stru.struEigOpt = False
+case1.stru.loadEigOpt = False
 case1 = epp(case1, **{'data_folder': 'subF/', 'glob_print_output': True, 'BN_mode':'preserve'})
 
-#Ejemplo de uso de ubicar nodos con nodeDof2idx
-#Usar un dict resultó más limpio para el end-user, aunque internamente se hagan 2 pasos extras.
-desired = {'200000':[0,3],'200010':[1]}
-indexes_listados = nodeDof2idx(case1.stru,desired)
-
-
+basic_general_plots(case1)

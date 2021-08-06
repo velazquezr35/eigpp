@@ -79,40 +79,22 @@ class stru:
         self.t_Nan = np.inf                         # inf       - NaN minimum time
         
         
-        self.eqInfo = np.array([], dtype=float)     # Information Relative to the Equations Numbers
+        self.eqInfo = np.array([], dtype=float)             # Information Relative to the Equations Numbers
         
-        self.rdof       = True   # True if rotational DoFs exist
-        self.struRdOpt  = 'bin'  # reading data flag for structural response: 
-                                 #   'raw': from ASCII data files
-                                 #   'bin': from binary file with preprocessed data
-        self.loadRdOpt  = 'raw'  # reading data flag for external loading: 
-                                 #   'raw': from ASCII data files
-                                 #   'bin': from binary file with preprocessed data
-                                 #   'non': no external load data available
-        self.struEigOpt = False  # True if modal decomposition should be done over generalized displacements
-        self.loadEigOpt = False  # True if modal decomposition should be done over external loads
-        
+        self.rdof       = True                              # True if rotational DoFs exist
+        self.struRdOpt  = 'raw'                             # reading data flag for structural response: 
+                                                            #   'raw': from ASCII data files
+                                                            #   'bin': from binary file with preprocessed data
+        self.loadRdOpt  = 'raw'                             #reading data flag for external loading: 
+                                                            #   'raw': from ASCII data files
+                                                            #   'bin': from binary file with preprocessed data
+                                                            #   'non': no external load data available
+        self.struEigOpt = True                              # True if modal decomposition should be done over generalized displacements
+        self.loadEigOpt = True                              # True if modal decomposition should be done over external loads
+        self.plot_timeInds = np.array([0,-1])               # desired plot indexes
+        self.plot_timeVals = np.array([np.inf,np.inf])      # desired plot time values
     #Methods
-    def time_slice(self): #NOTA: ¿Tomar otro nombre?
-        '''
-        Delete all values with time > min(max(tf_stru),max(tf_loads))
-        '''
-        if self.t[-1] > self.t_Loads[-1]:
-            chg_index = int(self.dt/self.dt)
-            self.u_raw = self.u_raw[:,0:chg_index+1]
-            self.u_avr = self.u_avr[:,0:chg_index+1]
-            self.t = self.t[:chg_index+1]
-        
-        elif self.t_Loads[-1] > self.t[-1]:
-            chg_index = int(self.t/self.dt_Loads)
-            self.eLoad = self.eLoad[:,0:chg_index+1]
-            self.t_Loads = self.t_Loads[:chg_index+1]
-        #Comentarios extra:
-        #Conviene hacer slice que recorrer fila a fila y recortar
-            
-        #Aprovechar la función definida más abajo para el caso local, y reutilizarla con un factor step correspondiente al mismo tiempo (diferencia de dt entre loads y desp)
-        #No sé si es útil de momento, dado que para tener todo en arrays cada fila (o info asociada a X cosa) debe tener la misma longitud.
-        pass
+    #Coming soon...
 
 class aero:
     """
@@ -152,6 +134,84 @@ class sim:
 functions
 ------------------------------------------------------------------------------
 """
+
+# searchs for specific time value
+
+def search_time(t_array, t_values, **kwargs):
+    '''
+    Searchs for indexes (equal or max) in t_array corresponding to t_values
+    
+    inputs:
+        t_array, numpy ndarray 1D
+        t_values, list [start, end]
+    
+    returns:
+        [ind_start, ind_end]
+    '''
+    t_abs = abs(t_array-t_values[0])
+    ind_start = list(t_abs).index(min(t_abs))
+    t_abs = abs(t_array-t_values[1])
+    ind_end = list(t_abs).index(min(t_abs))
+    return([ind_start,ind_end])
+
+# handle sim objs for specific time plotting
+
+def sfti_time(struCase, **kwargs):
+    '''
+    Searchs for time indexes - Updates the desired indexes for plotting purposes
+    inputs:
+        struCase stru class obj
+    kwargs:
+        must contain:
+                indexes, list, time indexes [start, end] for struCase.t
+            or
+                time_vals, list, time values [start, end] for struCase.t
+    
+    returns: struCase
+    '''
+    if 'indexes' in kwargs:
+        time_inds = kwargs.get('indexes') #NOTA: El default por ahora es para los u
+        struCase.plot_timeInds[:] = time_inds[:]
+        return(struCase)
+    elif 'time_vals' in kwargs:
+        time_vals = kwargs.get('time_vals')
+        time_inds = search_time(struCase.t,time_vals)
+        struCase.plot_timeInds[:] = time_inds[:]
+        struCase.plot_timeVals[0] = struCase.t[time_inds[0]]
+        struCase.plot_timeVals[1] = struCase.t[time_inds[1]]
+        return(struCase)
+    else:
+        print('Warning: Time interval not set')
+        return()
+    
+    
+    
+
+# handle time indexes
+
+def time_slice(struCase,**kwargs): #NOTA: ¿Tomar otro nombre?
+    '''
+    Delete all values with time > min(max(tf_stru),max(tf_loads))
+    inputs:
+            struCase stru class obj
+    kwargs may contain: none
+    returns: none
+    '''
+    if struCase.t[-1] > struCase.t_Loads[-1]:
+        chg_index = int(struCase.dt_Loads/struCase.dt)
+        struCase.u_raw = struCase.u_raw[:,0:chg_index+1]
+        struCase.u_avr = struCase.u_avr[:,0:chg_index+1]
+        struCase.t = struCase.t[:chg_index+1]
+    
+    elif struCase.t_Loads[-1] > struCase.t[-1]:
+        chg_index = int(struCase.t/struCase.dt_Loads)
+        struCase.eLoad = struCase.eLoad[:,0:chg_index+1]
+        struCase.t_Loads = struCase.t_Loads[:chg_index+1]
+
+    #NOTAS (viejas)    
+    #Aprovechar la función definida más abajo para el caso local, y reutilizarla con un factor step correspondiente al mismo tiempo (diferencia de dt entre loads y desp)
+    #No sé si es útil de momento, dado que para tener todo en arrays cada fila (o info asociada a X cosa) debe tener la misma longitud.
+    return(struCase)
 
 # handle data indexes
 
@@ -257,7 +317,7 @@ def rd_SimpactTable(x_dat, start_line, **kwargs):
             counter = counter+1
 
             try: 
-                if x_dat[start_line + counter] == '\n':
+                if x_dat[start_line + counter] == '\n' or x_dat[start_line + counter][:4] == '  iw':
                     stop_flag = False
             except:
                 stop_flag=False
@@ -359,15 +419,19 @@ def NaN_filter(full_data, Nan_step, **kwargs):
     else:
         glob_print_output = False
     
-    for i in range(len(full_data)):
-        if Nan_step < len(full_data[i]):
-            full_data[i] = np.delete(full_data[i],range(Nan_step,len(full_data[i])))
-            if glob_print_output:
-                print(len(full_data[i])-Nan_step, ' steps deleted')
-        else:
-            if glob_print_output:
-                print('No data was deleted')
-    return full_data
+    if Nan_step == 0:
+        return(full_data)
+    else:
+        
+        for i in range(len(full_data)):
+            if Nan_step < len(full_data[i]):
+                full_data[i] = np.delete(full_data[i],range(Nan_step,len(full_data[i])))
+                if glob_print_output:
+                    print(len(full_data[i])-Nan_step, ' steps deleted')
+            else:
+                if glob_print_output:
+                    print('No data was deleted')
+        return(full_data)
     
 def rd_eqInfo(struCase, **kwargs):
     """
@@ -509,8 +573,9 @@ def rd_eig(struCase, **kwargs):
         local_mode_row = []
         for j in range(0, len(raw_mode_table[:, 0])): # number of rows in modes' table
             for a in range(0, struCase.nnode):
-                if raw_mode_table[j, 0] == struCase.nodes[a]:
-                    local_mode_row = np.append(local_mode_row, raw_mode_table[j,1:])
+                # if raw_mode_table[j, 0] == struCase.nodes[a]:
+                if struCase.eqInfo[j, 0] == struCase.nodes[a]:
+                    local_mode_row = np.append(local_mode_row, raw_mode_table[j,:])
                     if glob_print_output:
                         print("Local mode row ---------------")
                         print(local_mode_row)
@@ -609,7 +674,7 @@ def check_BN_files(case, **kwargs):
     av_files = os.listdir(data_folder)
     if case.fName+'.sim' in av_files:
         print('Warning: ',case.fName,' already exists')
-        print('act: Update info (new file w/timestamp), new: Save new file, ov: Overwrite') #NOTA: Agregar más opciones
+        print('act: Update info (new file w/timestamp), ov: Overwrite') #NOTA: Agregar más opciones
         acp_inpt = ['act','new','ov']
         acp_cond = True
         while acp_cond:
@@ -618,14 +683,11 @@ def check_BN_files(case, **kwargs):
                 acp_cond = False
         if var_inpt == 'act':
             print('Updating file')
-            case.fName = case.fName+'_upd_'+strftime('%H%M_%d%b%Y')
+            case.fName = case.fName+'_upd_'+strftime('%H%M%d%b%Y')
         elif var_inpt == 'ov':
             print('Overwriting file')
-            #Por ahora es lo mismo
-        elif var_inpt == 'new':
-            print('Saving new file')
-            case.fName = case.fName+'_new'
-    return case.fName
+            #Mismo archivo
+    return case
 
 def ae_Ftable(struCase, **kwargs): ##NOTA: Si el nombre no gusta, lo cambio
     '''
