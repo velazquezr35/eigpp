@@ -21,6 +21,7 @@ importing zone
 import numpy as np
 from scipy import signal
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 from sim_db import nodeDof2idx, sfti_time, search_time
 from scipy.fft import fft
 plt.rcParams.update({'font.size': 15})
@@ -69,15 +70,15 @@ def plt_ut(struCase, dofDict, ax, **kwargs):
     else:
         env = False
 
-    t=struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]+1]
+    t=struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
     desired_inds = nodeDof2idx(struCase, dofDict)
     original_inds = flatten_values_list(dofDict.values())
     node_labels = label_asoc(dofDict) #OJO. No contempla posibles errores (q pida algo que no tengo) y esto daría problemas. Parece no importar.
     for i in range(len(desired_inds)):
         if u_type=='avr':
-            u = struCase.u_avr[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]+1]
+            u = struCase.u_avr[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         elif u_type=='raw':
-            u = struCase.u_raw[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]+1]
+            u = struCase.u_raw[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         else:
             print('Warning: Bad u_type def')
             
@@ -98,7 +99,7 @@ def plt_qt(struCase, modal_inds, ax, **kwargs):
     Plot modal coordinates as f(t).
     
     Inputs: struCase is a Stru Class Obj
-            mode_Dict is a dict {'key':[MODEs]}
+            modal_inds is a list (indexes)
             ax is a matplotlib.pyplot Axes obj
             kwargs: 'vel': False (default) or True (in order to calculate and plot modal velocities)
                     'env': False (default) or True (in order to plot the envelope)
@@ -112,9 +113,9 @@ def plt_qt(struCase, modal_inds, ax, **kwargs):
     else:
         env = False
 
-    t=struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]+1]
+    t=struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
     for loc_ind in modal_inds:
-        u = struCase.q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]+1]
+        u = struCase.q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         if vel:
             u=np.gradient(u,t)
         ax.plot(t,u, label=str(loc_ind)) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
@@ -172,7 +173,7 @@ def plt_us(struCase, tdof_dict,ax,**kwargs):
 
 #Plot all modes for a single t val
 
-def plt_qs(struCase, t_lst,ax,**kwargs):
+def plt_qs(struCase, tmode_dict,ax,**kwargs):
     
     """
     Plot all modal DOFs in particular instants of time, u_avr as default.
@@ -191,6 +192,7 @@ def plt_qs(struCase, t_lst,ax,**kwargs):
     
     modal_inds = np.linspace(1,len(struCase.q),len(struCase.q))
     inds_t = []
+    t_lst = flatten_values_list(tmode_dict.values())
     for des_t in t_lst:
         inds_t.append(search_time(struCase.t,[des_t,0])[0])
     for i in range(len(inds_t)):
@@ -228,16 +230,16 @@ def plt_uFFT(struCase, dofDict, ax, **kwargs):
     else:
         graphs_pack = handle_graph_info(**kwargs)
     
-    t = struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]+1]
+    t = struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
     desired_inds = nodeDof2idx(struCase,dofDict)
     original_inds = flatten_values_list(dofDict.values())
     node_labels = label_asoc(dofDict) #OJO. No contempla posibles errores
     fDef = 1/(t[-1]-t[0])
     for i in range(len(desired_inds)):
         if u_type=='avr':
-            u = struCase.u_avr[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]+1]
+            u = struCase.u_avr[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         elif u_type=='raw':
-            u = struCase.u_raw[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]+1]
+            u = struCase.u_raw[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         else:
             print('Warning: Bad u_type def')
             
@@ -282,10 +284,10 @@ def plt_qFFT(struCase, modal_inds, ax, **kwargs):
     else:
         graphs_pack = handle_graph_info(**kwargs)
     
-    t = struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]+1]
+    t = struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
     fDef = 1/(t[-1]-t[0])
     for i in modal_inds:
-        q = struCase.q[i-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]+1]
+        q = struCase.q[i-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         if vel:
             q=np.gradient(q,t) #NOTA: Agregar al plot que es una velocidad
         y_f = abs(fft(q))
@@ -324,13 +326,13 @@ def plt_uPP(struCase, dofDict,ax,**kwargs):
     for loc_ind in desired_inds:
         #NOTA: Esto se puede mejorar tomando u = todos y luego plot(u[desired])
         if u_type=='avr':
-            u = struCase.u_avr[loc_ind,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]+1]
+            u = struCase.u_avr[loc_ind,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         elif u_type=='raw':
-            u = struCase.u_raw[loc_ind,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]+1]
+            u = struCase.u_raw[loc_ind,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         else:
             print('Warning: Bad u_type def')
         
-        du = np.gradient(u,struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]+1])
+        du = np.gradient(u,struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]])
         ax.plot(u,du, label=str(loc_ind)) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
         
     return(ax) #NOTA: ¿Necesito hacer el return? Quizá para actualizar
@@ -345,8 +347,8 @@ def plt_qPP(struCase, modal_inds,ax,**kwargs):
     """
     for loc_ind in modal_inds:
         #NOTA: Esto se puede mejorar tomando u = todos y luego plot(u[desired])
-        dq = np.gradient(struCase.q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]+1],struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]+1])
-        ax.plot(struCase.q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]+1],dq, label=str(loc_ind)) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
+        dq = np.gradient(struCase.q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]],struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]])
+        ax.plot(struCase.q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]],dq, label=str(loc_ind)) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
     ax.legend(title='plt_qPP')
     return(ax) #NOTA: ¿Necesito hacer el return? Quizá para actualizar
 
@@ -372,12 +374,12 @@ def plt_uspectr(struCase, dofDict, fig, ax, **kwargs):
         graphs_pack = kwargs.get('graphs_pack')
     else:
         graphs_pack = handle_graph_info(**kwargs)
-    t = struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]+1]
+    t = struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
     D_t = t[-1] - t[0] #NOTA: Esto asume un único t para el struCase
     if 'SP_Winsize' in kwargs:
-        WinSize = kwargs.get('SP_Winsize')
+        WinSize = int(len(t)/kwargs.get('SP_Winsize'))
     else:
-        WinSize = len(t)/20 #NOTA: Esto asume un único winsize para el struCase. Ver si agregar info en un dict aparte para más customización
+        WinSize = int(len(t)/20) #NOTA: Esto asume un único winsize para el struCase. Ver si agregar info en un dict aparte para más customización
     if 'SP_OvrLapFactor' in kwargs:
         OverLapFactor = kwargs.get('SP_OvrLapFactor')
     else:
@@ -400,15 +402,14 @@ def plt_uspectr(struCase, dofDict, fig, ax, **kwargs):
     node_labels = label_asoc(dofDict) #OJO. No contempla posibles errores
     for i in range(len(desired_inds)):
         if u_type=='avr':
-            u = struCase.u_avr[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]+1]
+            u = struCase.u_avr[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         elif u_type=='raw':
-            u = struCase.u_raw[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]+1]
+            u = struCase.u_raw[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         else:
             print('Warning: Bad u_type def')
         if vel:
             u=np.gradient(u,t) #NOTA: Agregar al plot que es una velocidad
-
-        F, T, S = signal.spectrogram(u, fDef,window=WinType, noverlap=OverLap)
+        F, T, S = signal.spectrogram(u, fDef,window=WinType, noverlap=OverLap,nperseg=WinSize)
         if b_norm:
             loc_m = 0
             for j in range(len(S)):
@@ -446,12 +447,12 @@ def plt_qspectr(struCase, modal_inds, fig, ax, **kwargs):
         graphs_pack = kwargs.get('graphs_pack')
     else:
         graphs_pack = handle_graph_info(**kwargs)
-    t = struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]+1]
+    t = struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
     D_t = t[-1] - t[0] #NOTA: Esto asume un único t para el struCase
     if 'SP_Winsize' in kwargs:
-        WinSize = kwargs.get('SP_Winsize')
+        WinSize = int(len(t)/kwargs.get('SP_Winsize'))
     else:
-        WinSize = len(t)/20 #NOTA: Esto asume un único winsize para el struCase. Ver si agregar info en un dict aparte para más customización
+        WinSize = int(len(t)/20) #NOTA: Esto asume un único winsize para el struCase. Ver si agregar info en un dict aparte para más customización
     if 'SP_OvrLapFactor' in kwargs:
         OverLapFactor = kwargs.get('SP_OvrLapFactor')
     else:
@@ -472,10 +473,10 @@ def plt_qspectr(struCase, modal_inds, fig, ax, **kwargs):
     
 
     for i in modal_inds:
-        q = struCase.q[i-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]+1]
+        q = struCase.q[i-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         if vel:
             q=np.gradient(q,t) #NOTA: Agregar al plot que es una velocidad
-        F, T, S = signal.spectrogram(q, fDef,window=WinType, noverlap=OverLap)
+        F, T, S = signal.spectrogram(q, fDef,window=WinType, noverlap=OverLap,nperseg=WinSize)
         if b_norm:
             loc_m = 0
             for j in range(len(S)):
@@ -583,7 +584,7 @@ def fig_us(struCase, tdofLIST, **kwargs):
     Arranges plots of DOF(nodes) @t fixed
     
     struCase:   stru class object
-    dofLIST:    list of tdofDicts or tdofDict {DOF: [t_instants]} 
+    tdofLIST:    list of tdofDicts or tdofDict {DOF: [t_instants]} 
     kwargs: may contain
         #General:
         sharex: matplotlib.pyplot.subplots() argument - default 'col'
@@ -632,7 +633,7 @@ def fig_qs(struCase, tmodeLIST, **kwargs):
     Arranges plots of mode(nodes) @t fixed
     
     struCase:   stru class object
-    dofLIST:    list of tmodeDicts or a sigle tmodeDict {MODE: [t_instants]} 
+    tdofLIST:    list of tmodeDicts or a sigle tmodeDict {MODE: [t_instants]} 
     kwargs: may contain
         #General:
         sharex: matplotlib.pyplot.subplots() argument - default 'col'
@@ -660,7 +661,7 @@ def fig_qs(struCase, tmodeLIST, **kwargs):
     
     fig, axs = plt.subplots(n, p_prow, sharex = sharex)
     if n == 1: #Esto falla si ax no es un iterable (cuando n = 1 es sólo ax, no ax[:])
-        axs = plt_qs(struCase, tmodeLIST[0], axs, **kwargs)
+        axs = plt_qs(struCase, tmodeLIST, axs, **kwargs)
         axs.set_xlabel(graphs_pack['x_label'])
         axs.set_ylabel(graphs_pack['y_label'])
         axs.grid()
@@ -772,6 +773,8 @@ def fig_qt(struCase, modeLIST, **kwargs):
     fig, axs = plt.subplots(n, p_prow, sharex = sharex)
     
     if n == 1: #Esto falla si ax no es un iterable (cuando n = 1 es sólo ax, no ax[:])
+        if type(modeLIST[0]) == int:
+            modeLIST = [modeLIST]
         axs = plt_qt(struCase, modeLIST[0], axs, **kwargs)
         axs.set_xlabel(graphs_pack['x_label'])
         axs.set_ylabel(graphs_pack['y_label'])
@@ -878,6 +881,8 @@ def fig_q_FFT(struCase, modeLIST, **kwargs):
     n = len(modeLIST)
     fig, axs = plt.subplots(n,p_prow, sharex=sharex)
     if n == 1: #Esto falla si ax no es un iterable (cuando n = 1 es sólo ax, no ax[:])
+        if type(modeLIST[0]) == int:
+            modeLIST = [modeLIST]
         axs = plt_qFFT(struCase, modeLIST[0], axs, **kwargs)
         axs.set_xlabel(graphs_pack['x_label'])
         axs.set_ylabel(graphs_pack['y_label'])
@@ -987,6 +992,8 @@ def fig_q_spect(struCase, modeLIST, **kwargs):
     n = len(modeLIST)
     fig, axs = plt.subplots(n,p_prow, sharex=sharex)
     if n == 1: #Esto falla si ax no es un iterable (cuando n = 1 es sólo ax, no ax[:])
+        if type(modeLIST[0]) == int:
+            modeLIST = [modeLIST]
         axs = plt_qspectr(struCase, modeLIST[0], fig, axs, **kwargs)
         axs.set_xlabel(graphs_pack['x_label'])
         axs.set_ylabel(graphs_pack['y_label'])
@@ -1037,16 +1044,20 @@ def fig_ut_vt_pp(struCase, dofDict, **kwargs): #NOTA: No sé si esto refleja lo 
         #Nada, quedan los indexes que ya vienen con el objeto
         
     graphs_pack = handle_graph_info(**kwargs)
-    n = 3
-    fig, axs = plt.subplots(n, p_prow, sharex = sharex)
-    
-    plt_ut(struCase, dofDict, axs[0],**kwargs)
+    gs = gridspec.GridSpec(2, 3)
+    fig = plt.figure()
+    ax1 = fig.add_subplot(gs[0,0:2])
+    ax2 = fig.add_subplot(gs[1,0:2])
+    ax3 = fig.add_subplot(gs[:,2])
+    axs = [ax1,ax2,ax3]
+    plt_ut(struCase, dofDict, ax1,**kwargs)
     kwargs['vel'] = True
-    plt_ut(struCase,dofDict, axs[1], **kwargs)
+    plt_ut(struCase,dofDict, ax2, **kwargs)
     kwargs['vel'] = False
-    plt_uPP(struCase, dofDict, axs[2],**kwargs)
+    plt_uPP(struCase, dofDict, ax3,**kwargs)
     for ax in axs:
         ax.grid()
+    fig.suptitle(graphs_pack['fig_title'])
     return(fig)
 
 def fig_qt_vt_pp(struCase, modal_inds, **kwargs): #NOTA: No sé si esto refleja lo solicitado en el repo.
@@ -1089,16 +1100,21 @@ def fig_qt_vt_pp(struCase, modal_inds, **kwargs): #NOTA: No sé si esto refleja 
         print('qt_vt_pp plot > Warning: 1D list only!')
         return()
     graphs_pack = handle_graph_info(**kwargs)
-    n = 3
-    fig, axs = plt.subplots(n, p_prow, sharex = sharex)
+    gs = gridspec.GridSpec(2, 3)
+    fig = plt.figure()
+    ax1 = fig.add_subplot(gs[0,0:2])
+    ax2 = fig.add_subplot(gs[1,0:2])
+    ax3 = fig.add_subplot(gs[:,2])
+    axs = [ax1,ax2,ax3]
     
-    plt_qt(struCase, modal_inds, axs[0],**kwargs)
+    plt_qt(struCase, modal_inds, ax1,**kwargs)
     kwargs['vel'] = True
-    plt_qt(struCase,modal_inds, axs[1], **kwargs)
+    plt_qt(struCase,modal_inds, ax2, **kwargs)
     kwargs['vel'] = False
-    plt_qPP(struCase, modal_inds, axs[2],**kwargs)
+    plt_qPP(struCase, modal_inds, ax3,**kwargs)
     for ax in axs:
         ax.grid()
+    fig.suptitle(graphs_pack['fig_title'])
     return(fig)
 
 
@@ -1252,6 +1268,111 @@ def hl_envelopes_idx(y, dmin=1, dmax=1, split=False):
     lmax = lmax[[i+np.argmax(y[lmax[i:i+dmax]]) for i in range(0,len(lmax),dmax)]]
     
     return lmin,lmax
+
+def dte_ut(struCase, dofDict, **kwargs):
+    """
+    Dof temporal evolution - Search & handle DOFs as f(t)
+    
+    Inputs: struCase Stru Class Obj
+            dof_Dict dofDict dict {'NODE': [DOFs]}
+            kwargs: 'u_type': str, raw or avr (default)
+                    'vel': bool, False (default) or True (in order to calculate and plot velocities)
+                    't_pref': list, ['type',t_in, t_f] (type:str, 'index' or 'vals')
+    returns:
+            ndarray
+    """
+    if 'u_type' in kwargs:
+        u_type = kwargs.get('u_type')
+    else:
+        u_type = 'avr'
+    
+    if 'vel' in kwargs:
+        vel = kwargs.get('vel')
+    else:
+        vel = False
+    
+    if 't_pref' in kwargs:
+        t_pref = kwargs.get('t_pref')
+        if t_pref[0] == 'index':
+            plt_t_inds = t_pref[1:]
+            if plt_t_inds[1] == -1:
+                plt_t_inds[1] = None
+            else:
+                plt_t_inds[1] += 1
+            t = struCase.t[plt_t_inds[0]:plt_t_inds[1]]   
+        elif t_pref[0] == 'vals':
+            plt_t_inds = search_time(struCase.t,t_pref[1:])
+            if plt_t_inds[1] == -1:
+                plt_t_inds[1] = None
+            else:
+                plt_t_inds[1] += 1
+            t = struCase.t[plt_t_inds[0]:plt_t_inds[1]]     
+    else:
+        t = struCase.t
+        plt_t_inds = [0,None]
+
+    desired_inds = nodeDof2idx(struCase, dofDict)
+    desired_u = []
+    desired_u.append(t)
+    for i in range(len(desired_inds)):
+        if u_type=='avr':
+            u = struCase.u_avr[desired_inds[i],plt_t_inds[0]:plt_t_inds[1]]
+        elif u_type=='raw':
+            u = struCase.u_raw[desired_inds[i],plt_t_inds[0]:plt_t_inds[1]]
+        else:
+            print('Warning: Bad u_type def')
+            
+        if vel:
+            u=np.gradient(u,t) #NOTA: Agregar al plot que es una velocidad
+        desired_u.append(u)
+    desired_u=np.array(desired_u)
+    return(desired_u)
+
+def dte_qt(struCase, modal_inds, **kwargs):
+    """
+    Dof temporal evolution - Search & handle MODALs as f(t)
+    
+    Inputs: struCase Stru Class Obj
+            modal_inds, list: Modal indexes (WARNING: Use normal indexes, not Python´s)
+            kwargs: 'vel': bool, False (default) or True (in order to calculate and plot modal velocities)
+                    't_pref': list, ['type',t_in, t_f] (type:str, 'index' or 'vals')
+    returns:
+            ndarray
+    """
+    if 'vel' in kwargs:
+        vel = kwargs.get('vel')
+    else:
+        vel = False
+    
+    if 't_pref' in kwargs:
+        t_pref = kwargs.get('t_pref')
+        if t_pref[0] == 'index':
+            plt_t_inds = t_pref[1:]
+            if plt_t_inds[1] == -1:
+                plt_t_inds[1] = None
+            else:
+                plt_t_inds[1] += 1
+            t = struCase.t[plt_t_inds[0]:plt_t_inds[1]]  
+        elif t_pref[0] == 'vals':
+            plt_t_inds = search_time(struCase.t,t_pref[1:])
+            if plt_t_inds[1] == -1:
+                plt_t_inds[1] = None
+            else:
+                plt_t_inds[1] += 1
+            t = struCase.t[plt_t_inds[0]:plt_t_inds[1]]
+    else:
+        t = struCase.t
+        plt_t_inds = [0,None]
+
+    desired_q = []
+    desired_q.append(t)
+    for loc_ind in modal_inds:
+        q = struCase.q[loc_ind-1,plt_t_inds[0]:plt_t_inds[1]]
+        if vel:
+            q=np.gradient(q,t) #NOTA: Agregar al plot que es una velocidad
+        desired_q.append(q)
+    desired_q=np.array(desired_q)
+    return(desired_q)
 
 """
 ------------------------------------------------------------------------------

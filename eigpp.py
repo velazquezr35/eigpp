@@ -189,17 +189,13 @@ def epp(case, **kwargs):
                                 default: False
     """
 
-    # read data
     case = rd_data(case, **kwargs)
-    # apply modal decomposition
-    #pero si ya la leí de antes...?
-    # if case.stru.struRdOpt == 'raw' or case.stru.loadRdOpt == 'raw':
     if case.stru.struEigOpt or case.stru.loadEigOpt:
         case = modalDecomp(case,**kwargs)
         
 
     # NOTA: acá va todo lo que sigue, si es que ponemos algo más, como graficar cosas o imprimir un informe de algún tipo
-    # si es qeu lo ponemos acá o si hacemos otra "end-user funct" para hacer un reporte de algo
+    # si es que lo ponemos acá o si hacemos otra "end-user funct" para hacer un reporte de algo
     # hay que pensarlo una vez que tengamos algo de salida (gráficos o cosas por el estilo) andando, porqeu recién ahí nos vamos a dar cuenta qué es lo mejor
     return(case)
 
