@@ -91,7 +91,7 @@ class stru:
                                                             #   'non': no external load data available
         self.struEigOpt = True                              # True if modal decomposition should be done over generalized displacements
         self.loadEigOpt = True                              # True if modal decomposition should be done over external loads
-        self.plot_timeInds = np.array([0,-2])               # desired plot indexes
+        self.plot_timeInds = np.array([0,-1])               # desired plot indexes
         self.plot_timeVals = np.array([np.inf,np.inf])      # desired plot time values
     #Methods
     #Coming soon...
@@ -317,7 +317,7 @@ def rd_SimpactTable(x_dat, start_line, **kwargs):
             counter = counter+1
 
             try: 
-                if x_dat[start_line + counter] == '\n':
+                if x_dat[start_line + counter] == '\n' or x_dat[start_line + counter][:4] == '  iw':
                     stop_flag = False
             except:
                 stop_flag=False
@@ -419,15 +419,19 @@ def NaN_filter(full_data, Nan_step, **kwargs):
     else:
         glob_print_output = False
     
-    for i in range(len(full_data)):
-        if Nan_step < len(full_data[i]):
-            full_data[i] = np.delete(full_data[i],range(Nan_step,len(full_data[i])))
-            if glob_print_output:
-                print(len(full_data[i])-Nan_step, ' steps deleted')
-        else:
-            if glob_print_output:
-                print('No data was deleted')
-    return full_data
+    if Nan_step == 0:
+        return(full_data)
+    else:
+        
+        for i in range(len(full_data)):
+            if Nan_step < len(full_data[i]):
+                full_data[i] = np.delete(full_data[i],range(Nan_step,len(full_data[i])))
+                if glob_print_output:
+                    print(len(full_data[i])-Nan_step, ' steps deleted')
+            else:
+                if glob_print_output:
+                    print('No data was deleted')
+        return(full_data)
     
 def rd_eqInfo(struCase, **kwargs):
     """
@@ -569,8 +573,9 @@ def rd_eig(struCase, **kwargs):
         local_mode_row = []
         for j in range(0, len(raw_mode_table[:, 0])): # number of rows in modes' table
             for a in range(0, struCase.nnode):
-                if raw_mode_table[j, 0] == struCase.nodes[a]:
-                    local_mode_row = np.append(local_mode_row, raw_mode_table[j,1:])
+                # if raw_mode_table[j, 0] == struCase.nodes[a]:
+                if struCase.eqInfo[j, 0] == struCase.nodes[a]:
+                    local_mode_row = np.append(local_mode_row, raw_mode_table[j,:])
                     if glob_print_output:
                         print("Local mode row ---------------")
                         print(local_mode_row)
