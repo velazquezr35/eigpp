@@ -238,11 +238,11 @@ def nodeDof2idx(struCase, nodeDOFs):
 
 # read Simpact and Delta output files ----------------------------------------
 
-def callbat(file_data, nodo, dof, name_otp):
+def callbat(file_folder, file_name, nodo, dof, output_name):
     """
     Extracts generalized displacements data from *.p11 bin file
     """
-    cmd = "(echo " + file_data + " 1 0 && echo d && echo " + nodo + " " + dof + " " + name_otp + " && echo s) | curvas"  
+    cmd = "cd " + file_folder + " && (echo " + file_name + " 1 0 && echo d && echo " + nodo + " " + dof + " " + output_name + " && echo s) | curvas"  
     os.system(cmd)
 
 
@@ -370,7 +370,7 @@ def rd_u(struCase, **kwargs):
     
     glob_step_Nan = 0
     for node_name in struCase.nodes:
-        callbat( data_folder+struCase.p11FN, str(node_name), "0", data_folder+"temp_file")
+        callbat(data_folder,struCase.p11FN, str(node_name), "0", "temp_file")
         loc_lines = open(data_folder+"temp_file",'r')
         loc_x_dat = loc_lines.readlines()
         loc_table_raw, loc_step_Nan = rd_SimpactTable(loc_x_dat,0, STable_mode='with_counter')
