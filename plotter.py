@@ -708,6 +708,10 @@ def fig_ut(struCase, dofLIST, **kwargs):
     else:
         pass
         #Nada, quedan los indexes que ya vienen con el objeto
+    if 'aspect_ratio' in kwargs:
+        aspect_ratio = kwargs.get('aspect_ratio')
+    else:
+        aspect_ratio = 'auto'
     graphs_pack = handle_graph_info(**kwargs)
     
     if type(dofLIST) == dict: #Para comodidad end-user
@@ -716,17 +720,18 @@ def fig_ut(struCase, dofLIST, **kwargs):
     n = len(dofLIST)
     
     fig, axs = plt.subplots(n, p_prow, sharex = sharex)
-    
     if n == 1: #Esto falla si ax no es un iterable (cuando n = 1 es sólo ax, no ax[:])
         axs = plt_ut(struCase, dofLIST[0], axs, **kwargs)
         axs.set_xlabel(graphs_pack['x_label'])
         axs.set_ylabel(graphs_pack['y_label'])
+        axs.set_aspect(aspect_ratio)
         axs.grid()
     else:
         for ax, dof_dict in zip(axs, dofLIST):
             ax = plt_ut(struCase, dof_dict, ax)
             ax.set_xlabel(graphs_pack['x_label'])
             ax.set_ylabel(graphs_pack['y_label'])
+            ax.set_aspect(aspect_ratio)
             ax.grid()
     fig.suptitle(graphs_pack['fig_title'])
     return(fig)

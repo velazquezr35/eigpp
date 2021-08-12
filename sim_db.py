@@ -226,12 +226,16 @@ def nodeDof2idx(struCase, nodeDOFs):
     loc_indexes = []
     nodes = list(nodeDOFs.keys())
     dofs = list(nodeDOFs.values())
+    
     for i in range(len(nodes)):
         for j in range(len(dofs[i])):
             try:
+                if dofs[i][j] > 5:
+                    print('DOF local mal definido')
+                    raise ValueError()
                 loc_indexes.append(5*struCase.nodes.index(int(nodes[i]))+dofs[i][j])
             except:
-                print('Revisar datos: Error para el nodo:', nodes[i], ', DOF: ', dofs[i][j])
+                print('Error - Revisar datos: nodo:', nodes[i], ', DOF: ', dofs[i][j])
     return loc_indexes
     
     
