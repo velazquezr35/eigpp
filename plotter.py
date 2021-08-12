@@ -572,7 +572,7 @@ def fig_uxuy(struCase,vsLIST, **kwargs):
         axs.grid()
     else:
         for ax, vs_dict in zip(axs, vsLIST):
-            ax = plt_uxuy(struCase, vs_dict, ax)
+            ax = plt_uxuy(struCase, vs_dict, ax,**kwargs)
             ax.set_xlabel(graphs_pack['x_label'])
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
@@ -621,7 +621,7 @@ def fig_us(struCase, tdofLIST, **kwargs):
         axs.grid()
     else:
         for ax, tdof_dict in zip(axs, tdofLIST):
-            ax = plt_us(struCase, tdof_dict, ax)
+            ax = plt_us(struCase, tdof_dict, ax,**kwargs)
             ax.set_xlabel(graphs_pack['x_label'])
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
@@ -667,7 +667,7 @@ def fig_qs(struCase, tmodeLIST, **kwargs):
         axs.grid()
     else:
         for ax, tmode_dict in zip(axs, tmodeLIST):
-            ax = plt_qs(struCase, tmode_dict, ax)
+            ax = plt_qs(struCase, tmode_dict, ax,**kwargs)
             ax.set_xlabel(graphs_pack['x_label'])
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
@@ -728,7 +728,7 @@ def fig_ut(struCase, dofLIST, **kwargs):
         axs.grid()
     else:
         for ax, dof_dict in zip(axs, dofLIST):
-            ax = plt_ut(struCase, dof_dict, ax)
+            ax = plt_ut(struCase, dof_dict, ax,**kwargs)
             ax.set_xlabel(graphs_pack['x_label'])
             ax.set_ylabel(graphs_pack['y_label'])
             ax.set_aspect(aspect_ratio)
@@ -786,7 +786,7 @@ def fig_qt(struCase, modeLIST, **kwargs):
         axs.grid()
     else:
         for ax, dof_dict in zip(axs, modeLIST):
-            ax = plt_qt(struCase, dof_dict, ax)
+            ax = plt_qt(struCase, dof_dict, ax,**kwargs)
             ax.set_xlabel(graphs_pack['x_label'])
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
@@ -839,7 +839,7 @@ def fig_u_FFT(struCase, dofLIST, **kwargs):
         axs.grid()
     else:
         for ax, dof_dict in zip(axs, dofLIST):
-            ax = plt_uFFT(struCase, dof_dict, ax)
+            ax = plt_uFFT(struCase, dof_dict, ax,**kwargs)
             ax.set_xlabel(graphs_pack['x_label'])
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
@@ -894,7 +894,7 @@ def fig_q_FFT(struCase, modeLIST, **kwargs):
         axs.grid()
     else:
         for ax, mode_dict in zip(axs, modeLIST):
-            ax = plt_qFFT(struCase, mode_dict, ax)
+            ax = plt_qFFT(struCase, mode_dict, ax,**kwargs)
             ax.set_xlabel(graphs_pack['x_label'])
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
@@ -949,7 +949,7 @@ def fig_u_spect(struCase, dofLIST, **kwargs):
         axs.grid()
     else:
         for ax, dof_dict in zip(axs, dofLIST):
-            ax = plt_uspectr(struCase, dof_dict, fig, ax)
+            ax = plt_uspectr(struCase, dof_dict, fig, ax,**kwargs)
             ax.set_xlabel(graphs_pack['x_label'])
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
@@ -1005,7 +1005,7 @@ def fig_q_spect(struCase, modeLIST, **kwargs):
         axs.grid()
     else:
         for ax, mode_dict in zip(axs, modeLIST):
-            ax = plt_qspectr(struCase, mode_dict, fig, ax)
+            ax = plt_qspectr(struCase, mode_dict, fig, ax,**kwargs)
             ax.set_xlabel(graphs_pack['x_label'])
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
