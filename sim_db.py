@@ -31,7 +31,7 @@ import pickle
 import os
 from time import gmtime, strftime
 import re
-
+from scipy.spatial.transform import Rotation as Rot
 
 """
 ------------------------------------------------------------------------------
@@ -342,12 +342,15 @@ def euler2axial(cols):
     Converts rotations expresed as 3-1-3 Euler Angles
     to axial vector form using SciPy class Rotation
     """
-    
-    from scipy.spatial.transform import Rotation as Rot
-    
-    for i in range(len(cols[:,0])):
-        R = Rot.from_euler('ZXZ',cols[i,:],degrees=False)
-        cols[i,:] = R.as_rotvec()
+    # o_0 = M_0 * g
+    # o_i = M_i * g = M_r * M_0 * g
+    # M_i * M_0^T = M_r
+    R_0 = Rot.from_euler('ZXZ',cols[0,:],degrees=False)
+    cols[0,:] = R_0.as_rotvec()
+    for i in range(1,len(cols[:,0])):
+        R_i = Rot.from_euler('ZXZ',cols[i,:],degrees=False)
+        R_r = R_i*R_0.inv()
+        cols[i,:] = R_r.as_rotvec()
     return(cols)
 
 

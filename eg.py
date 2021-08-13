@@ -24,7 +24,7 @@ get_ipython().magic('reset -sf')
 importing zone
 ------------------------------------------------------------------------------
 """
-from sim_db import sim, search_time, sfti_time
+from sim_db import sim
 from eigpp  import epp
 import plotter
 
@@ -81,19 +81,19 @@ case1.stru.loadEigOpt = False
 case1 = epp(case1, **{'data_folder': 'subF/', 'glob_print_output': True, 'BN_mode':'preserve'})
 
 # plot
-save_opts = {'folder':'figures', 'filecode':'170'}
+save_opts = {'folder':'figures', 'filecode':'170', 'fig_format':None}
 # analisis geometrico
-vertical_desp_1 = {str(case1.stru.nodes[0]):[2]}
-vertical_desp_2 = {str(case1.stru.nodes[1]):[2]}
-fig_geom_ut = plotter.fig_ut(case1.stru, [vertical_desp_1,vertical_desp_2], fig_title = 'MPC - Vertical Disp.', x_label = 't', y_label = r'$u_z$',fig_save = True, fig_save_opts = save_opts, fig_name='geom_ut')
-fig_geom_vt = plotter.fig_ut(case1.stru, [vertical_desp_1,vertical_desp_2], vel= True, fig_title = 'MPC - Vertical Spd.', x_label = 't', y_label = r'$u_z$',fig_save = True, fig_save_opts = save_opts, fig_name='geom_vt')
-fig_u_spect = plotter.fig_u_spect(case1.stru, [vertical_desp_1, vertical_desp_2], fig_title = 'MPC - Vertical Spectrogram', x_label='t', y_label = 'f [rad/s]', f_lims = [0,10],fig_save = True, fig_save_opts = save_opts, fig_name='ut_spectr')
+# vertical_desp_1 = {str(case1.stru.nodes[0]):[2]}
+# vertical_desp_2 = {str(case1.stru.nodes[1]):[2]}
+# fig_geom_ut = plotter.fig_ut(case1.stru, [vertical_desp_1,vertical_desp_2], fig_title = 'MPC - Vertical Disp.', x_label = 't', y_label = r'$u_z$',fig_save = True, fig_save_opts = save_opts, fig_name='geom_ut')
+# fig_geom_vt = plotter.fig_ut(case1.stru, [vertical_desp_1,vertical_desp_2], vel= True, fig_title = 'MPC - Vertical Spd.', x_label = 't', y_label = r'$u_z$',fig_save = True, fig_save_opts = save_opts, fig_name='geom_vt')
+# fig_u_spect = plotter.fig_u_spect(case1.stru, [vertical_desp_1, vertical_desp_2], fig_title = 'MPC - Vertical Spectrogram', x_label='t', y_label = 'f [rad/s]', f_lims = [0,10],fig_save = True, fig_save_opts = save_opts, fig_name='ut_spectr')
 
-giro_1 = {str(case1.stru.nodes[0]):[4]}
-giro_2 = {str(case1.stru.nodes[1]):[4]}
-fig_geom_phit = plotter.fig_ut(case1.stru, [giro_1,giro_2], fig_title = 'MPC - Vertical Phi. (raw)', x_label = 't', y_label = r'$\phi_y$ [rad]', u_type = 'raw',fig_save = True, fig_save_opts = save_opts, fig_name='geom_phit')
-fig_geom_dphit = plotter.fig_ut(case1.stru, [giro_1,giro_2], fig_title = 'MPC - Vertical Phi. (raw)', x_label = 't', y_label = r'$\phi_y$ [rad]', u_type = 'raw', vel = True,fig_save = True, fig_save_opts = save_opts, fig_name='geom_dphit')
-fig_phi_spect = plotter.fig_u_spect(case1.stru, [giro_1, giro_2], fig_title = 'MPC - $\phi_y$ Spectrogram', x_label='t', y_label = 'f [rad/s]', u_type ='raw', f_lims = [0,10],fig_save = True, fig_save_opts = save_opts, fig_name='phi_spectr')
+giro_1 = {str(case1.stru.nodes[0]):[3,4,5]}
+giro_2 = {str(case1.stru.nodes[1]):[3,4,5]}
+fig_geom_phit = plotter.fig_ut(case1.stru, [giro_1,giro_2], fig_title = 'MPC - $\phi$', x_label = 't', y_label = r'$\phi$ [rad]',fig_save = True, fig_save_opts = save_opts, fig_name='geom_phit')
+# fig_geom_dphit = plotter.fig_ut(case1.stru, [giro_1,giro_2], fig_title = 'MPC - Vertical d/dt Phi. (raw)', x_label = 't', y_label = r'$\phi_y$ [rad]', vel = True,fig_save = True, fig_save_opts = save_opts, fig_name='geom_dphit')
+# fig_phi_spect = plotter.fig_u_spect(case1.stru, [giro_1, giro_2], fig_title = 'MPC - $\phi_y$ Spectrogram', x_label='t', y_label = 'f [rad/s]', f_lims = [0,10],fig_save = True, fig_save_opts = save_opts, fig_name='phi_spectr')
 
 # tambien es posible guardar manualmente:
 # plotter.save_figure(fig_phi_spect,save_opts,close=True)
