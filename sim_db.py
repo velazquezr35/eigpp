@@ -346,7 +346,7 @@ def euler2axial(cols):
     # o_i = M_i * g = M_r * M_0 * g
     # M_i * M_0^T = M_r
     R_0 = Rot.from_euler('ZXZ',cols[0,:],degrees=False)
-    cols[0,:] = R_0.as_rotvec()
+    cols[0,:] = cols[0,:] = Rot.as_rotvec(Rot.from_matrix(np.diag([1,1,1])))
     for i in range(1,len(cols[:,0])):
         R_i = Rot.from_euler('ZXZ',cols[i,:],degrees=False)
         R_r = R_i*R_0.inv()
