@@ -230,12 +230,12 @@ def nodeDof2idx(struCase, nodeDOFs):
     for i in range(len(nodes)):
         for j in range(len(dofs[i])):
             try:
-                if dofs[i][j] > 5:
+                if dofs[i][j] > 6 or dofs[i][j] < 1:
                     print('DOF local mal definido')
                     raise ValueError()
-                loc_indexes.append(6*struCase.nodes.index(int(nodes[i]))+dofs[i][j])
+                loc_indexes.append(6*struCase.nodes.index(int(nodes[i]))+(dofs[i][j]-1))
             except:
-                print('Error - Revisar datos: nodo:', nodes[i], ', DOF: ', dofs[i][j])
+                print('Error - Revisar datos: nodo:', nodes[i], ', DOF: ', (dofs[i][j]-1))
     return loc_indexes
     
     
@@ -337,6 +337,20 @@ def rd_SimpactTable(x_dat, start_line, **kwargs):
     elif S_mode == 'with_counter':
         return table_gen, loc_Nan_counter
 
+def rd_rsn_De(struCase, **kwargs):
+    """
+    reads data from Delta *.rsn output
+        - eigen modes and eigen frequencies
+        - mass matrix
+    
+    struCase: "stru" class object
+    """
+    
+    struCase = rd_mass(struCase, **kwargs)
+    struCase = rd_eig(struCase, **kwargs)
+    
+    return struCase
+
 def euler2axial(cols):
     """
     Converts rotations expresed as 3-1-3 Euler Angles
@@ -346,7 +360,7 @@ def euler2axial(cols):
     # o_i = M_i * g = M_r * M_0 * g
     # M_i * M_0^T = M_r
     R_0 = Rot.from_euler('ZXZ',cols[0,:],degrees=False)
-    cols[0,:] = cols[0,:] = Rot.as_rotvec(Rot.from_matrix(np.diag([1,1,1])))
+    cols[0,:] = Rot.as_rotvec(Rot.from_matrix(np.diag([1,1,1])))
     for i in range(1,len(cols[:,0])):
         R_i = Rot.from_euler('ZXZ',cols[i,:],degrees=False)
         R_r = R_i*R_0.inv()
@@ -366,10 +380,10 @@ def rd_u(struCase, **kwargs):
         glob_print_output = kwargs.get('glob_print_output')
     else:
         glob_print_output = False
-    if 'data_folder' in kwargs:
-        data_folder = kwargs.get('data_folder')
+    if 'subDir_P11' in kwargs:
+        subDir_P11 = kwargs.get('subDir_P11')
     else:
-        data_folder=''
+        subDir_P11=''
     
     glob_u_raw = []
     glob_u_avr = []
@@ -377,8 +391,8 @@ def rd_u(struCase, **kwargs):
     
     glob_step_Nan = 0
     for node_name in struCase.nodes:
-        callbat(data_folder,struCase.p11FN, str(node_name), "0", "temp_file")
-        loc_lines = open(data_folder+"temp_file",'r')
+        callbat(subDir_P11,struCase.p11FN, str(node_name), "0", "temp_file")
+        loc_lines = open(subDir_P11+"temp_file",'r')
         loc_x_dat = loc_lines.readlines()
         loc_table_raw, loc_step_Nan = rd_SimpactTable(loc_x_dat,0, STable_mode='with_counter')
         if loc_step_Nan > glob_step_Nan:
@@ -405,7 +419,7 @@ def rd_u(struCase, **kwargs):
             glob_u_avr = np.append(glob_u_avr,np.transpose(loc_table_avr)[1:,:],axis=0)
     
     
-    os.remove(data_folder+"temp_file")
+    os.remove(subDir_P11+"temp_file")
     
     struCase.nt = total_ntime
     struCase.dt = glob_time[1]-glob_time[0]
@@ -449,10 +463,10 @@ def rd_eqInfo(struCase, **kwargs):
     struCase: "stru" class object
     """
     
-    if 'data_folder' in kwargs:
-        data_folder = kwargs.get('data_folder')
+    if 'subDir_RSN' in kwargs:
+        subDir_RSN = kwargs.get('subDir_RSN')
     else:
-        data_folder=''
+        subDir_RSN=''
         
     if 'c_info_eq' in kwargs:
         c_info_eq = kwargs.get('c_info_eq')
@@ -464,7 +478,7 @@ def rd_eqInfo(struCase, **kwargs):
     
     
     # open Delta *.rsn output file
-    y = open(data_folder+struCase.rsnDe+'.rsn', 'r')
+    y = open(subDir_RSN+struCase.rsnDe+'.rsn', 'r')
     x_dat = y.readlines()
 
     # find reference line and read table
@@ -485,10 +499,10 @@ def rd_mass(struCase, **kwargs):
     struCase: "stru" class object
     """
     
-    if 'data_folder' in kwargs:
-        data_folder = kwargs.get('data_folder')
+    if 'subDir_RSN' in kwargs:
+        subDir_RSN = kwargs.get('subDir_RSN')
     else:
-        data_folder=''
+        subDir_RSN=''
     
     if 'glob_print_output' in kwargs:
         glob_print_output = kwargs.get('glob_print_output')
@@ -509,7 +523,7 @@ def rd_mass(struCase, **kwargs):
         struCase = rd_eqInfo(struCase, **kwargs)
     
     # open Delta *.rsn output file
-    y = open(data_folder+struCase.rsnDe+'.rsn', 'r')
+    y = open(subDir_RSN+struCase.rsnDe+'.rsn', 'r')
     x_dat = y.readlines()
 
     # find reference line and read table
@@ -543,10 +557,10 @@ def rd_eig(struCase, **kwargs):
     struCase: "stru" class object
     """
     
-    if 'data_folder' in kwargs:
-        data_folder = kwargs.get('data_folder')
+    if 'subDir_RSN' in kwargs:
+        subDir_RSN = kwargs.get('subDir_RSN')
     else:
-        data_folder=''
+        subDir_RSN=''
     
     if 'glob_print_output' in kwargs:
         glob_print_output = kwargs.get('glob_print_output')
@@ -562,7 +576,7 @@ def rd_eig(struCase, **kwargs):
     
     
     # open Delta *.rsn output file
-    y = open(data_folder+struCase.rsnDe+'.rsn', 'r')
+    y = open(subDir_RSN+struCase.rsnDe+'.rsn', 'r')
     x_dat = y.readlines()
 
     # find reference line and read table
@@ -593,6 +607,23 @@ def rd_eig(struCase, **kwargs):
     y.close()
     
     struCase.phi = np.transpose(struCase.phi)
+    
+    return struCase
+
+def rd_rawRespData(struCase, **kwargs):
+    """
+    reads response data from Simpact and/or Delta output
+        - generalized displacements over time
+        - eigen modes and eigen frequencies
+        - mass matrix
+    
+    struCase: "stru" class object
+    """
+    
+    struCase = rd_mass(struCase, **kwargs)
+    struCase = rd_eig(struCase, **kwargs)
+    struCase = rd_u(struCase, **kwargs)
+    struCase = ae_Ftable(struCase, **kwargs)
     
     return struCase
 
@@ -669,17 +700,17 @@ def check_BN_files(case, **kwargs):
     '''
     Check BN files
     '''
-    if 'data_folder' in kwargs:
-        data_folder = kwargs.get('data_folder')
+    if 'subDir_P11' in kwargs:
+        subDir_P11 = kwargs.get('subDir_P11')
     else:
-        data_folder=''
+        subDir_P11=''
     
     if 'glob_print_output' in kwargs:
         glob_print_output = kwargs.get('glob_print_output')
     else:
         glob_print_output = False
     
-    av_files = os.listdir(data_folder)
+    av_files = os.listdir(subDir_P11)
     if case.fName+'.sim' in av_files:
         print('Warning: ',case.fName,' already exists')
         print('act: Update info (new file w/timestamp), ov: Overwrite') #NOTA: Agregar más opciones
@@ -704,16 +735,16 @@ def ae_Ftable(struCase, **kwargs): ##NOTA: Si el nombre no gusta, lo cambio
     kwargs:
     returns: stru obj, with some attributes updated (t_Loads, eLoad)
     '''   
-    if 'data_folder' in kwargs:
-        data_folder = kwargs.get('data_folder')
+    if 'subDir_FCS' in kwargs:
+        subDir_FCS = kwargs.get('subDir_FCS')
     else:
-        data_folder=''
+        subDir_FCS=''
     if 'glob_print_output' in kwargs:
         glob_print_output = kwargs.get('glob_print_output')
     else:
         glob_print_output = False
     
-    x = open(data_folder+struCase.loadsFN+'.dat','r') #Read file
+    x = open(subDir_FCS+struCase.loadsFN+'.dat','r') #Read file
     x_dat = x.readlines() #Read lines
     init_line = 0
     init_cond = True
@@ -765,40 +796,59 @@ def ae_Ftable(struCase, **kwargs): ##NOTA: Si el nombre no gusta, lo cambio
 
 
 # handle postprocessed data files --------------------------------------------
-
-def save_bin(file, data, msg:bool=False):
+def rdBin(file, **kwargs):
     
     """
     file: str - file name without extension
-    data: variable to be saved
-    msg: bool - True if printing message
+    kwargs:
+        subDir_BIN or subDir_P11, str - dir
+        glob_print_output, bool - for msg output
     """
-    
-    f = open(file+'.sim', 'wb')
-    pickle.dump(data, f)
-    f.close()
-    if msg:
-        print ('bin data file saved (save_bin funct)')
-
-
-def read_bin(file, msg:bool=False):
-    
-    """
-    file: str - file name without extension
-    data: variable read
-    msg: bool - True if printing message
-    """
+    if 'subDir_BIN' in kwargs:
+        subDir = kwargs.get('subDir_BIN')
+    elif 'subDir_P11' in kwargs:
+        subDir = kwargs.get('subDir_P11')
+    else:
+        subDir=''
+    if 'glob_print_output' in kwargs:
+        print_output = kwargs.get('glob_print_output')
+    else:
+        print_output = False
     try:
-        f = open(file+'.sim','rb')
+        f = open(subDir+file+'.sim','rb')
     except:
         raise NameError('File not found: '+file)
     data = pickle.load(f)
     f.close()
-    if msg:
+    if print_output:
         print ('bin data file read (read_bin funct)')
     
-    return(data)
+    return(data)  
 
+def svBin(data, **kwargs):
+    
+    """
+    data: variable to be saved - sim class object
+    kwargs:
+        glob_print_output, bool - print msg
+        subDir_BIN or subDir_P11, str - dir
+    """
+    if 'subDir_BIN' in kwargs:
+        subDir = kwargs.get('subDir_BIN')
+    elif 'subDir_P11' in kwargs:
+        subDir = kwargs.get('subDir_P11')
+    else:
+        subDir=''
+    if 'glob_print_output' in kwargs:
+        print_output = kwargs.get('glob_print_output')
+    else:
+        print_output = False
+    if isinstance(data, sim):
+        f = open(subDir+data.fName+'.sim', 'wb')
+        pickle.dump(data, f)
+        f.close()
+        if print_output:
+            print ('bin data file saved (save_bin funct)')
 
 """
 ------------------------------------------------------------------------------
@@ -807,45 +857,7 @@ Unit tests
 """
 # NOTA: hay que hacer más unit tests
 def uTest1():
-    """
-    determine if str class is fine to work with "pickle"
-    """
-    
-    # create str object and populate
-    a=stru()
-    a.nnode=2
-    a.nodes=[200001,200003]
-    a.ndof=6
-    
-    
-    # str.t as list 
-    a.t=[0.0, 0.1, 0.3]
-    print('type str.t should be "list" at this point')
-    print( type(a.t) )
-    
-    file1Name='file1.bin'
-    print('save')
-    save_bin(file1Name, a)    
-    print('read')
-    b=read_bin(file1Name, True)
-    print('type str.t should be "list" at this point')
-    print( type(b.t) )
-    os.remove(file1Name)
-    
-    
-    # str.t as numpy array 
-    a.t=np.array([0.0, 0.1, 0.3], dtype=float)
-    print('type str.t should be "numpy.ndarray" at this point')
-    print( type(a.t) )
-    
-    file1Name='file1.bin'
-    print('save')
-    save_bin(file1Name, a)    
-    print('read')
-    b=read_bin(file1Name, True)
-    print('type str.t should be "numpy.ndarray" at this point')
-    print( type(b.t) )
-    os.remove(file1Name)
+    pass
     
 
 """

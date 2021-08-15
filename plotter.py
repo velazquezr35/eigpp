@@ -77,9 +77,9 @@ def plt_ut(struCase, dofDict, ax, **kwargs):
     node_labels = label_asoc(dofDict) #OJO. No contempla posibles errores (q pida algo que no tengo) y esto daría problemas. Parece no importar.
     for i in range(len(desired_inds)):
         if u_type=='avr':
-            u = struCase.u_avr[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+            u = struCase.u_avr[desired_inds[i]-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         elif u_type=='raw':
-            u = struCase.u_raw[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+            u = struCase.u_raw[desired_inds[i]-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         else:
             print('Warning: Bad u_type def')
             
@@ -90,8 +90,8 @@ def plt_ut(struCase, dofDict, ax, **kwargs):
             high_idx, low_idx = hl_envelopes_idx(u)
             ax.plot(t[high_idx], u[high_idx])
             ax.plot(t[low_idx], u[low_idx])
-    ax.legend(title='Node(s): ' + keys_to_str(dofDict)) #NOTA: ¿Quiero esta info como titulo?
-    return(ax) #NOTA: ¿Necesito hacer el return? Quizá para actualizar
+    ax.legend()
+    return(ax)
     
 #Plot q data
 
@@ -238,9 +238,9 @@ def plt_uFFT(struCase, dofDict, ax, **kwargs):
     fDef = 1/(t[-1]-t[0])
     for i in range(len(desired_inds)):
         if u_type=='avr':
-            u = struCase.u_avr[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+            u = struCase.u_avr[desired_inds[i]-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         elif u_type=='raw':
-            u = struCase.u_raw[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+            u = struCase.u_raw[desired_inds[i]-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         else:
             print('Warning: Bad u_type def')
             
@@ -327,9 +327,9 @@ def plt_uPP(struCase, dofDict,ax,**kwargs):
     for loc_ind in desired_inds:
         #NOTA: Esto se puede mejorar tomando u = todos y luego plot(u[desired])
         if u_type=='avr':
-            u = struCase.u_avr[loc_ind,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+            u = struCase.u_avr[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         elif u_type=='raw':
-            u = struCase.u_raw[loc_ind,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+            u = struCase.u_raw[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         else:
             print('Warning: Bad u_type def')
         
@@ -407,9 +407,9 @@ def plt_uspectr(struCase, dofDict, fig, ax, **kwargs):
     node_labels = label_asoc(dofDict) #OJO. No contempla posibles errores
     for i in range(len(desired_inds)):
         if u_type=='avr':
-            u = struCase.u_avr[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+            u = struCase.u_avr[desired_inds[i]-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         elif u_type=='raw':
-            u = struCase.u_raw[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+            u = struCase.u_raw[desired_inds[i]-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         else:
             print('Warning: Bad u_type def')
         if vel:
@@ -1468,9 +1468,9 @@ def dte_ut(struCase, dofDict, **kwargs):
     desired_u.append(t)
     for i in range(len(desired_inds)):
         if u_type=='avr':
-            u = struCase.u_avr[desired_inds[i],plt_t_inds[0]:plt_t_inds[1]]
+            u = struCase.u_avr[desired_inds[i]-1,plt_t_inds[0]:plt_t_inds[1]]
         elif u_type=='raw':
-            u = struCase.u_raw[desired_inds[i],plt_t_inds[0]:plt_t_inds[1]]
+            u = struCase.u_raw[desired_inds[i]-1,plt_t_inds[0]:plt_t_inds[1]]
         else:
             print('Warning: Bad u_type def')
             

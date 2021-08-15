@@ -76,9 +76,10 @@ case1.stru.p11FN='pcolgante.@1' # binary *.p11 file name (without extension - Si
 case1.stru.rsnDe='pcolgante' # ASCII *.rsn file name (without extension) - Delta output
 case1.stru.loadsFN = 'AeroFcsOnStruc' #ASCII *.dat file name - Loads
 case1.stru.loadRdOpt = 'bin'
-case1.stru.struEigOpt = False
-case1.stru.loadEigOpt = False
-case1 = epp(case1, **{'data_folder': 'subF/', 'glob_print_output': True, 'BN_mode':'preserve'})
+case1.stru.struEigOpt = True
+case1.stru.loadEigOpt = True
+#data dir: use / instead of \
+case1 = epp(case1, **{'subDir_P11':'D:/UNC/Ayudantía Investigación/data/rigid_aero_020821/020 10 08x40/R100840_1700/', 'subDir_RSN':'D:/UNC/Ayudantía Investigación/data/rigid_aero_020821/frecuencias y modos/', 'subDir_FCS':'D:/UNC/Ayudantía Investigación/data/rigid_aero_020821/020 10 08x40/R100840_1700/', 'glob_print_output': True, 'BN_mode':'preserve'})
 
 # plot
 save_opts = {'folder':'figures', 'filecode':'170', 'fig_format':None}
@@ -89,7 +90,7 @@ save_opts = {'folder':'figures', 'filecode':'170', 'fig_format':None}
 # fig_geom_vt = plotter.fig_ut(case1.stru, [vertical_desp_1,vertical_desp_2], vel= True, fig_title = 'MPC - Vertical Spd.', x_label = 't', y_label = r'$u_z$',fig_save = True, fig_save_opts = save_opts, fig_name='geom_vt')
 # fig_u_spect = plotter.fig_u_spect(case1.stru, [vertical_desp_1, vertical_desp_2], fig_title = 'MPC - Vertical Spectrogram', x_label='t', y_label = 'f [rad/s]', f_lims = [0,10],fig_save = True, fig_save_opts = save_opts, fig_name='ut_spectr')
 
-giro_1 = {str(case1.stru.nodes[0]):[3,4,5]}
+giro_1 = {str(case1.stru.nodes[0]):[4,5,6]}
 giro_2 = {str(case1.stru.nodes[1]):[3,4,5]}
 fig_geom_phit = plotter.fig_ut(case1.stru, [giro_1,giro_2], fig_title = 'MPC - $\phi$', x_label = 't', y_label = r'$\phi$ [rad]',fig_save = True, fig_save_opts = save_opts, fig_name='geom_phit')
 # fig_geom_dphit = plotter.fig_ut(case1.stru, [giro_1,giro_2], fig_title = 'MPC - Vertical d/dt Phi. (raw)', x_label = 't', y_label = r'$\phi_y$ [rad]', vel = True,fig_save = True, fig_save_opts = save_opts, fig_name='geom_dphit')
