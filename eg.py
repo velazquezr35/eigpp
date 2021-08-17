@@ -81,6 +81,7 @@ case1.stru.loadEigOpt = False
 #data dir: use / instead of \
 case1 = epp(case1, **{'subDir_P11':'C:/Users/Ramon/Documents/ayudantia/data/020_aeroelastica_vigas_rigido/020 10 08x40/R100840_1700/', 'subDir_RSN':'C:/Users/Ramon/Documents/ayudantia/data/020_aeroelastica_vigas_rigido/frecuencias y modos/', 'subDir_FCS':'C:/Users/Ramon/Documents/ayudantia/data/020_aeroelastica_vigas_rigido/020 10 08x40/R100840_1700/', 'glob_print_output': True, 'BN_mode':'preserve'})
 
+
 # plot
 save_opts = {'folder':'figures', 'filecode':'170', 'fig_format':None}
 # analisis geometrico
@@ -90,11 +91,13 @@ save_opts = {'folder':'figures', 'filecode':'170', 'fig_format':None}
 # fig_geom_vt = plotter.fig_ut(case1.stru, [vertical_desp_1,vertical_desp_2], vel= True, fig_title = 'MPC - Vertical Spd.', x_label = 't', y_label = r'$u_z$',fig_save = True, fig_save_opts = save_opts, fig_name='geom_vt')
 # fig_u_spect = plotter.fig_u_spect(case1.stru, [vertical_desp_1, vertical_desp_2], fig_title = 'MPC - Vertical Spectrogram', x_label='t', y_label = 'f [rad/s]', f_lims = [0,10],fig_save = True, fig_save_opts = save_opts, fig_name='ut_spectr')
 
+
 giro_1 = {str(case1.stru.nodes[1]):[1]}
 giro_2 = {str(case1.stru.nodes[1]):[2]}
 fig_geom_phit = plotter.fig_ut(case1.stru, [giro_1,giro_2], fig_title = 'MPC - $/phi$', x_label = 't', y_label = r'$/phi$ [rad]',fig_save = True, fig_save_opts = save_opts, fig_name='geom_phit')
 # fig_geom_dphit = plotter.fig_ut(case1.stru, [giro_1,giro_2], fig_title = 'MPC - Vertical d/dt Phi. (raw)', x_label = 't', y_label = r'$/phi_y$ [rad]', vel = True,fig_save = True, fig_save_opts = save_opts, fig_name='geom_dphit')
 # fig_phi_spect = plotter.fig_u_spect(case1.stru, [giro_1, giro_2], fig_title = 'MPC - $/phi_y$ Spectrogram', x_label='t', y_label = 'f [rad/s]', f_lims = [0,10],fig_save = True, fig_save_opts = save_opts, fig_name='phi_spectr')
+
 
 # tambien es posible guardar manualmente:
 # plotter.save_figure(fig_phi_spect,save_opts,close=True)
