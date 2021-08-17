@@ -4,14 +4,7 @@
 
 eigpp.py: Código principal
 
-- /data: Carpeta que contiene los archivos *necesarios* (inputs).
-- /iedata: Carpeta que contiene los archivos de *salida* BIN.
-
 La presente versión genera un único archivo SIM_BN
-
-La carpeta */data* contiene un recorte de pcolgante con 2 modos (iguales) para pruebas. 
-
-*temp_file* es un ejemplo de salida al correr el auto-bat.
 
 ### Apéndice original del código
 
