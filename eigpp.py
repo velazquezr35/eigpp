@@ -24,7 +24,7 @@ importing zone
 ------------------------------------------------------------------------------
 """
 import numpy as np
-from sim_db import ae_Ftable, rd_mass, rd_eig, rd_u, save_bin, read_bin, sim, check_BN_files #NOTA RV: Clases con mayuscula
+from sim_db import svBin, rdBin, sim, check_BN_files, rd_rawRespData, ae_Ftable #NOTA RV: Clases con mayuscula
 import sim_db
 
 
@@ -43,36 +43,6 @@ class MyClass(): # just an example
 functions
 ------------------------------------------------------------------------------
 """
-
-def rd_rawRespData(struCase, **kwargs):
-    """
-    reads response data from Simpact and/or Delta output
-        - generalized displacements over time
-        - eigen modes and eigen frequencies
-        - mass matrix
-    
-    struCase: "stru" class object
-    """
-    
-    struCase = rd_mass(struCase, **kwargs)
-    struCase = rd_eig(struCase, **kwargs)
-    struCase = rd_u(struCase, **kwargs)
-    
-    return struCase
-
-
-def rd_rawLoadData(struCase, **kwargs):
-    """
-    reads external load data
-    
-    struCase: "stru" class object
-    """
-    struCase.t_Loads, struCase.eLoad = ae_Ftable(struCase, **kwargs)
-    #NOTA: Es mejor así o seguir pasando los objetos completos?
-    
-    return struCase
-
-
 def rd_data(case, **kwargs):
     """
     reads data
@@ -80,10 +50,10 @@ def rd_data(case, **kwargs):
     case: "sim" class object
     """
     
-    if 'data_folder' in kwargs:
-        data_folder = kwargs.get('data_folder')
+    if 'subDir_P11' in kwargs:
+        subDir_P11 = kwargs.get('subDir_P11')
     else:
-        data_folder=''
+        subDir_P11=''
     
     if 'glob_print_output' in kwargs:
         glob_print_output = kwargs.get('glob_print_output')
@@ -97,14 +67,14 @@ def rd_data(case, **kwargs):
     
     #If raw
     if case.stru.struRdOpt == 'raw':
-        case.fName = check_BN_files(case, **kwargs) #NOTA: Ver si usar un nombre loc o cambiarlo en case
+        case = check_BN_files(case, **kwargs) #NOTA: Ver si usar un nombre loc o cambiarlo en case
 
         #Check if available:
         ##NOTA: Ahora desde una función, para ahorrar líneas
         sim_db.check_case_attris(case) #Esto debería imprimir alertas si falta algo
 
         case.stru = rd_rawRespData(case.stru, **kwargs)
-        save_bin(data_folder+case.fName, case, glob_print_output)
+        svBin(case, **kwargs)
         if glob_print_output:
             print("Raw response data read")
             
@@ -112,8 +82,8 @@ def rd_data(case, **kwargs):
     elif case.stru.struRdOpt == 'bin':
         if case.fName == '':
             print('Warning: fName empty!') ##NOTA: Esto podría hacerse con un 'kit' de opciones a verificar desde check_attris
-        temp_case = read_bin(data_folder+case.fName, glob_print_output) # expects "sim" class object
-        case = sim_db.update_BN_objs(case, temp_case, modo='preserve') #Se compara y actualiza para no perder info
+        temp_case = rdBin(case.fName, **kwargs) # expects "sim" class object
+        case = sim_db.update_BN_objs(case, temp_case, **kwargs) #Se compara y actualiza para no perder info
         if type(case) != sim: ##NOTA: Idem
             print('Warning: Not a sim class obj')
         if glob_print_output:
@@ -121,17 +91,17 @@ def rd_data(case, **kwargs):
     
     # read external load data
     if case.stru.loadRdOpt == 'raw':
-        case.fName = check_BN_files(case, **kwargs) #NOTA: Ver si usar un nombre loc o cambiarlo en case
+        case = check_BN_files(case, **kwargs) #NOTA: Ver si usar un nombre loc o cambiarlo en case
         sim_db.check_case_attris(case) #Esto debería imprimir alertas si falta algo
-        case.stru = rd_rawLoadData(case.stru, **kwargs)
-        save_bin(data_folder+case.fName, case, glob_print_output)
+        case.stru = ae_Ftable(case.stru, **kwargs)
+        svBin(case, **kwargs)
         if glob_print_output:
-            print("Raw external load data read")
+            print("Raw external load data used")
     elif case.stru.loadRdOpt == 'bin':
         if case.fName == '':
             print('Warning, empty Filename')
-        temp_case = read_bin(data_folder+case.fName, glob_print_output) # expects "sim" class object
-        case = sim_db.update_BN_objs(case,temp_case,modo='preserve') #Nuevamente
+        temp_case = rdBin(case.fName,**kwargs) # expects "sim" class object
+        case = sim_db.update_BN_objs(case,temp_case,**kwargs) #Nuevamente
         if type(case) != sim:
             print('Warning: Not a sim class obj')
         if glob_print_output:
@@ -149,10 +119,10 @@ def modalDecomp(case,**kwargs):
     
     case: "sim" class object
     """
-    if 'data_folder' in kwargs:
-        data_folder = kwargs.get('data_folder')
+    if 'subDir_P11' in kwargs:
+        subDir_P11 = kwargs.get('subDir_P11')
     else:
-        data_folder=''
+        subDir_P11=''
     if len(case.stru.auxMD) == 0: ##NOTA: ¿Por qué si 0??
         case.stru.auxMD = np.zeros((len(case.stru.phi[0,:]),len(case.stru.mass)))
         #NOTA: Else, la recuperamos de la clase?
@@ -165,8 +135,8 @@ def modalDecomp(case,**kwargs):
     if case.stru.loadEigOpt:
         case.stru.Q = np.matmul(case.stru.auxMD, case.stru.eLoad)
     
-    case.fName = check_BN_files(case, **kwargs)
-    save_bin(data_folder+case.fName, case) #Se exporta todo, finalmente.
+    case = check_BN_files(case, **kwargs)
+    svBin(case,**kwargs) #Se exporta todo, finalmente.
     return case
 
 
@@ -181,7 +151,7 @@ def epp(case, **kwargs):
     
     case: "sim" class object
     kwargs:
-        - data_folder:  str
+        -subDir_RSN, subDir_P11, subDir_FCS:  str
                         path to data from current folder
                         e.g.: 'subFolder1/subFolder2/folderWhereDataIs/'
                         default: ''
@@ -189,18 +159,14 @@ def epp(case, **kwargs):
                                 info printing flag
                                 default: False
     """
-    # NOTA: no lo tengo claro, pero creo que data_folder y bin_folder deberían ser lo mismo
-    
-    # read data
+
     case = rd_data(case, **kwargs)
-    # apply modal decomposition
     if case.stru.struEigOpt or case.stru.loadEigOpt:
         case = modalDecomp(case,**kwargs)
         
-    ##NOTA: ¿Dejar para hacer la descomposición separada?
-    
+
     # NOTA: acá va todo lo que sigue, si es que ponemos algo más, como graficar cosas o imprimir un informe de algún tipo
-    # si es qeu lo ponemos acá o si hacemos otra "end-user funct" para hacer un reporte de algo
+    # si es que lo ponemos acá o si hacemos otra "end-user funct" para hacer un reporte de algo
     # hay que pensarlo una vez que tengamos algo de salida (gráficos o cosas por el estilo) andando, porqeu recién ahí nos vamos a dar cuenta qué es lo mejor
     return(case)
 

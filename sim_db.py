@@ -31,7 +31,7 @@ import pickle
 import os
 from time import gmtime, strftime
 import re
-
+from scipy.spatial.transform import Rotation as Rot
 
 """
 ------------------------------------------------------------------------------
@@ -51,8 +51,10 @@ class stru:
         self.nnode  = 0                             # 1         - number of nodes considered
         self.nodes  = []                            # nnode     - label of nodes considered (external)
         self.iLabl  = np.array([], dtype=int)       # nnode     - label of nodes considered (internal)
-        self.ndof   = 0                             # 1         - number of DoF considered (including those where BCs are applied)
+        self.ndof   = 0                             # 1         - Total number of DoF considered (including those where BCs are applied)
         self.nt     = 0                             # 1         - number of time steps
+        self.dt_Loads = 0                           # 1         - Loads time step
+        self.dt     = 0                             # 1         - Stru time step
         self.t      = np.array([], dtype=float)     # nt        - Response temporal grid
         self.t_Loads = np.array([],dtype = float)   # nt        - Loads temporal grid
         self.u_raw  = np.array([], dtype=float)     # ndof x nt - generalized displacements as functions of time - as read from "curvas"
@@ -74,20 +76,26 @@ class stru:
         self.rsnSi  = ''                            # ASCII *.rsn file name (without extension) - Simpact output
         self.rsnDe  = ''                            # ASCII *.rsn file name (without extension) - Delta output
         self.loadsFN = ''                           # ASCII *. ??? file name (without extension) - Loads on stru
+        self.t_Nan = np.inf                         # inf       - NaN minimum time
         
-        self.eqInfo = np.array([], dtype=float)     # Information Relative to the Equations Numbers
         
-        self.rdof       = True   # True if rotational DoFs exist
-        self.struRdOpt  = 'bin'  # reading data flag for structural response: 
-                                 #   'raw': from ASCII data files
-                                 #   'bin': from binary file with preprocessed data
-        self.loadRdOpt  = 'raw'  # reading data flag for external loading: 
-                                 #   'raw': from ASCII data files
-                                 #   'bin': from binary file with preprocessed data
-                                 #   'non': no external load data available
-        self.struEigOpt = False  # True if modal decomposition should be done over generalized displacements
-        self.loadEigOpt = False  # True if modal decomposition should be done over external loads
-
+        self.eqInfo = np.array([], dtype=float)             # Information Relative to the Equations Numbers
+        
+        self.rdof       = True                              # True if rotational DoFs exist
+        self.struRdOpt  = 'raw'                             # reading data flag for structural response: 
+                                                            #   'raw': from ASCII data files
+                                                            #   'bin': from binary file with preprocessed data
+        self.loadRdOpt  = 'raw'                             #reading data flag for external loading: 
+                                                            #   'raw': from ASCII data files
+                                                            #   'bin': from binary file with preprocessed data
+                                                            #   'non': no external load data available
+        self.struEigOpt = True                              # True if modal decomposition should be done over generalized displacements
+        self.loadEigOpt = True                              # True if modal decomposition should be done over external loads
+        self.plot_timeInds = np.array([0,-1])               # desired plot indexes
+        self.plot_timeVals = np.array([np.inf,np.inf])      # desired plot time values
+        self.intLabOffset = 6                              # offset node labels
+    #Methods
+    #Coming soon...
 
 class aero:
     """
@@ -128,13 +136,118 @@ functions
 ------------------------------------------------------------------------------
 """
 
+# searchs for specific time value
+
+def search_time(t_array, t_values, **kwargs):
+    '''
+    Searchs for indexes (equal or max) in t_array corresponding to t_values
+    
+    inputs:
+        t_array, numpy ndarray 1D
+        t_values, list [start, end]
+    
+    returns:
+        [ind_start, ind_end]
+    '''
+    t_abs = abs(t_array-t_values[0])
+    ind_start = list(t_abs).index(min(t_abs))
+    t_abs = abs(t_array-t_values[1])
+    ind_end = list(t_abs).index(min(t_abs))
+    return([ind_start,ind_end])
+
+# handle sim objs for specific time plotting
+
+def sfti_time(struCase, **kwargs):
+    '''
+    Searchs for time indexes - Updates the desired indexes for plotting purposes
+    inputs:
+        struCase stru class obj
+    kwargs:
+        must contain:
+                indexes, list, time indexes [start, end] for struCase.t
+            or
+                time_vals, list, time values [start, end] for struCase.t
+    
+    returns: struCase
+    '''
+    if 'indexes' in kwargs:
+        time_inds = kwargs.get('indexes') #NOTA: El default por ahora es para los u
+        struCase.plot_timeInds[:] = time_inds[:]
+        return(struCase)
+    elif 'time_vals' in kwargs:
+        time_vals = kwargs.get('time_vals')
+        time_inds = search_time(struCase.t,time_vals)
+        struCase.plot_timeInds[:] = time_inds[:]
+        struCase.plot_timeVals[0] = struCase.t[time_inds[0]]
+        struCase.plot_timeVals[1] = struCase.t[time_inds[1]]
+        return(struCase)
+    else:
+        print('Warning: Time interval not set')
+        return()
+    
+    
+    
+
+# handle time indexes
+
+def time_slice(struCase,**kwargs): #NOTA: ¿Tomar otro nombre?
+    '''
+    Delete all values with time > min(max(tf_stru),max(tf_loads))
+    inputs:
+            struCase stru class obj
+    kwargs may contain: none
+    returns: none
+    '''
+    if struCase.t[-1] > struCase.t_Loads[-1]:
+        chg_index = int(struCase.dt_Loads/struCase.dt)
+        struCase.u_raw = struCase.u_raw[:,0:chg_index+1]
+        struCase.u_avr = struCase.u_avr[:,0:chg_index+1]
+        struCase.t = struCase.t[:chg_index+1]
+    
+    elif struCase.t_Loads[-1] > struCase.t[-1]:
+        chg_index = int(struCase.t/struCase.dt_Loads)
+        struCase.eLoad = struCase.eLoad[:,0:chg_index+1]
+        struCase.t_Loads = struCase.t_Loads[:chg_index+1]
+
+    #NOTAS (viejas)    
+    #Aprovechar la función definida más abajo para el caso local, y reutilizarla con un factor step correspondiente al mismo tiempo (diferencia de dt entre loads y desp)
+    #No sé si es útil de momento, dado que para tener todo en arrays cada fila (o info asociada a X cosa) debe tener la misma longitud.
+    return(struCase)
+
+# handle data indexes
+
+def nodeDof2idx(struCase, nodeDOFs):
+    """
+    Returns indexes for the nodes and nodes DOFs of interest
+    struCase: sim.stru obj
+    nodeDOFs: dict, keys: nodes, values: list of DOFs per node
+    returns: list of ints (indexes) in order
+    """
+    loc_indexes = []
+    nodes = list(nodeDOFs.keys())
+    dofs = list(nodeDOFs.values())
+    
+    for i in range(len(nodes)):
+        for j in range(len(dofs[i])):
+            try:
+                if dofs[i][j] > 6 or dofs[i][j] < 1:
+                    print('DOF local mal definido')
+                    raise ValueError()
+                loc_indexes.append(6*struCase.nodes.index(int(nodes[i]))+(dofs[i][j]-1))
+            except:
+                print('Error - Revisar datos: nodo:', nodes[i], ', DOF: ', (dofs[i][j]-1))
+                break
+    return loc_indexes
+    
+    
+
 # read Simpact and Delta output files ----------------------------------------
 
-def callbat(file_data, nodo, dof, name_otp):
+def callbat(file_folder, file_name, nodo, dof, output_name):
     """
     Extracts generalized displacements data from *.p11 bin file
     """
-    cmd = "(echo " + file_data + " 1 0 && echo d && echo " + nodo + " " + dof + " " + name_otp + " && echo s) | curvas"  
+    cmd = "cd " + file_folder + " && (echo " + file_name + " 1 0 && echo d && echo " + nodo + " " + dof + " " + output_name + " && echo s) | curvas"  
     os.system(cmd)
 
 
@@ -186,14 +299,21 @@ def rd_SimpactTable(x_dat, start_line, **kwargs):
     else:
         glob_print_output = False
         
+    if 'STable_mode' in kwargs:
+        S_mode = kwargs.get('STable_mode')
+    else:
+        S_mode = 'normal'
+        
     stop_flag = True
     counter = 0
+    loc_Nan_counter = 0
     while stop_flag:
         loc_arr = line_spliter(x_dat[start_line+counter])
         b_cond = np.isnan(loc_arr)
         if b_cond.any():
             stop_flag = False
             print('NaN found after ', counter, ' timesteps')
+            loc_Nan_counter = counter
         else:
             if counter == 0:  #First cycle
                 table_gen = np.array([loc_arr])
@@ -203,7 +323,7 @@ def rd_SimpactTable(x_dat, start_line, **kwargs):
             counter = counter+1
 
             try: 
-                if x_dat[start_line + counter] == '\n':
+                if x_dat[start_line + counter] == '\n' or x_dat[start_line + counter][:4] == '  iw':
                     stop_flag = False
             except:
                 stop_flag=False
@@ -212,20 +332,40 @@ def rd_SimpactTable(x_dat, start_line, **kwargs):
         print('Table:')
         print(table_gen)
         print(' ')
-    return(table_gen)
+    
+    if S_mode == 'normal':
+        return table_gen
+    elif S_mode == 'with_counter':
+        return table_gen, loc_Nan_counter
 
+def rd_rsn_De(struCase, **kwargs):
+    """
+    reads data from Delta *.rsn output
+        - eigen modes and eigen frequencies
+        - mass matrix
+    
+    struCase: "stru" class object
+    """
+    
+    struCase = rd_mass(struCase, **kwargs)
+    struCase = rd_eig(struCase, **kwargs)
+    
+    return struCase
 
 def euler2axial(cols):
     """
     Converts rotations expresed as 3-1-3 Euler Angles
     to axial vector form using SciPy class Rotation
     """
-    
-    from scipy.spatial.transform import Rotation as Rot
-    
-    for i in range(len(cols[:,0])):
-        R = Rot.from_euler('ZXZ',cols[i,:],degrees=False)
-        cols[i,:] = R.as_rotvec()
+    # o_0 = M_0 * g
+    # o_i = M_i * g = M_r * M_0 * g
+    # M_i * M_0^T = M_r
+    R_0 = Rot.from_euler('ZXZ',cols[0,:],degrees=False)
+    cols[0,:] = Rot.as_rotvec(Rot.from_matrix(np.diag([1,1,1])))
+    for i in range(1,len(cols[:,0])):
+        R_i = Rot.from_euler('ZXZ',cols[i,:],degrees=False)
+        R_r = R_i*R_0.inv()
+        cols[i,:] = R_r.as_rotvec()
     return(cols)
 
 
@@ -237,23 +377,40 @@ def rd_u(struCase, **kwargs):
     
     struCase: "stru" class object
     """
-    if 'data_folder' in kwargs:
-        data_folder = kwargs.get('data_folder')
+    if 'glob_print_output' in kwargs:
+        glob_print_output = kwargs.get('glob_print_output')
     else:
-        data_folder=''
+        glob_print_output = False
+    if 'subDir_P11' in kwargs:
+        subDir_P11 = kwargs.get('subDir_P11')
+    else:
+        subDir_P11=''
     
     glob_u_raw = []
     glob_u_avr = []
+    loc_unf_raw = []
+    
+    glob_step_Nan = 0
     for node_name in struCase.nodes:
-        callbat( data_folder+struCase.p11FN, str(node_name), "0", data_folder+"temp_file")
-        loc_lines = open(data_folder+"temp_file",'r')
+        callbat(subDir_P11,struCase.p11FN, str(node_name), "0", "temp_file")
+        loc_lines = open(subDir_P11+"temp_file",'r')
         loc_x_dat = loc_lines.readlines()
-        loc_table_raw = rd_SimpactTable(loc_x_dat,0)
+        loc_table_raw, loc_step_Nan = rd_SimpactTable(loc_x_dat,0, STable_mode='with_counter')
+        if loc_step_Nan > glob_step_Nan:
+            glob_step_Nan = loc_step_Nan
+            if glob_print_output:
+                print('t_Nan update:', loc_step_Nan,', for node: ',node_name)
+        #Save all before NaN filter
+        loc_unf_raw.append(loc_table_raw)
+        loc_lines.close()
+    
+    loc_unf_raw = NaN_filter(loc_unf_raw, glob_step_Nan, **kwargs) #Delete all t>t_Nan data
+    for a in range(len(struCase.nodes)): #Continue. Esto debería reproducir nuevamente el bucle interrumpido por el filtrado
+        loc_table_raw = loc_unf_raw[a]
         loc_table_avr = np.copy(loc_table_raw)
         if struCase.rdof: # if rotational DoFs, create field u_avr
             loc_table_avr[:,4:]= euler2axial(loc_table_avr[:,4:])
-        if struCase.nodes.index(node_name) == 0:
-            #Acomodar posibilidad de que el tiempo de 1 nodo sea menor (NaN antes q resto)???
+        if a == 0:
             glob_time = loc_table_raw[:,0]
             total_ntime = len(glob_time)
             glob_u_raw = np.transpose(loc_table_raw)[1:,:]
@@ -262,17 +419,43 @@ def rd_u(struCase, **kwargs):
             glob_u_raw = np.append(glob_u_raw,np.transpose(loc_table_raw)[1:,:],axis=0)
             glob_u_avr = np.append(glob_u_avr,np.transpose(loc_table_avr)[1:,:],axis=0)
     
-    loc_lines.close()
-    os.remove(data_folder+"temp_file")
+    
+    os.remove(subDir_P11+"temp_file")
     
     struCase.nt = total_ntime
+    struCase.dt = glob_time[1]-glob_time[0]
     struCase.t  = glob_time
     struCase.u_raw = glob_u_raw
     struCase.u_avr = glob_u_avr
     
     return struCase
 
-
+def NaN_filter(full_data, Nan_step, **kwargs):
+    """
+    Deletes all data with index > earliest NaN
+    
+    bulk_data: list of numpy arrays, each one is a stru displacements case from *.p11 bin file
+    Nan_step: Nan´s first index
+    """
+    if 'glob_print_output' in kwargs:
+        glob_print_output = kwargs.get('glob_print_output')
+    else:
+        glob_print_output = False
+    
+    if Nan_step == 0:
+        return(full_data)
+    else:
+        
+        for i in range(len(full_data)):
+            if Nan_step < len(full_data[i]):
+                full_data[i] = np.delete(full_data[i],range(Nan_step,len(full_data[i])))
+                if glob_print_output:
+                    print(len(full_data[i])-Nan_step, ' steps deleted')
+            else:
+                if glob_print_output:
+                    print('No data was deleted')
+        return(full_data)
+    
 def rd_eqInfo(struCase, **kwargs):
     """
     Extracts Information Relative to the Equations Numbers from ASCII *.rsn file
@@ -281,10 +464,10 @@ def rd_eqInfo(struCase, **kwargs):
     struCase: "stru" class object
     """
     
-    if 'data_folder' in kwargs:
-        data_folder = kwargs.get('data_folder')
+    if 'subDir_RSN' in kwargs:
+        subDir_RSN = kwargs.get('subDir_RSN')
     else:
-        data_folder=''
+        subDir_RSN=''
         
     if 'c_info_eq' in kwargs:
         c_info_eq = kwargs.get('c_info_eq')
@@ -296,7 +479,7 @@ def rd_eqInfo(struCase, **kwargs):
     
     
     # open Delta *.rsn output file
-    y = open(data_folder+struCase.rsnDe+'.rsn', 'r')
+    y = open(subDir_RSN+struCase.rsnDe+'.rsn', 'r')
     x_dat = y.readlines()
 
     # find reference line and read table
@@ -317,10 +500,10 @@ def rd_mass(struCase, **kwargs):
     struCase: "stru" class object
     """
     
-    if 'data_folder' in kwargs:
-        data_folder = kwargs.get('data_folder')
+    if 'subDir_RSN' in kwargs:
+        subDir_RSN = kwargs.get('subDir_RSN')
     else:
-        data_folder=''
+        subDir_RSN=''
     
     if 'glob_print_output' in kwargs:
         glob_print_output = kwargs.get('glob_print_output')
@@ -341,7 +524,7 @@ def rd_mass(struCase, **kwargs):
         struCase = rd_eqInfo(struCase, **kwargs)
     
     # open Delta *.rsn output file
-    y = open(data_folder+struCase.rsnDe+'.rsn', 'r')
+    y = open(subDir_RSN+struCase.rsnDe+'.rsn', 'r')
     x_dat = y.readlines()
 
     # find reference line and read table
@@ -362,7 +545,7 @@ def rd_mass(struCase, **kwargs):
     # close file
     y.close()
     
-    struCase.iLabl = np.array(struCase.iLabl)
+    struCase.iLabl = np.array(struCase.iLabl) + struCase.intLabOffset
     
     return struCase
 
@@ -375,10 +558,10 @@ def rd_eig(struCase, **kwargs):
     struCase: "stru" class object
     """
     
-    if 'data_folder' in kwargs:
-        data_folder = kwargs.get('data_folder')
+    if 'subDir_RSN' in kwargs:
+        subDir_RSN = kwargs.get('subDir_RSN')
     else:
-        data_folder=''
+        subDir_RSN=''
     
     if 'glob_print_output' in kwargs:
         glob_print_output = kwargs.get('glob_print_output')
@@ -394,7 +577,7 @@ def rd_eig(struCase, **kwargs):
     
     
     # open Delta *.rsn output file
-    y = open(data_folder+struCase.rsnDe+'.rsn', 'r')
+    y = open(subDir_RSN+struCase.rsnDe+'.rsn', 'r')
     x_dat = y.readlines()
 
     # find reference line and read table
@@ -413,8 +596,9 @@ def rd_eig(struCase, **kwargs):
         local_mode_row = []
         for j in range(0, len(raw_mode_table[:, 0])): # number of rows in modes' table
             for a in range(0, struCase.nnode):
-                if raw_mode_table[j, 0] == struCase.nodes[a]:
-                    local_mode_row = np.append(local_mode_row, raw_mode_table[j,1:])
+                # if raw_mode_table[j, 0] == struCase.nodes[a]:
+                if struCase.eqInfo[j, 0] == struCase.nodes[a]:
+                    local_mode_row = np.append(local_mode_row, raw_mode_table[j,:])
                     if glob_print_output:
                         print("Local mode row ---------------")
                         print(local_mode_row)
@@ -427,6 +611,23 @@ def rd_eig(struCase, **kwargs):
     
     return struCase
 
+def rd_rawRespData(struCase, **kwargs):
+    """
+    reads response data from Simpact and/or Delta output
+        - generalized displacements over time
+        - eigen modes and eigen frequencies
+        - mass matrix
+    
+    struCase: "stru" class object
+    """
+    
+    struCase = rd_mass(struCase, **kwargs)
+    struCase = rd_eig(struCase, **kwargs)
+    struCase = rd_u(struCase, **kwargs)
+    struCase = ae_Ftable(struCase, **kwargs)
+    
+    return struCase
+
 def update_BN_objs(act_case, new_case, **kwargs):
     '''
     Compare and update sim objs. Keep info from the actual case
@@ -434,10 +635,10 @@ def update_BN_objs(act_case, new_case, **kwargs):
     kwargs: {modo}
     returns: new_case, from BN file. Updated as req.
     '''
-    try:
-        modo = kwargs.get('modo')
-    except:
-        raise NameError('Ingresar modo de comparación')
+    if 'BN_mode' in kwargs:
+        modo = kwargs.get('BN_mode')
+    else:
+        modo = 'preserve'
     #Use dict for future expansions???
     if modo == 'pass':
         #Just the new case
@@ -500,20 +701,20 @@ def check_BN_files(case, **kwargs):
     '''
     Check BN files
     '''
-    if 'data_folder' in kwargs:
-        data_folder = kwargs.get('data_folder')
+    if 'subDir_P11' in kwargs:
+        subDir_P11 = kwargs.get('subDir_P11')
     else:
-        data_folder=''
+        subDir_P11=''
     
     if 'glob_print_output' in kwargs:
         glob_print_output = kwargs.get('glob_print_output')
     else:
         glob_print_output = False
     
-    av_files = os.listdir(data_folder)
+    av_files = os.listdir(subDir_P11)
     if case.fName+'.sim' in av_files:
         print('Warning: ',case.fName,' already exists')
-        print('act: Update info, new: Save new file, ov: Overwrite') #NOTA: Agregar más opciones
+        print('act: Update info (new file w/timestamp), ov: Overwrite') #NOTA: Agregar más opciones
         acp_inpt = ['act','new','ov']
         acp_cond = True
         while acp_cond:
@@ -522,13 +723,11 @@ def check_BN_files(case, **kwargs):
                 acp_cond = False
         if var_inpt == 'act':
             print('Updating file')
-            case.fName = case.fName+'_upd_'+strftime('%H%M_%d%b%Y')
+            case.fName = case.fName+'_upd_'+strftime('%H%M%d%b%Y')
         elif var_inpt == 'ov':
             print('Overwriting file')
-        elif var_inpt == 'new':
-            print('Saving new file')
-            case.fName = case.fName+'_new'
-    return case.fName
+            #Mismo archivo
+    return case
 
 def ae_Ftable(struCase, **kwargs): ##NOTA: Si el nombre no gusta, lo cambio
     '''
@@ -537,16 +736,16 @@ def ae_Ftable(struCase, **kwargs): ##NOTA: Si el nombre no gusta, lo cambio
     kwargs:
     returns: stru obj, with some attributes updated (t_Loads, eLoad)
     '''   
-    if 'data_folder' in kwargs:
-        data_folder = kwargs.get('data_folder')
+    if 'subDir_FCS' in kwargs:
+        subDir_FCS = kwargs.get('subDir_FCS')
     else:
-        data_folder=''
+        subDir_FCS=''
     if 'glob_print_output' in kwargs:
         glob_print_output = kwargs.get('glob_print_output')
     else:
         glob_print_output = False
     
-    x = open(data_folder+struCase.loadsFN+'.dat','r') #Read file
+    x = open(subDir_FCS+struCase.loadsFN+'.dat','r') #Read file
     x_dat = x.readlines() #Read lines
     init_line = 0
     init_cond = True
@@ -575,12 +774,6 @@ def ae_Ftable(struCase, **kwargs): ##NOTA: Si el nombre no gusta, lo cambio
             if glob_print_output:
                 print("End of table, line: ", act_line)
             tab_cond = False
-    #Now, keep only the info associated to the nodes of interest
-    ######################### BORRAR LUEGO
-    #Agrego manualmente
-    struCase.iLabl[0,1] = 27
-    struCase.iLabl[1,1] = 35
-    ######################### BORRAR LUEGO
     counter = 0
     for a in loc_ftab: #For each \Delta t
         loc_frow_filt = np.array([])
@@ -596,45 +789,67 @@ def ae_Ftable(struCase, **kwargs): ##NOTA: Si el nombre no gusta, lo cambio
     loc_ftab_filt = np.transpose(loc_ftab_filt)
     loc_ittab = np.array(loc_ittab)
     
-    #step, instant, loads
-    return(loc_ittab[:,1], loc_ftab_filt)
+    #step, instants, loads
+    struCase.t_Loads = loc_ittab[:,1]
+    struCase.eLoad = loc_ftab_filt
+    struCase.dt_Loads = loc_ittab[1][1]-loc_ittab[0][1]
+    return struCase
 
 
 # handle postprocessed data files --------------------------------------------
-
-def save_bin(file, data, msg:bool=False):
+def rdBin(file, **kwargs):
     
     """
     file: str - file name without extension
-    data: variable to be saved
-    msg: bool - True if printing message
+    kwargs:
+        subDir_BIN or subDir_P11, str - dir
+        glob_print_output, bool - for msg output
     """
-    
-    f = open(file+'.sim', 'wb')
-    pickle.dump(data, f)
-    f.close()
-    if msg:
-        print ('bin data file saved (save_bin funct)')
-
-
-def read_bin(file, msg:bool=False):
-    
-    """
-    file: str - file name without extension
-    data: variable read
-    msg: bool - True if printing message
-    """
+    if 'subDir_BIN' in kwargs:
+        subDir = kwargs.get('subDir_BIN')
+    elif 'subDir_P11' in kwargs:
+        subDir = kwargs.get('subDir_P11')
+    else:
+        subDir=''
+    if 'glob_print_output' in kwargs:
+        print_output = kwargs.get('glob_print_output')
+    else:
+        print_output = False
     try:
-        f = open(file+'.sim','rb')
+        f = open(subDir+file+'.sim','rb')
     except:
         raise NameError('File not found: '+file)
     data = pickle.load(f)
     f.close()
-    if msg:
+    if print_output:
         print ('bin data file read (read_bin funct)')
     
-    return(data)
+    return(data)  
 
+def svBin(data, **kwargs):
+    
+    """
+    data: variable to be saved - sim class object
+    kwargs:
+        glob_print_output, bool - print msg
+        subDir_BIN or subDir_P11, str - dir
+    """
+    if 'subDir_BIN' in kwargs:
+        subDir = kwargs.get('subDir_BIN')
+    elif 'subDir_P11' in kwargs:
+        subDir = kwargs.get('subDir_P11')
+    else:
+        subDir=''
+    if 'glob_print_output' in kwargs:
+        print_output = kwargs.get('glob_print_output')
+    else:
+        print_output = False
+    if isinstance(data, sim):
+        f = open(subDir+data.fName+'.sim', 'wb')
+        pickle.dump(data, f)
+        f.close()
+        if print_output:
+            print ('bin data file saved (save_bin funct)')
 
 """
 ------------------------------------------------------------------------------
@@ -643,45 +858,7 @@ Unit tests
 """
 # NOTA: hay que hacer más unit tests
 def uTest1():
-    """
-    determine if str class is fine to work with "pickle"
-    """
-    
-    # create str object and populate
-    a=stru()
-    a.nnode=2
-    a.nodes=[200001,200003]
-    a.ndof=6
-    
-    
-    # str.t as list 
-    a.t=[0.0, 0.1, 0.3]
-    print('type str.t should be "list" at this point')
-    print( type(a.t) )
-    
-    file1Name='file1.bin'
-    print('save')
-    save_bin(file1Name, a)    
-    print('read')
-    b=read_bin(file1Name, True)
-    print('type str.t should be "list" at this point')
-    print( type(b.t) )
-    os.remove(file1Name)
-    
-    
-    # str.t as numpy array 
-    a.t=np.array([0.0, 0.1, 0.3], dtype=float)
-    print('type str.t should be "numpy.ndarray" at this point')
-    print( type(a.t) )
-    
-    file1Name='file1.bin'
-    print('save')
-    save_bin(file1Name, a)    
-    print('read')
-    b=read_bin(file1Name, True)
-    print('type str.t should be "numpy.ndarray" at this point')
-    print( type(b.t) )
-    os.remove(file1Name)
+    pass
     
 
 """
