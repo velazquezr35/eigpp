@@ -236,6 +236,7 @@ def nodeDof2idx(struCase, nodeDOFs):
                 loc_indexes.append(6*struCase.nodes.index(int(nodes[i]))+(dofs[i][j]-1))
             except:
                 print('Error - Revisar datos: nodo:', nodes[i], ', DOF: ', (dofs[i][j]-1))
+                break
     return loc_indexes
     
     
