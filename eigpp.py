@@ -130,7 +130,7 @@ def modalDecomp(case,**kwargs):
             case.stru.auxMD[i] = np.multiply(case.stru.mass, case.stru.phi[:,i])
     
     if case.stru.struEigOpt:
-        case.stru.q = np.matmul( case.stru.auxMD, case.stru.u_avr )
+        case.stru.q = np.matmul( case.stru.auxMD, case.stru.u_mdr )
     
     if case.stru.loadEigOpt:
         case.stru.Q = np.matmul(case.stru.auxMD, case.stru.eLoad)

@@ -59,7 +59,7 @@ class stru:
         self.t_Loads = np.array([],dtype = float)   # nt        - Loads temporal grid
         self.u_raw  = np.array([], dtype=float)     # ndof x nt - generalized displacements as functions of time - as read from "curvas"
                                                     #           - rotational DoFs (if exist) are expresed as 3-1-3 Euler angles rotations [rad]
-        self.u_avr  = np.array([], dtype=float)     # ndof x nt - generalized displacements as functions of time - avr: axial vector rotations
+        self.u_mdr  = np.array([], dtype=float)     # ndof x nt - generalized displacements as functions of time - avr: axial vector rotations
                                                     #           - rotational DoFs (if exist) are expresed as axial vector rotations
         self.eLoad  = np.array([], dtype=float)     # ndof x nt - external loads as functions of time
                                                     #           - NOTA: qué onda con los momentos leídos acá? necesitan un tratamiento especial?
@@ -201,7 +201,7 @@ def time_slice(struCase,**kwargs): #NOTA: ¿Tomar otro nombre?
     if struCase.t[-1] > struCase.t_Loads[-1]:
         chg_index = int(struCase.dt_Loads/struCase.dt)
         struCase.u_raw = struCase.u_raw[:,0:chg_index+1]
-        struCase.u_avr = struCase.u_avr[:,0:chg_index+1]
+        struCase.u_mdr = struCase.u_mdr[:,0:chg_index+1]
         struCase.t = struCase.t[:chg_index+1]
     
     elif struCase.t_Loads[-1] > struCase.t[-1]:
@@ -357,23 +357,36 @@ def euler2axial(cols):
     Converts rotations expresed as 3-1-3 Euler Angles
     to axial vector form using SciPy class Rotation
     """
+    
+    from scipy.spatial.transform import Rotation as Rot
+    
+    for i in range(len(cols[:,0])):
+        R = Rot.from_euler('ZXZ',cols[i,:],degrees=False)
+        cols[i,:] = R.as_rotvec()
+    return(cols)
+
+def rotModalDec(cols):
+    """
+    Prepares rotational data for modal decomposition.
+    Represent rotations as incremental rotation vectors
+    expressed in initial local system.
+    """
     # o_0 = M_0 * g
     # o_i = M_i * g = M_r * M_0 * g
     # M_i * M_0^T = M_r
-    R_0 = Rot.from_euler('ZXZ',cols[0,:],degrees=False)
+    R_0 = Rot.from_euler('ZXZ',cols[0,:],degrees=False) # rotation to initial orientation
     cols[0,:] = Rot.as_rotvec(Rot.from_matrix(np.diag([1,1,1])))
     for i in range(1,len(cols[:,0])):
-        R_i = Rot.from_euler('ZXZ',cols[i,:],degrees=False)
-        R_r = R_i*R_0.inv()
-        cols[i,:] = R_r.as_rotvec()
+        R_i = Rot.from_euler('ZXZ',cols[i,:],degrees=False) # global rotation to instantaneous orientation
+        R_r = R_i*R_0.inv() # rotation relative to initial orientation
+        cols[i,:] = R_0.inv().apply( R_r.as_rotvec() ) # expressed as vector in local initial orientation
     return(cols)
-
 
 def rd_u(struCase, **kwargs):
     """
     Extracts generalized displacements data from *.p11 bin file
     and imports data to "stru" class object
-    also creates "u_avr" field if necessary
+    also creates "u_mdr" field if necessary
     
     struCase: "stru" class object
     """
@@ -387,7 +400,7 @@ def rd_u(struCase, **kwargs):
         subDir_P11=''
     
     glob_u_raw = []
-    glob_u_avr = []
+    glob_u_mdr = []
     loc_unf_raw = []
     
     glob_step_Nan = 0
@@ -408,16 +421,16 @@ def rd_u(struCase, **kwargs):
     for a in range(len(struCase.nodes)): #Continue. Esto debería reproducir nuevamente el bucle interrumpido por el filtrado
         loc_table_raw = loc_unf_raw[a]
         loc_table_avr = np.copy(loc_table_raw)
-        if struCase.rdof: # if rotational DoFs, create field u_avr
-            loc_table_avr[:,4:]= euler2axial(loc_table_avr[:,4:])
+        if struCase.rdof: # if rotational DoFs, create field u_mdr
+            loc_table_avr[:,4:]= rotModalDec(loc_table_avr[:,4:])
         if a == 0:
             glob_time = loc_table_raw[:,0]
             total_ntime = len(glob_time)
             glob_u_raw = np.transpose(loc_table_raw)[1:,:]
-            glob_u_avr = np.transpose(loc_table_avr)[1:,:]
+            glob_u_mdr = np.transpose(loc_table_avr)[1:,:]
         else:
             glob_u_raw = np.append(glob_u_raw,np.transpose(loc_table_raw)[1:,:],axis=0)
-            glob_u_avr = np.append(glob_u_avr,np.transpose(loc_table_avr)[1:,:],axis=0)
+            glob_u_mdr = np.append(glob_u_mdr,np.transpose(loc_table_avr)[1:,:],axis=0)
     
     
     os.remove(subDir_P11+"temp_file")
@@ -426,7 +439,7 @@ def rd_u(struCase, **kwargs):
     struCase.dt = glob_time[1]-glob_time[0]
     struCase.t  = glob_time
     struCase.u_raw = glob_u_raw
-    struCase.u_avr = glob_u_avr
+    struCase.u_mdr = glob_u_mdr
     
     return struCase
 

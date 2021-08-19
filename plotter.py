@@ -46,7 +46,7 @@ LOW LEVEL PLOT functions
 
 def plt_ut(struCase, dofDict, ax, **kwargs):
     """
-    Plot DOFs as f(t), u_avr as default.
+    Plot DOFs as f(t), u_mdr as default.
     
     Inputs: struCase Stru Class Obj
             dof_Dict dofDict dict {'NODE': [DOFs]}
@@ -77,7 +77,7 @@ def plt_ut(struCase, dofDict, ax, **kwargs):
     node_labels = label_asoc(dofDict) #OJO. No contempla posibles errores (q pida algo que no tengo) y esto daría problemas. Parece no importar.
     for i in range(len(desired_inds)):
         if u_type=='avr':
-            u = struCase.u_avr[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+            u = struCase.u_mdr[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         elif u_type=='raw':
             u = struCase.u_raw[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         else:
@@ -132,7 +132,7 @@ def plt_qt(struCase, modal_inds, ax, **kwargs):
 def plt_us(struCase, tdof_dict,ax,**kwargs):
     
     """
-    Plot all DOFs in particular instants of time, u_avr as default.
+    Plot all DOFs in particular instants of time, u_mdr as default.
     
     Inputs: struCase is a Stru Class Obj
             tdof_dict is a dict ['DOF':[t_vals]]
@@ -161,7 +161,7 @@ def plt_us(struCase, tdof_dict,ax,**kwargs):
     
     for i in range(len(inds_t)):
         if u_type=='avr':
-            u = struCase.u_avr[stru_inds,inds_t[i]]
+            u = struCase.u_mdr[stru_inds,inds_t[i]]
         elif u_type=='raw':
             u = struCase.u_raw[stru_inds,inds_t[i]]
         else:
@@ -177,7 +177,7 @@ def plt_us(struCase, tdof_dict,ax,**kwargs):
 def plt_qs(struCase, tmode_dict,ax,**kwargs):
     
     """
-    Plot all modal DOFs in particular instants of time, u_avr as default.
+    Plot all modal DOFs in particular instants of time, u_mdr as default.
     
     Inputs: struCase is a Stru Class Obj
             tmode_dict is a dict, ['MODE':[t_vals]]
@@ -238,7 +238,7 @@ def plt_uFFT(struCase, dofDict, ax, **kwargs):
     fDef = 1/(t[-1]-t[0])
     for i in range(len(desired_inds)):
         if u_type=='avr':
-            u = struCase.u_avr[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+            u = struCase.u_mdr[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         elif u_type=='raw':
             u = struCase.u_raw[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         else:
@@ -327,7 +327,7 @@ def plt_uPP(struCase, dofDict,ax,**kwargs):
     for loc_ind in desired_inds:
         #NOTA: Esto se puede mejorar tomando u = todos y luego plot(u[desired])
         if u_type=='avr':
-            u = struCase.u_avr[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+            u = struCase.u_mdr[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         elif u_type=='raw':
             u = struCase.u_raw[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         else:
@@ -407,7 +407,7 @@ def plt_uspectr(struCase, dofDict, fig, ax, **kwargs):
     node_labels = label_asoc(dofDict) #OJO. No contempla posibles errores
     for i in range(len(desired_inds)):
         if u_type=='avr':
-            u = struCase.u_avr[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+            u = struCase.u_mdr[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         elif u_type=='raw':
             u = struCase.u_raw[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         else:
@@ -525,7 +525,7 @@ def plt_uxuy(struCase, vsDict, ax, **kwargs):
     else:
         u_type = 'avr'
     if u_type=='avr':
-        u = struCase.u_avr
+        u = struCase.u_mdr
     elif u_type=='raw':
         u = struCase.u_raw
     else:
@@ -1468,7 +1468,7 @@ def dte_ut(struCase, dofDict, **kwargs):
     desired_u.append(t)
     for i in range(len(desired_inds)):
         if u_type=='avr':
-            u = struCase.u_avr[desired_inds[i],plt_t_inds[0]:plt_t_inds[1]]
+            u = struCase.u_mdr[desired_inds[i],plt_t_inds[0]:plt_t_inds[1]]
         elif u_type=='raw':
             u = struCase.u_raw[desired_inds[i],plt_t_inds[0]:plt_t_inds[1]]
         else:
