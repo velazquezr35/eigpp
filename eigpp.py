@@ -115,28 +115,39 @@ def rd_data(case, **kwargs):
 def modalDecomp(case,**kwargs):
     """
     Applies modal decomposition
-
     
     case: "sim" class object
     """
-    if 'subDir_P11' in kwargs:
-        subDir_P11 = kwargs.get('subDir_P11')
+    
+    if 'glob_print_output' in kwargs:
+        glob_print_output = kwargs.get('glob_print_output')
     else:
-        subDir_P11=''
-    if len(case.stru.auxMD) == 0: ##NOTA: ¿Por qué si 0??
-        case.stru.auxMD = np.zeros((len(case.stru.phi[0,:]),len(case.stru.mass)))
-        #NOTA: Else, la recuperamos de la clase?
-        for i in range(len(case.stru.auxMD)):
-            case.stru.auxMD[i] = np.multiply(case.stru.mass, case.stru.phi[:,i])
+        glob_print_output = False
+    
+    # se puede quitar??
+    # if 'subDir_P11' in kwargs:
+        # subDir_P11 = kwargs.get('subDir_P11')
+    # else:
+        # subDir_P11=''
+    #
+    
+    if len(case.stru.auxMD) == 0:
+        if (len(case.stru.mass)!=0) and (case.stru.phi.shape[0]!=0):
+            case.stru.auxMD = np.zeros(case.stru.phi.T.shape)
+            for i in range(case.stru.auxMD.shape[0]):
+                case.stru.auxMD[i] = np.multiply(case.stru.mass, case.stru.phi[:,i])
+        elif glob_print_output:
+            print("no mass and modal data for modal decomposition")
     
     if case.stru.struEigOpt:
         case.stru.q = np.matmul( case.stru.auxMD, case.stru.u_mdr )
     
     if case.stru.loadEigOpt:
-        case.stru.Q = np.matmul(case.stru.auxMD, case.stru.eLoad)
-    
-    case = check_BN_files(case, **kwargs)
-    svBin(case,**kwargs) #Se exporta todo, finalmente.
+        if (case.stru.eLoad.shape[0]!=0):
+            case.stru.Q = np.matmul(case.stru.auxMD, case.stru.eLoad)
+        elif glob_print_output:
+            print("no external load data for modal decomposition")
+            
     return case
 
 
@@ -163,11 +174,10 @@ def epp(case, **kwargs):
     case = rd_data(case, **kwargs)
     if case.stru.struEigOpt or case.stru.loadEigOpt:
         case = modalDecomp(case,**kwargs)
-        
-
-    # NOTA: acá va todo lo que sigue, si es que ponemos algo más, como graficar cosas o imprimir un informe de algún tipo
-    # si es que lo ponemos acá o si hacemos otra "end-user funct" para hacer un reporte de algo
-    # hay que pensarlo una vez que tengamos algo de salida (gráficos o cosas por el estilo) andando, porqeu recién ahí nos vamos a dar cuenta qué es lo mejor
+    
+    case = check_BN_files(case, **kwargs)
+    svBin(case,**kwargs) #Se exporta todo, finalmente.
+    
     return(case)
 
 
