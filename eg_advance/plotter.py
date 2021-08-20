@@ -51,15 +51,17 @@ def plt_ut(struCase, dofDict, ax, **kwargs):
     Inputs: struCase Stru Class Obj
             dof_Dict dofDict dict {'NODE': [DOFs]}
             ax matplotlib.pyplot Axes obj
-            kwargs: 'u_type': raw or avr (default)
+            kwargs: 'u_type': raw or mdr (default)
                     'vel': False (default) or True (in order to calculate and plot velocities)
                     'env': False (default) or True (in order to plot the envelope)
+                    'deg': None (default) or list of DoFs indices (in order to plot rotational DoFs in degrees)
+                           this does not change the values stored
                     
     """
     if 'u_type' in kwargs:
         u_type = kwargs.get('u_type')
     else:
-        u_type = 'avr'
+        u_type = 'mdr'
     
     if 'vel' in kwargs:
         vel = kwargs.get('vel')
@@ -70,22 +72,36 @@ def plt_ut(struCase, dofDict, ax, **kwargs):
         env = kwargs.get('env')
     else:
         env = False
+    
+    if 'deg' in kwargs:
+        deg = kwargs.get('deg')
+    else:
+        deg = None
+    if deg is not None:
+        local_deg=deg.copy()
+        for idx, dof in enumerate(deg):
+            local_deg[idx]=dof-1
 
     t=struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
     desired_inds = nodeDof2idx(struCase, dofDict)
     original_inds = flatten_values_list(dofDict.values())
     node_labels = label_asoc(dofDict) #OJO. No contempla posibles errores (q pida algo que no tengo) y esto daría problemas. Parece no importar.
     for i in range(len(desired_inds)):
-        if u_type=='avr':
+        if u_type=='mdr':
             u = struCase.u_mdr[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         elif u_type=='raw':
             u = struCase.u_raw[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         else:
             print('Warning: Bad u_type def')
+        
+        if (desired_inds[i] in local_deg):
+            u = np.rad2deg(u)
             
         if vel:
             u=np.gradient(u,t) #NOTA: Agregar al plot que es una velocidad
+        
         ax.plot(t,u, label= node_labels[i] +' - DOF: ' + str(original_inds[i])) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
+        
         if env:
             high_idx, low_idx = hl_envelopes_idx(u)
             ax.plot(t[high_idx], u[high_idx])
@@ -113,7 +129,10 @@ def plt_qt(struCase, modal_inds, ax, **kwargs):
         env = kwargs.get('env')
     else:
         env = False
-
+    
+    if not isinstance(modal_inds, list):
+        modal_inds=[modal_inds]
+        
     t=struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
     for loc_ind in modal_inds:
         u = struCase.q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
@@ -124,8 +143,8 @@ def plt_qt(struCase, modal_inds, ax, **kwargs):
             high_idx, low_idx = hl_envelopes_idx(u)
             ax.plot(t[high_idx], u[high_idx])
             ax.plot(t[low_idx], u[low_idx])
-    ax.legend(title='plt_q')
-    return(ax) #NOTA: ¿Necesito hacer el return? Quizá para actualizar
+    ax.legend()
+    return(ax)
 
 #Plot one dof for all nodes for a single t val
 
@@ -137,14 +156,14 @@ def plt_us(struCase, tdof_dict,ax,**kwargs):
     Inputs: struCase is a Stru Class Obj
             tdof_dict is a dict ['DOF':[t_vals]]
             ax is a matplotlib.pyplot Axes obj
-            kwargs: 'u_type': raw or avr (default)
+            kwargs: 'u_type': raw or mdr (default)
                     'vel': False (default) or True (in order to calculate and plot velocities)
                     
     """
     if 'u_type' in kwargs:
         u_type = kwargs.get('u_type')
     else:
-        u_type = 'avr'
+        u_type = 'mdr'
     
     if 'vel' in kwargs:
         vel = kwargs.get('vel')
@@ -160,7 +179,7 @@ def plt_us(struCase, tdof_dict,ax,**kwargs):
     node_labels = list(dofDict.keys())
     
     for i in range(len(inds_t)):
-        if u_type=='avr':
+        if u_type=='mdr':
             u = struCase.u_mdr[stru_inds,inds_t[i]]
         elif u_type=='raw':
             u = struCase.u_raw[stru_inds,inds_t[i]]
@@ -182,7 +201,7 @@ def plt_qs(struCase, tmode_dict,ax,**kwargs):
     Inputs: struCase is a Stru Class Obj
             tmode_dict is a dict, ['MODE':[t_vals]]
             ax is a matplotlib.pyplot Axes obj
-            kwargs: 'u_type': raw or avr (default)
+            kwargs: 'u_type': raw or mdr (default)
                     'vel': False (default) or True (in order to calculate and plot velocities)
                     
     """
@@ -220,7 +239,7 @@ def plt_uFFT(struCase, dofDict, ax, **kwargs):
     if 'u_type' in kwargs:
         u_type = kwargs.get('u_type')
     else:
-        u_type = 'avr'
+        u_type = 'mdr'
         
     if 'vel' in kwargs:
         vel = kwargs.get('vel')
@@ -237,7 +256,7 @@ def plt_uFFT(struCase, dofDict, ax, **kwargs):
     node_labels = label_asoc(dofDict) #OJO. No contempla posibles errores
     fDef = 1/(t[-1]-t[0])
     for i in range(len(desired_inds)):
-        if u_type=='avr':
+        if u_type=='mdr':
             u = struCase.u_mdr[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         elif u_type=='raw':
             u = struCase.u_raw[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
@@ -316,17 +335,17 @@ def plt_uPP(struCase, dofDict,ax,**kwargs):
     Inputs: struCase is a Stru Class Obj
             dof_lst is a dict (o lista, ver cual dejar), {node:[DOFs]}
             ax is a matplotlib.pyplot Axes obj
-            kwargs: 'u_type': raw or avr (default)
+            kwargs: 'u_type': raw or mdr (default)
     """
     if 'u_type' in kwargs:
         u_type = kwargs.get('u_type')
     else:
-        u_type = 'avr'
+        u_type = 'mdr'
 
     desired_inds = nodeDof2idx(struCase, dofDict)
     for loc_ind in desired_inds:
         #NOTA: Esto se puede mejorar tomando u = todos y luego plot(u[desired])
-        if u_type=='avr':
+        if u_type=='mdr':
             u = struCase.u_mdr[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         elif u_type=='raw':
             u = struCase.u_raw[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
@@ -344,7 +363,7 @@ def plt_qPP(struCase, modal_inds,ax,**kwargs):
     Inputs: struCase is a Stru Class Obj
             modal_inds list of modal indexes
             ax is a matplotlib.pyplot Axes obj
-            kwargs: 'u_type': raw or avr (default)
+            kwargs: 'u_type': raw or mdr (default)
     """
     for loc_ind in modal_inds:
         #NOTA: Esto se puede mejorar tomando u = todos y luego plot(u[desired])
@@ -361,12 +380,12 @@ def plt_uspectr(struCase, dofDict, fig, ax, **kwargs):
     Inputs: struCase is a Stru Class Obj
             dof_lst is a dict (o lista, ver cual dejar), {node:[DOFs]}
             ax is a matplotlib.pyplot Axes obj
-            kwargs: 'u_type': raw or avr (default)
+            kwargs: 'u_type': raw or mdr (default)
     """
     if 'u_type' in kwargs:
         u_type = kwargs.get('u_type')
     else:
-        u_type = 'avr'
+        u_type = 'mdr'
     if 'vel' in kwargs:
         vel = kwargs.get('vel')
     else:
@@ -406,7 +425,7 @@ def plt_uspectr(struCase, dofDict, fig, ax, **kwargs):
     original_inds = flatten_values_list(dofDict.values())
     node_labels = label_asoc(dofDict) #OJO. No contempla posibles errores
     for i in range(len(desired_inds)):
-        if u_type=='avr':
+        if u_type=='mdr':
             u = struCase.u_mdr[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         elif u_type=='raw':
             u = struCase.u_raw[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
@@ -523,8 +542,8 @@ def plt_uxuy(struCase, vsDict, ax, **kwargs):
     if 'u_type' in kwargs:
         u_type = kwargs.get('u_type')
     else:
-        u_type = 'avr'
-    if u_type=='avr':
+        u_type = 'mdr'
+    if u_type=='mdr':
         u = struCase.u_mdr
     elif u_type=='raw':
         u = struCase.u_raw
@@ -810,7 +829,7 @@ def fig_qt(struCase, modeLIST, **kwargs):
     Arranges plots of q(t)
     
     struCase:   stru class object
-    dofLIST:    list of modal_inds or modal_inds list of modal indexes
+    modeLIST:   list of modal_inds or modal_inds list of modal indexes
     kwargs: may contain
         #General:
         fig_save, bool - For saving purp.
@@ -1329,7 +1348,7 @@ def keys_to_str(dct_keys):
     """
     word = ''
     for loc_nam in list(dct_keys):
-        word+=loc_nam
+        word+=str(loc_nam)
         word+='-'
     return(word[:-1])
 
@@ -1427,7 +1446,7 @@ def dte_ut(struCase, dofDict, **kwargs):
     
     Inputs: struCase Stru Class Obj
             dof_Dict dofDict dict {'NODE': [DOFs]}
-            kwargs: 'u_type': str, raw or avr (default)
+            kwargs: 'u_type': str, raw or mdr (default)
                     'vel': bool, False (default) or True (in order to calculate and plot velocities)
                     't_pref': list, ['type',t_in, t_f] (type:str, 'index' or 'vals')
     returns:
@@ -1436,7 +1455,7 @@ def dte_ut(struCase, dofDict, **kwargs):
     if 'u_type' in kwargs:
         u_type = kwargs.get('u_type')
     else:
-        u_type = 'avr'
+        u_type = 'mdr'
     
     if 'vel' in kwargs:
         vel = kwargs.get('vel')
@@ -1467,7 +1486,7 @@ def dte_ut(struCase, dofDict, **kwargs):
     desired_u = []
     desired_u.append(t)
     for i in range(len(desired_inds)):
-        if u_type=='avr':
+        if u_type=='mdr':
             u = struCase.u_mdr[desired_inds[i],plt_t_inds[0]:plt_t_inds[1]]
         elif u_type=='raw':
             u = struCase.u_raw[desired_inds[i],plt_t_inds[0]:plt_t_inds[1]]
