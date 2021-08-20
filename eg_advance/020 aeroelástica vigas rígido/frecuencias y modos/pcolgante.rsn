@@ -1,0 +1,375 @@
+
+
+          str01                                                       
+
+
+
+  C O N T R O L   P A R A M E T E R S 
+
+         Number of coordinate Dimension ........ NDIME   =            3
+         Nodal system code 0:NO 1:YES .......... NEULR   =            1
+         Number of Degrees Of Freedom .......... NDOFN   =            6
+         Symmetric or Non-Symmetric matrix...... NSYMM   =            0
+         Node Renumbering flag ................. NRENU   =            0
+         Number of Temperature DOFs............. NDOFT   =            1
+
+  A D V A N C E   P A R A M E T E R S 
+
+         Number of steps in the analysis........ NSTEP   =            1
+         First iteration for K evaluation....... FIRST   =            1
+         Frequency of K evaluation ............. EVERY   =            1
+         Maximum No of iteration in a step...... NITER   =           20
+         Convergence Norm to be used ........... ITTOL   =            1
+         Tolerance in convergence norm ......... TOLER   =    0.10000E-03
+         Node for displacement control.......... NODE    =       200000
+         DOF for displacement control........... DOF     =            3
+
+  T I M E   P A R A M E T E R S 
+
+         Time Increment ........................ DTIME   =    0.10000E-01
+         Alpha coeff. in Newmark Scheme ........ ALPHA   =    0.50000    
+         Beta coeff in Newmark Scheme .......... BETA    =    0.25000    
+         Gamma coeff in Newmark Scheme ......... GAMMA   =    0.50000    
+  Lumped Mass matrix will be used 
+  No Damping will be used 
+         Number of eigenvectors ................ NEIGEN  =            2
+
+  O U T P U T   P A R A M E T E R S 
+
+         History Output Interval  .............. NOUTD   =            1
+         Complete Output IntervaL .............. NOUTP   =            1
+         Print-out code -      0:NO 1:Yes ...... IWRIT   =            1
+         Calculation of Energy 0:NO 1:Yes ...... IENER   =            0
+         Print nodal Reactions 0:NO 1:Yes ...... REACT   =            0
+
+--------------------------------------------------------------------------------
+
+  G E O M E T R Y   DEFINITION
+
+         SCALE Factor for Coordinates .......... GSCALE  =     1.0000    
+         Coordinates Sys 0:CART 1:CYL 2:SPH..... NRADS   =            0
+
+
+   ECHO of the Coordinate Data 
+      Node      X         Y         Z       Alfa      Beta      Gamma
+=============  nodes in set PALA2 ============
+    200000    0.13000E+03    0.60000E+04    0.15000E+03   -0.90000E+02    0.90000E+02    0.18000E+03
+    200001    0.13000E+03    0.66100E+04    0.15000E+03   -0.90000E+02    0.90000E+02    0.18000E+03
+=============  nodes in set PALA2X ============
+    200200    0.13000E+03    0.60000E+04    0.89000E+02    0.00000E+00    0.00000E+00    0.00000E+00
+    200201    0.13000E+03    0.66100E+04    0.89000E+02    0.00000E+00    0.00000E+00    0.00000E+00
+
+
+
+         MATERIAL NUMBER ....................... MATNO   =       400000
+         Material Space Dimension .............. NDIME   =            3
+         Material Definition ELASTI &
+         MATERIAL TYPE ......................... MATYPE  =            1
+         YOUNG MODULUS ......................... YOUNG   =    0.21000E+12
+         POISSON RATIO ......................... POISS   =    0.30000    
+         DENSITY ............................... DENS    =     7850.0    
+         Thermical Dilatation Coeff............. ALPHAT  =     0.0000    
+
+
+
+         MATERIAL NUMBER ....................... MATNO   =            2
+         Material Space Dimension .............. NDIME   =            3
+         Material Definition ELASTI &
+         MATERIAL TYPE ......................... MATYPE  =            1
+         YOUNG MODULUS ......................... YOUNG   =    0.21000E+12
+         POISSON RATIO ......................... POISS   =    0.30000    
+         DENSITY ............................... DENS    =     7850.0    
+         Thermical Dilatation Coeff............. ALPHAT  =     0.0000    
+
+
+
+         MATERIAL NUMBER ....................... MATNO   =            3
+         Material Space Dimension .............. NDIME   =            3
+         Material Definition ELASTI &
+         MATERIAL TYPE ......................... MATYPE  =           20
+         YOUNG MODULUS ......................... YOUNG   =     20.000    
+         POISSON RATIO ......................... POISS   =    0.30000    
+         DENSITY ............................... DENS    =     10.000    
+
+
+
+         SECTION NUMBER ........................ SECNO   =       400001
+         SECTION TYPE  ......................... SEC_TYP =       BEAM
+         Associated Material ................... NUMAT   =       400000
+         Width of a rect. cross section ........ B       =     0.0000    
+         Height of a rect. cross section ....... H       =     0.0000    
+         Diam. of a circu. cross section ....... DIAM    =     0.0000    
+         Axial area ............................ AREA    =     2.8246    
+         Shear area in local 2 direcction ...... SHEAR2  =     1.4123    
+         Shear area in local 3 direcction ...... SHEAR3  =     1.4123    
+         Torsional inertia ..................... TORINE  =     634.27    
+         Moment of inertia about local 2 ax..... INERT2  =     317.13    
+         Moment of inertia about local 3 ax..... INERT3  =     317.13    
+
+
+
+         SECTION NUMBER ........................ SECNO   =       500001
+         SECTION TYPE  ......................... SEC_TYP =       BEAM
+         Associated Material ................... NUMAT   =       400000
+         Width of a rect. cross section ........ B       =     0.0000    
+         Height of a rect. cross section ....... H       =     0.0000    
+         Diam. of a circu. cross section ....... DIAM    =     0.0000    
+         Axial area ............................ AREA    =     2.3542    
+         Shear area in local 2 direcction ...... SHEAR2  =     1.1771    
+         Shear area in local 3 direcction ...... SHEAR3  =     1.1771    
+         Torsional inertia ..................... TORINE  =     528.82    
+         Moment of inertia about local 2 ax..... INERT2  =     264.41    
+         Moment of inertia about local 3 ax..... INERT3  =     264.41    
+
+
+
+         SECTION NUMBER ........................ SECNO   =            0
+         SECTION TYPE  ......................... SEC_TYP =       SOLID
+         Thickness for Plane Stress Problem..... THICK   =     1.0000    
+         Associated Material ................... NUMAT   =       400000
+         FLC LABEL ............................. LBLFLC  =            0
+
+
+
+         SECTION NUMBER ........................ SECNO   =            1
+         SECTION TYPE  ......................... SEC_TYP =       BEAM
+         Associated Material ................... NUMAT   =            2
+         Axial density ......................... AXIALD  =     269.00    
+         Torsional density ..................... TORDEN  =    0.15064E+06
+         Moment of inertia about local 2 ax..... INERT2  =     21830.    
+         Moment of inertia about local 3 ax..... INERT3  =     21830.    
+         Axial stiffness ....................... EA      =    0.84560E+11
+         Shear Y Stiffness ..................... GAY     =    0.21980E+11
+         Shear Z Stiffness ..................... GAZ     =    0.21980E+11
+         Torsional stiffness ................... GJ      =    0.16740E+12
+         Bending Y Stiffness ................... EIY     =    0.32200E+12
+         Bending Z Stiffness.................... EIZ     =    0.32200E+12
+         Coupling N-TY.......................... CNTY    =     0.0000    
+         Coupling N-TZ.......................... CNTZ    =     0.0000    
+         Coupling N-MX.......................... CNMX    =     0.0000    
+         Coupling N-MY.......................... CNMY    =     0.0000    
+         Coupling N-MZ.......................... CNMZ    =     0.0000    
+         Coupling TY-TZ......................... CTYTZ   =     0.0000    
+         Coupling TY-TZ......................... CTYTZ   =     0.0000    
+         Coupling TY-MX......................... CTYMX   =     0.0000    
+         Coupling TY-MY......................... CTYMY   =     0.0000    
+         Coupling TZ-MX......................... CTZMX   =     0.0000    
+         Coupling TZ-MY......................... CTZMY   =     0.0000    
+         Coupling TZ-MZ......................... CTZMZ   =     0.0000    
+         Coupling MX-MY......................... CMXMY   =     0.0000    
+         Coupling MX-MZ......................... CMXMZ   =     0.0000    
+         Coupling MY-MZ......................... CMYMZ   =     0.0000    
+
+
+
+         SECTION NUMBER ........................ SECNO   =         6000
+         SECTION TYPE  ......................... SEC_TYP =       SPOT
+         Associated Material ................... NUMAT   =            3
+         Axial Stiffness ....................... ASTIFF  =    0.12730E+06
+         Rotational Stiffness................... RSTIFF  =    0.22145E+09
+         Axial Damping ......................... ADAMPI  =     0.0000    
+         Rotational Damping .................... RDAMPI  =     0.0000    
+         Translational Mass..................... TMASS   =     0.0000    
+         Rotational Mass ....................... RMASS   =     0.0000    
+         Transversal Area ...................... AREA    =     0.0000    
+         Normal Penalty ........................ NPENAL  =    0.10000E-01
+
+--------------------------------------------------------------------------------
+
+ ELEMENT SETS DEFINITION
+
+ Element set named: PALA2  will be read
+
+   Elements type (BEAM)
+
+         Number of nodes per element ........... NNODE   =            2
+         Integration points in the set ......... NGAUS   =            1
+         Local axes code ....................... AXESCO  =           -2
+         Gauss pt for stress time history....... NREQS   =            0
+
+
+      Element    Mat       Node Numbers 
+          1        1     **********    3    3
+ Element set named: RESORTES  will be read
+
+   Elements type (SPOT)
+
+         Number of nodes defining spot ......... NNODE   =            2
+         Gauss pt for stress time history....... NREQS   =            0
+
+    element  mat        node numbers
+
+          1 6000 200000      0
+
+
+ KINEMATIC CONDITIONS read in this strategy
+
+
+ B O U N D A R Y  C O N D I T I O N S
+
+
+     Node   XYZABG
+   200000   110011
+   200001   110011
+
+
+   Slave/Master nodes Data
+
+
+   Slave Node     Master Node
+    200001    200000
+      master node:  200000  slave node:  200001
+
+
+      Selective Output Requested for Displacements 
+     **********
+
+
+      Selective Output Requested for Velocities 
+     **********
+
+
+      Selective Output Requested for Internal Loads
+     **********
+
+
+ KINEMATIC CONDITIONS applied in this strategy
+
+
+
+   Slave/Master nodes Data
+
+   Slave Node     Master Node
+    200001    200000
+
+ Boundary Conditions
+   Node   XYZABG
+ 200000   110011
+ 200001   222222
+
+
+  Information Relative to the Equations Numbers 
+      NODE       X       Y       Z    Alfa    Beta   Gamma  Orig
+  200000-1000001-1000002       1       2-1000003-1000004       1       1
+  200001      -1      -2      -3      -4      -5      -6       2       2
+  200200       0       0       0       0       0       0       3       3
+  200201       0       0       0       0       0       0       4       4
+
+  Coordinates After Generation
+  Node     X         Y         Z
+200000    0.13000E+03    0.60000E+04    0.15000E+03
+200001    0.13000E+03    0.66100E+04    0.15000E+03
+200200    0.13000E+03    0.60000E+04    0.89000E+02
+200201    0.13000E+03    0.66100E+04    0.89000E+02
+
+  Nodal Systems After Generation
+   Node  X1     X2     X3       Y1     Y2     Y3       Z1     Z2     Z3
+ 200000  -0.0000 1.0000 0.0000  -0.0000 0.0000-1.0000  -1.0000-0.0000 0.0000
+ 200001  -0.0000 1.0000 0.0000  -0.0000 0.0000-1.0000  -1.0000-0.0000 0.0000
+
+  Number of active Equations        =           2
+  Number of elements under Skyline  =           4
+
+  Initial strains in beams (if exist) 
+
+  L O A D   A P P L I E D   I N   T H E   P R E S E N T   S T R A T E G Y 
+
+
+
+ REFERENCE Load SETS 
+
+
+
+
+  total mass for SPOT element :  0.0000000E+00
+
+
+  Total mass for Beam element :  0.1640900E+06
+
+
+Total Mass of the System (Without Point Masses):  0.1640900E+06
+
+
+  Lumped Mass Matrix
+ Node      X           Y           z          RX          RY          RZ
+*****  0.8204E+05  0.8204E+05  0.8204E+05  0.4594E+08  0.6658E+07  0.6658E+07
+*****  0.8204E+05  0.8204E+05  0.8204E+05  0.4594E+08  0.6658E+07  0.6658E+07
+*****  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00
+*****  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00
+
+
+ linear dynamic eigen-mode analysis  
+Order   1  natural freq    0.880791E+00 Period    0.713357E+01
+
+
+ eigenvector components 
+
+   node       DOF-1       DOF-2       DOF-3  
+*******       0.00000E+00    0.00000E+00    0.24686E-02   -0.87438E-22    0.00000E+00    0.00000E+00
+*******       0.65319E-35    0.00000E+00    0.24686E-02   -0.87438E-22    0.00000E+00    0.42208E-54
+
+
+ linear dynamic eigen-mode analysis  
+Order   2  natural freq    0.155242E+01 Period    0.404736E+01
+
+
+ eigenvector components 
+
+   node       DOF-1       DOF-2       DOF-3  
+*******       0.00000E+00    0.00000E+00    0.41788E-18    0.10432E-03    0.00000E+00    0.00000E+00
+*******      -0.77931E-17    0.00000E+00   -0.34787E-17    0.10432E-03    0.00000E+00   -0.50357E-36
+  iw=0.100E-03 nf=0.100E-03 id=0.100E-03
+ convergence in   1 iterations 
+
+
+Results are reported for postprocess at:
+          Istep=        1     Ttime=   0.1000000E-01
+
+
+
+     Displacements at time step          1     Time    0.10000000000E-01
+     Nnode   X-disp      Y-disp      Z-disp
+
+     *****  0.0000000E+00  0.0000000E+00  0.0000000E+00
+     *****  0.0000000E+00  0.0000000E+00  0.0000000E+00
+     *****  0.0000000E+00  0.0000000E+00  0.0000000E+00
+     *****  0.0000000E+00  0.0000000E+00  0.0000000E+00
+
+
+  Nodal cartesyan systems (Euler angles in rads) 
+
+  856972295  -90.00000000  90.00000000 180.00000000
+ **********  -90.00000000  90.00000000 180.00000000
+
+
+     Velocity at time step          1     Time    0.10000000000E-01
+
+     Nnode   X-vel       Y-vel       Z-vel      Omega-1     Omega-2     Omega-3
+
+     *****  0.0000000E+00  0.0000000E+00 -0.7194661E-93  0.5951214E-61  0.0000000E+00  0.0000000E+00
+     ***** -0.4445763E-74  0.0000000E+00 -0.2222881E-74  0.5951214E-61  0.0000000E+00 -0.2872742E-93
+     *****  0.0000000E+00  0.0000000E+00  0.0000000E+00  0.0000000E+00  0.0000000E+00  0.0000000E+00
+     *****  0.0000000E+00  0.0000000E+00  0.0000000E+00  0.0000000E+00  0.0000000E+00  0.0000000E+00
+
+
+     Acceleration at time step          1     Time    0.10000000000E-01
+
+     nnode   X-accel      Y-accel      Z-accel      Alpha-1      Alpha-2      Alpha-3
+
+     *****  0.0000000E+00  0.0000000E+00 -0.1438932E-90  0.5951035E-59  0.0000000E+00  0.0000000E+00
+     *****  0.0000000E+00  0.0000000E+00  0.0000000E+00  0.0000000E+00  0.0000000E+00  0.0000000E+00
+     *****  0.0000000E+00  0.0000000E+00  0.0000000E+00  0.0000000E+00  0.0000000E+00  0.0000000E+00
+     *****  0.0000000E+00  0.0000000E+00  0.0000000E+00  0.0000000E+00  0.0000000E+00  0.0000000E+00
+
+          Stresses 
+
+     forces for SPOT elements
+
+     element No.    1    N =  0.00000E+00   M =  0.00000E+00    EPD=  0.0000E+00
+     stresses for beam elements
+
+
+      element no.    1
+      ----------------
+ g.p.     n          q2          q3          mt          m2          m3          epd       a/a0
+  1   0.0000E+00  0.0000E+00  0.8241E-22  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00 1.00000
