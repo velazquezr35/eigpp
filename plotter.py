@@ -416,7 +416,7 @@ def plt_uspectr(struCase, dofDict, fig, ax, **kwargs):
         'SP_OvrLapFactor': int, detault 80 (%)
         'SP_WinType': str, default 'Hann' - Check supported FFT-Windows in scipy.signal
         'SP_Normalize': bool, default True - In order to normalize the spectrogram
-        'y_units': str, 'Hz' or 'rad' - freq units
+        'y_units': str, 'Hz' or 'rad/s' - freq units
             
     """
     if 'u_type' in kwargs:
@@ -484,7 +484,7 @@ def plt_uspectr(struCase, dofDict, fig, ax, **kwargs):
                 S = abs(S)/loc_m
             else:
                 print('Warning: 1/0 found')
-        if y_units == 'rad':
+        if y_units == 'rad/s':
             print('f in rad/s!')
             c = ax.pcolormesh(T,F*2*np.pi,S,shading = 'auto', cmap='gray_r')
         elif y_units == 'Hz':
@@ -509,7 +509,7 @@ def plt_q_spectr(struCase, modal_inds, fig, ax, **kwargs):
                 'SP_OvrLapFactor': int, detault 80 (%)
                 'SP_WinType': str, default 'Hann' - Check supported FFT-Windows in scipy.signal
                 'SP_Normalize': bool, default True - In order to normalize the spectrogram
-                'y_units': str, 'Hz' or 'rad' - freq units
+                'y_units': str, 'Hz' or 'rad/s' - freq units
     """
     if 'vel' in kwargs:
         vel = kwargs.get('vel')
@@ -568,7 +568,7 @@ def plt_q_spectr(struCase, modal_inds, fig, ax, **kwargs):
                 S = abs(S)/loc_m
             else:
                 print('Warning: 1/0 found')
-        if y_units == 'rad':
+        if y_units == 'rad/s':
             print('f in rad/s!')
             c = ax.pcolormesh(T,F*2*np.pi,S,shading = 'auto', cmap='gray_r')
         elif y_units == 'Hz':
@@ -1101,7 +1101,7 @@ def fig_u_spect(struCase, dofLIST, **kwargs):
     struCase: stru class obj
     dofLIST: list of dofDicts or a single dofDict: {'NODE':[DOFs]}
     kwargs: may contain
-        y_units, str: 'Hz' or 'rad' - spectrogram f units
+        y_units, str: 'Hz' or 'rad/s' - spectrogram f units
         #General:
         fig_save, bool - For saving purp.
             fig_save_opts, dict - Folder, filecode, etc
