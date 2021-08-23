@@ -245,6 +245,7 @@ def plt_uFFT(struCase, dofDict, ax, **kwargs):
             dofDict dict {'NODE': [DOFs]}
             ax matplotlib.pyplot Axes obj
     kwargs (may contain):
+            x_units, str: 'rad/s' or 'Hz' (default) - x freqs units
             graphs_pack, standard dict for plot customization
         
     returns:
@@ -259,6 +260,10 @@ def plt_uFFT(struCase, dofDict, ax, **kwargs):
         vel = kwargs.get('vel')
     else:
         vel = False
+    if 'x_units' in kwargs:
+        x_units = kwargs.get('x_units')
+    else:
+        x_units = 'Hz'
     if 'graphs_pack' in kwargs:
         graphs_pack = kwargs.get('graphs_pack')
     else:
@@ -286,7 +291,8 @@ def plt_uFFT(struCase, dofDict, ax, **kwargs):
         else:
             print('Warning: 1/0 found')
         x_f = np.arange(0,fDef*(len(t)-1),fDef)
-        x_f = x_f*2*np.pi
+        if x_units == 'rad/s':
+            x_f = x_f*2*np.pi
         ax.plot(x_f[:(len(t)-1)//2],y_f[:(len(t)-1)//2], label= node_labels[i] +' - DOF: ' + str(original_inds[i])) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
 
     ax.legend(title='Node(s): ' + keys_to_str(dofDict)) #NOTA: ¿Quiero esta info como titulo?
@@ -301,6 +307,7 @@ def plt_qFFT(struCase, modal_inds, ax, **kwargs):
             modal_inds list of modal indexes
             ax matplotlib.pyplot Axes obj
     kwargs (may contain):
+            x_units, str: 'rad/s' or 'Hz' (default) - x freqs units
             vel, for in order to calculate and plot the FFT of the modal velocities
             graphs_pack, standard dict for plot customization
         
@@ -312,6 +319,10 @@ def plt_qFFT(struCase, modal_inds, ax, **kwargs):
         vel = kwargs.get('vel')
     else:
         vel = False
+    if 'x_units' in kwargs:
+        x_units = kwargs.get('x_units')
+    else:
+        x_units = 'Hz'
     if 'graphs_pack' in kwargs:
         graphs_pack = kwargs.get('graphs_pack')
     else:
@@ -333,7 +344,8 @@ def plt_qFFT(struCase, modal_inds, ax, **kwargs):
             print('Warning: 1/0 found')
         
         x_f = np.arange(0,fDef*(len(t)-1),fDef)
-        x_f = x_f*2*np.pi
+        if x_units == 'rad/s':
+            x_f = x_f*2*np.pi
         ax.plot(x_f[:(len(t)-1)//2],y_f[:(len(t)-1)//2], label=' - MODO: ' + str(i)) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
 
     ax.legend(title='plt_qFFT') #NOTA: ¿Quiero esta info como titulo?
@@ -970,6 +982,7 @@ def fig_u_FFT(struCase, dofLIST, **kwargs):
     struCase: stru class obj
     dofLIST: list of dofDicts or a single dofDict: {'NODE':[DOFs]}
     kwargs: may contain
+        x_units, str: 'Hz' (Default) or 'rad/s' - x axis units
         #General:
         fig_save, bool - For saving purp.
             fig_save_opts, dict - Folder, filecode, etc
@@ -986,7 +999,11 @@ def fig_u_FFT(struCase, dofLIST, **kwargs):
         sharex = kwargs.get('sharex')
     else:
         sharex = "col"
-        
+    if not 'x_units' in kwargs:
+        kwargs['x_units'] = 'Hz'
+    
+    if not 'x_label' in kwargs:
+        kwargs['x_label'] = '$\Omega$' + ' [' + kwargs['x_units'] + ']'
     if 'p_prow' in kwargs:
         p_prow = kwargs.get('p_prows')
     else:
@@ -1034,6 +1051,7 @@ def fig_q_FFT(struCase, modeLIST, **kwargs):
     struCase: stru class obj
     dofLIST: list of modal_inds or modal_inds list of modal indexes
     kwargs: may contain
+        x_units, str: 'Hz' (Default) or 'rad/s' - x axis units
         #General:
         fig_save, bool - For saving purp.
             fig_save_opts, dict - Folder, filecode, etc
@@ -1062,6 +1080,10 @@ def fig_q_FFT(struCase, modeLIST, **kwargs):
     else:
         pass
         #Nada, quedan los indexes que ya vienen con el objeto
+    if not 'x_units' in kwargs:
+        kwargs['x_units'] = 'Hz'
+    if not 'x_label' in kwargs:
+        kwargs['x_label'] = '$\Omega$' + ' [' + kwargs['x_units'] + ']'
     if 'fig_save' in kwargs:
         fig_save = kwargs.get('fig_save')
         if 'fig_save_opts' in kwargs:
@@ -1129,14 +1151,11 @@ def fig_u_spect(struCase, dofLIST, **kwargs):
     elif 'limit_tinds' in kwargs:
         struCase = sfti_time(struCase,indexes = kwargs.get('limit_tinds'))
     else:
-        pass
-    if 'y_units' in kwargs:
-        y_units = kwargs.get('y_units')
-    else:
-        y_units = 'Hz'
+        pass #Nada, quedan los indexes que ya vienen con el objeto
+    if not 'y_units' in kwargs:
+       kwargs['y_units'] = 'Hz'
     if not 'y_label' in kwargs:
-        kwargs['y_label'] = '$\Omega$' + ' [' + y_units + ']'
-        #Nada, quedan los indexes que ya vienen con el objeto
+        kwargs['y_label'] = '$\Omega$' + ' [' + kwargs['y_units'] + ']'
     if 'fig_save' in kwargs:
         fig_save = kwargs.get('fig_save')
         if 'fig_save_opts' in kwargs:
@@ -1203,12 +1222,10 @@ def fig_q_spect(struCase, modeLIST, **kwargs):
     else:
         pass
         #Nada, quedan los indexes que ya vienen con el objeto
-    if 'y_units' in kwargs:
-        y_units = kwargs.get('y_units')
-    else:
-        y_units = 'Hz'
+    if not 'y_units' in kwargs:
+       kwargs['y_units'] = 'Hz'
     if not 'y_label' in kwargs:
-        kwargs['y_label'] = '$\Omega$' + ' [' + y_units + ']'
+        kwargs['y_label'] = '$\Omega$' + ' [' + kwargs['y_units'] + ']'
     if 'fig_save' in kwargs:
         fig_save = kwargs.get('fig_save')
         if 'fig_save_opts' in kwargs:
