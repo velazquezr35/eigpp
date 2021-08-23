@@ -290,7 +290,6 @@ def plt_uFFT(struCase, dofDict, ax, **kwargs):
         ax.plot(x_f[:(len(t)-1)//2],y_f[:(len(t)-1)//2], label= node_labels[i] +' - DOF: ' + str(original_inds[i])) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
 
     ax.legend(title='Node(s): ' + keys_to_str(dofDict)) #NOTA: ¿Quiero esta info como titulo?
-    ax.set_xlabel(graphs_pack['x_label'])
     ax.set_ylabel(graphs_pack['y_label'])
     ax.legend(title=graphs_pack['legend_title'])
     return(ax)
@@ -338,7 +337,6 @@ def plt_qFFT(struCase, modal_inds, ax, **kwargs):
         ax.plot(x_f[:(len(t)-1)//2],y_f[:(len(t)-1)//2], label=' - MODO: ' + str(i)) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
 
     ax.legend(title='plt_qFFT') #NOTA: ¿Quiero esta info como titulo?
-    ax.set_xlabel(graphs_pack['x_label'])
     ax.set_ylabel(graphs_pack['y_label'])
     ax.legend(title=graphs_pack['legend_title'])
     return(ax)
@@ -411,7 +409,15 @@ def plt_uspectr(struCase, dofDict, fig, ax, **kwargs):
     Inputs: struCase is a Stru Class Obj
             dof_lst is a dict (o lista, ver cual dejar), {node:[DOFs]}
             ax is a matplotlib.pyplot Axes obj
-            kwargs: 'u_type': raw or mdr (default)
+    kwargs: 
+        'u_type': raw or mdr (default)
+        'vel': bool, default False - In order to calculate and plot the modal vel's spectrogram
+        'SP_Winsize': str, default Dt/20 
+        'SP_OvrLapFactor': int, detault 80 (%)
+        'SP_WinType': str, default 'Hann' - Check supported FFT-Windows in scipy.signal
+        'SP_Normalize': bool, default True - In order to normalize the spectrogram
+        'y_units': str, 'Hz' or 'rad' - freq units
+            
     """
     if 'u_type' in kwargs:
         u_type = kwargs.get('u_type')
@@ -449,6 +455,10 @@ def plt_uspectr(struCase, dofDict, fig, ax, **kwargs):
         f_lims = kwargs.get('f_lims')
     else:
         f_lims = False
+    if 'y_units' in kwargs:
+        y_units = kwargs.get('y_units')
+    else:
+        print('Missing f units. Set to default (Hz)')
         
     OverLap = np.round(WinSize*OverLapFactor/100)
     fDef = len(t)/D_t
@@ -474,12 +484,16 @@ def plt_uspectr(struCase, dofDict, fig, ax, **kwargs):
                 S = abs(S)/loc_m
             else:
                 print('Warning: 1/0 found')
-        c = ax.pcolormesh(T,F*2*np.pi,S,shading = 'auto', cmap='gray_r')
-        fig.colorbar(c, ax = ax, label= 'DOF: ' + str(original_inds[i]))
-        ax.set_title('Node(s): ' + keys_to_str(dofDict))
+        if y_units == 'rad':
+            print('f in rad/s!')
+            c = ax.pcolormesh(T,F*2*np.pi,S,shading = 'auto', cmap='gray_r')
+        elif y_units == 'Hz':
+            print('f in hz!')
+            c = ax.pcolormesh(T,F,S,shading = 'auto', cmap='gray_r')
+        fig.colorbar(c, ax = ax)
+        ax.set_title('Node(s): ' + keys_to_str(dofDict) + ', DOF:' + str(original_inds[i]))
     if f_lims:
         ax.set_ylim(f_lims)
-    ax.set_xlabel(graphs_pack['x_label'])
     ax.set_ylabel(graphs_pack['y_label'])
     return(ax)
 
@@ -495,6 +509,7 @@ def plt_q_spectr(struCase, modal_inds, fig, ax, **kwargs):
                 'SP_OvrLapFactor': int, detault 80 (%)
                 'SP_WinType': str, default 'Hann' - Check supported FFT-Windows in scipy.signal
                 'SP_Normalize': bool, default True - In order to normalize the spectrogram
+                'y_units': str, 'Hz' or 'rad' - freq units
     """
     if 'vel' in kwargs:
         vel = kwargs.get('vel')
@@ -529,6 +544,10 @@ def plt_q_spectr(struCase, modal_inds, fig, ax, **kwargs):
         f_lims = kwargs.get('f_lims')
     else:
         f_lims = False
+    if 'y_units' in kwargs:
+        y_units = kwargs.get('y_units')
+    else:
+        print('Missing f units. Set to default (Hz)')
         
     OverLap = np.round(WinSize*OverLapFactor/100)
     fDef = len(t)/D_t
@@ -549,9 +568,14 @@ def plt_q_spectr(struCase, modal_inds, fig, ax, **kwargs):
                 S = abs(S)/loc_m
             else:
                 print('Warning: 1/0 found')
-        c = ax.pcolormesh(T,F*2*np.pi,S,shading = 'auto', cmap='gray_r')
-        fig.colorbar(c, ax = ax, label= 'MODE: ' + str(loc_ind))
-    ax.set_xlabel(graphs_pack['x_label'])
+        if y_units == 'rad':
+            print('f in rad/s!')
+            c = ax.pcolormesh(T,F*2*np.pi,S,shading = 'auto', cmap='gray_r')
+        elif y_units == 'Hz':
+            print('f in hz!')
+            c = ax.pcolormesh(T,F,S,shading = 'auto', cmap='gray_r')
+        fig.colorbar(c, ax = ax)
+    ax.set_title('MODE: ' + str(loc_ind))
     ax.set_ylabel(graphs_pack['y_label'])
     if f_lims:
         ax.set_ylim(f_lims)
@@ -667,9 +691,9 @@ def fig_uxuy(struCase,vsLIST, **kwargs):
     else:
         for ax, vs_dict in zip(axs, vsLIST):
             ax = plt_uxuy(struCase, vs_dict, ax,**kwargs)
-            ax.set_xlabel(graphs_pack['x_label'])
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
+        axs[-1].set_xlabel(graphs_pack['x_label'])
     fig.suptitle(graphs_pack['fig_title'])
     if fig_save:
         save_figure(fig,fig_save_opts,**kwargs)
@@ -729,9 +753,9 @@ def fig_us(struCase, tdofLIST, **kwargs):
     else:
         for ax, tdof_dict in zip(axs, tdofLIST):
             ax = plt_us(struCase, tdof_dict, ax,**kwargs)
-            ax.set_xlabel(graphs_pack['x_label'])
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
+        axs[-1].set_xlabel(graphs_pack['x_label'])
     fig.suptitle(graphs_pack['fig_title'])
     if fig_save:
         save_figure(fig,fig_save_opts,**kwargs)
@@ -787,9 +811,9 @@ def fig_qs(struCase, tmodeLIST, **kwargs):
     else:
         for ax, tmode_dict in zip(axs, tmodeLIST):
             ax = plt_qs(struCase, tmode_dict, ax,**kwargs)
-            ax.set_xlabel(graphs_pack['x_label'])
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
+        axs[-1].set_xlabel(graphs_pack['x_label'])
     fig.suptitle(graphs_pack['fig_title'])
     if fig_save:
         save_figure(fig,fig_save_opts,**kwargs)
@@ -861,10 +885,10 @@ def fig_ut(struCase, dofLIST, **kwargs):
     else:
         for ax, dof_dict in zip(axs, dofLIST):
             ax = plt_ut(struCase, dof_dict, ax,**kwargs)
-            ax.set_xlabel(graphs_pack['x_label'])
             ax.set_ylabel(graphs_pack['y_label'])
             ax.set_aspect(aspect_ratio)
             ax.grid()
+        axs[-1].set_xlabel(graphs_pack['x_label'])
     fig.suptitle(graphs_pack['fig_title'])
     if fig_save:
         save_figure(fig,fig_save_opts,**kwargs)
@@ -931,9 +955,9 @@ def fig_qt(struCase, modeLIST, **kwargs):
     else:
         for ax, dof_dict in zip(axs, modeLIST):
             ax = plt_qt(struCase, dof_dict, ax,**kwargs)
-            ax.set_xlabel(graphs_pack['x_label'])
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
+        axs[-1].set_xlabel(graphs_pack['x_label'])
     fig.suptitle(graphs_pack['fig_title'])
     if fig_save:
         save_figure(fig,fig_save_opts,**kwargs)
@@ -995,9 +1019,9 @@ def fig_u_FFT(struCase, dofLIST, **kwargs):
     else:
         for ax, dof_dict in zip(axs, dofLIST):
             ax = plt_uFFT(struCase, dof_dict, ax,**kwargs)
-            ax.set_xlabel(graphs_pack['x_label'])
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
+        axs[-1].set_xlabel(graphs_pack['x_label'])
     fig.suptitle(graphs_pack['fig_title'])
     if fig_save:
         save_figure(fig,fig_save_opts,**kwargs)
@@ -1061,9 +1085,9 @@ def fig_q_FFT(struCase, modeLIST, **kwargs):
     else:
         for ax, mode_dict in zip(axs, modeLIST):
             ax = plt_qFFT(struCase, mode_dict, ax,**kwargs)
-            ax.set_xlabel(graphs_pack['x_label'])
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
+        axs[-1].set_xlabel(graphs_pack['x_label'])
     fig.suptitle(graphs_pack['fig_title'])
     if fig_save:
         save_figure(fig,fig_save_opts,**kwargs)
@@ -1077,6 +1101,7 @@ def fig_u_spect(struCase, dofLIST, **kwargs):
     struCase: stru class obj
     dofLIST: list of dofDicts or a single dofDict: {'NODE':[DOFs]}
     kwargs: may contain
+        y_units, str: 'Hz' or 'rad' - spectrogram f units
         #General:
         fig_save, bool - For saving purp.
             fig_save_opts, dict - Folder, filecode, etc
@@ -1105,6 +1130,12 @@ def fig_u_spect(struCase, dofLIST, **kwargs):
         struCase = sfti_time(struCase,indexes = kwargs.get('limit_tinds'))
     else:
         pass
+    if 'y_units' in kwargs:
+        y_units = kwargs.get('y_units')
+    else:
+        y_units = 'Hz'
+    if not 'y_label' in kwargs:
+        kwargs['y_label'] = '$\Omega$' + ' [' + y_units + ']'
         #Nada, quedan los indexes que ya vienen con el objeto
     if 'fig_save' in kwargs:
         fig_save = kwargs.get('fig_save')
@@ -1127,10 +1158,10 @@ def fig_u_spect(struCase, dofLIST, **kwargs):
     else:
         for ax, dof_dict in zip(axs, dofLIST):
             ax = plt_uspectr(struCase, dof_dict, fig, ax,**kwargs)
-            ax.set_xlabel(graphs_pack['x_label'])
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
-    fig.suptitle(graphs_pack['fig_title'])
+        axs[-1].set_xlabel(graphs_pack['x_label'])
+    # fig.suptitle(graphs_pack['fig_title'])
     if fig_save:
         save_figure(fig,fig_save_opts,**kwargs)
     return(fig)
@@ -1142,6 +1173,7 @@ def fig_q_spect(struCase, modeLIST, **kwargs):
     struCase: stru class obj
     dofLIST: list of modal_indexes or modal_inds list of modal indexes
     kwargs: may contain
+        y_units, str: 'Hz' or 'rad' - Spectrogram f units
         #General:
         fig_save, bool - For saving purp.
             fig_save_opts, dict - Folder, filecode, etc
@@ -1171,6 +1203,12 @@ def fig_q_spect(struCase, modeLIST, **kwargs):
     else:
         pass
         #Nada, quedan los indexes que ya vienen con el objeto
+    if 'y_units' in kwargs:
+        y_units = kwargs.get('y_units')
+    else:
+        y_units = 'Hz'
+    if not 'y_label' in kwargs:
+        kwargs['y_label'] = '$\Omega$' + ' [' + y_units + ']'
     if 'fig_save' in kwargs:
         fig_save = kwargs.get('fig_save')
         if 'fig_save_opts' in kwargs:
@@ -1194,10 +1232,10 @@ def fig_q_spect(struCase, modeLIST, **kwargs):
     else:
         for ax, mode_dict in zip(axs, modeLIST):
             ax = plt_q_spectr(struCase, mode_dict, fig, ax,**kwargs)
-            ax.set_xlabel(graphs_pack['x_label'])
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
-    fig.suptitle(graphs_pack['fig_title'])
+        axs[-1].set_xlabel(graphs_pack['x_label'])
+    # fig.suptitle(graphs_pack['fig_title'])
     if fig_save:
         save_figure(fig,fig_save_opts,**kwargs)
     return(fig)
@@ -1261,6 +1299,7 @@ def fig_ut_vt_pp(struCase, dofDict, **kwargs): #NOTA: No sé si esto refleja lo 
     plt_uPP(struCase, dofDict, ax3,**kwargs)
     for ax in axs:
         ax.grid()
+    axs[-1].set_xlabel(graphs_pack['x_label'])
     fig.suptitle(graphs_pack['fig_title'])
     if fig_save:
         save_figure(fig,fig_save_opts,**kwargs)
@@ -1329,6 +1368,7 @@ def fig_qt_vt_pp(struCase, modal_inds, **kwargs): #NOTA: No sé si esto refleja 
     plt_qPP(struCase, modal_inds, ax3,**kwargs)
     for ax in axs:
         ax.grid()
+    axs[-1].set_xlabel(graphs_pack['x_label'])
     fig.suptitle(graphs_pack['fig_title'])
     if fig_save:
         save_figure(fig,fig_save_opts,**kwargs)

@@ -92,11 +92,11 @@ save_opts = {'folder':'figures', 'filecode':'170', 'fig_format':None}
 
 giro_1 = {str(case1.stru.nodes[1]):[6]}
 giro_2 = {str(case1.stru.nodes[1]):[3,4,5]}
-# fig_geom_phit = plotter.fig_ut(case1.stru, [giro_2,giro_2], deg = True, fig_title = 'MPC - $/phi$', x_label = 't', y_label = r'$/phi$ [rad]',fig_save = True, fig_save_opts = save_opts, fig_name='geom_phit')
-# plotter.fig_ut_vt_pp(case1.stru,giro_1, deg = True)
-# plotter.fig_us(case1.stru,{'6':[100,150],'1':[100,120]},deg=True)
+fig_geom_phit = plotter.fig_ut(case1.stru, [giro_2,giro_2], deg = True, fig_title = 'MPC - $/phi$', x_label = 't', y_label = r'$/phi$ [rad]',fig_save = True, fig_save_opts = save_opts, fig_name='geom_phit')
+plotter.fig_ut_vt_pp(case1.stru,giro_1, deg = True)
+plotter.fig_us(case1.stru,{'6':[100,150],'1':[100,120]},deg=True)
 plotter.fig_uxuy(case1.stru,{'DOFs':[1,6],'t_vals':[100,150]},deg=True)
-
+plotter.fig_u_spect(case1.stru,[giro_1,giro_1], y_units = 'rad')
 # fig_geom_dphit = plotter.fig_ut(case1.stru, [giro_1,giro_2], fig_title = 'MPC - Vertical d/dt Phi. (raw)', x_label = 't', y_label = r'$/phi_y$ [rad]', vel = True,fig_save = True, fig_save_opts = save_opts, fig_name='geom_dphit')
 # fig_phi_spect = plotter.fig_u_spect(case1.stru, [giro_1, giro_2], fig_title = 'MPC - $/phi_y$ Spectrogram', x_label='t', y_label = 'f [rad/s]', f_lims = [0,10],fig_save = True, fig_save_opts = save_opts, fig_name='phi_spectr')
 # plotter.fig_qt(case1.stru,[[1,2],2])
