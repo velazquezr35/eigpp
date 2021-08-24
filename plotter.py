@@ -1534,7 +1534,7 @@ def handle_graph_info(**kwargs):
     if 'graphs_pack' in kwargs:
         graphs_pack = kwargs.get('graphs_pack')
     else:
-        graphs_pack = {'fig_title':'Default title', 'x_label': 'Eje x', 'y_label': 'Eje y', 'legend_title':''}
+        graphs_pack = {'fig_title':'', 'x_label': 'Eje x', 'y_label': 'Eje y', 'legend_title':''}
         
     #Also, add custom things:
     if 'fig_title' in kwargs:
