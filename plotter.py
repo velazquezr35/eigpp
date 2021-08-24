@@ -55,13 +55,14 @@ def plt_ut(struCase, dofDict, ax, **kwargs):
     """
     Plot DOFs as f(t), u_mdr as default.
     
-    Inputs: struCase Stru Class Obj
+    inputs: struCase Stru Class Obj
             dof_Dict dofDict dict {'NODE': [DOFs]}
             ax matplotlib.pyplot Axes obj
-            kwargs: 'u_type': raw or mdr (default)
-                    'vel': False (default) or True (in order to calculate and plot velocities)
-                    'env': False (default) or True (in order to plot the envelope)
-                    'deg',bool - False (default) or True (in order to plot rot dofs in degs)
+    kwargs: 
+            'u_type': raw or mdr (default)
+            'vel': False (default) or True (in order to calculate and plot velocities)
+            'env': False (default) or True (in order to plot the envelope)
+            'deg',bool - False (default) or True (in order to plot rot dofs in degs)
                 
                     
     """
@@ -119,8 +120,9 @@ def plt_qt(struCase, modal_inds, ax, **kwargs):
     Inputs: struCase is a Stru Class Obj
             modal_inds is a list (indexes)
             ax is a matplotlib.pyplot Axes obj
-            kwargs: 'vel': False (default) or True (in order to calculate and plot modal velocities)
-                    'env': False (default) or True (in order to plot the envelope)
+    kwargs: 
+            'vel': False (default) or True (in order to calculate and plot modal velocities)
+            'env': False (default) or True (in order to plot the envelope)
     """
     if 'vel' in kwargs:
         vel = kwargs.get('vel')
@@ -143,7 +145,7 @@ def plt_qt(struCase, modal_inds, ax, **kwargs):
             high_idx, low_idx = hl_envelopes_idx(u)
             ax.plot(t[high_idx], u[high_idx])
             ax.plot(t[low_idx], u[low_idx])
-    ax.legend(title='plt_q')
+    ax.legend()
     return(ax) #NOTA: ¿Necesito hacer el return? Quizá para actualizar
 
 #Plot one dof for all nodes for a single t val
@@ -156,9 +158,10 @@ def plt_us(struCase, tdof_dict,ax,**kwargs):
     Inputs: struCase is a Stru Class Obj
             tdof_dict is a dict ['DOF':[t_vals]]
             ax is a matplotlib.pyplot Axes obj
-            kwargs: 'u_type': raw or mdr (default)
-                    'vel': False (default) or True (in order to calculate and plot velocities)
-                    'deg', bool - False (defaul) or True (in order to plot rot dofs in degs)
+    kwargs: 
+            'u_type': raw or mdr (default)
+            'vel': False (default) or True (in order to calculate and plot velocities)
+            'deg', bool - False (defaul) or True (in order to plot rot dofs in degs)
                     
     """
     if 'u_type' in kwargs:
@@ -210,13 +213,14 @@ def plt_us(struCase, tdof_dict,ax,**kwargs):
 def plt_qs(struCase, tmode_dict,ax,**kwargs):
     
     """
-    Plot all modal DOFs in particular instants of time, u_mdr as default.
+    Plot all modal DOFs in particular instants of time.
     
     Inputs: struCase is a Stru Class Obj
             tmode_dict is a dict, ['MODE':[t_vals]]
             ax is a matplotlib.pyplot Axes obj
-            kwargs: 'u_type': raw or mdr (default)
-                    'vel': False (default) or True (in order to calculate and plot velocities)
+    kwargs: 
+            'u_type': raw or mdr (default)
+            'vel': False (default) or True (in order to calculate and plot velocities)
                     
     """
     if 'vel' in kwargs:
@@ -230,9 +234,8 @@ def plt_qs(struCase, tmode_dict,ax,**kwargs):
     for des_t in t_lst:
         inds_t.append(search_time(struCase.t,[des_t,0])[0])
     for i in range(len(inds_t)):
-        u = struCase.q[:,inds_t[i]]
-        ax.plot(modal_inds,u, label= '{0:.2f}, {1:.3f}'.format(t_lst[i],struCase.t[inds_t[i]])) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
-
+        q = struCase.q[:,inds_t[i]]
+        ax.plot(modal_inds,q, label= '{0:.2f}, {1:.3f}'.format(t_lst[i],struCase.t[inds_t[i]])) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
     ax.legend(title='Time instants (des vs act):') #NOTA: ¿Quiero esta info como titulo?
     return(ax) #NOTA: ¿Necesito hacer el return? Quizá para actualizar
     
@@ -247,6 +250,7 @@ def plt_uFFT(struCase, dofDict, ax, **kwargs):
     kwargs (may contain):
             x_units, str: 'rad/s' or 'Hz' (default) - x freqs units
             graphs_pack, standard dict for plot customization
+            vel, for in order to calculate and plot the FFT of DOF velocities
         
     returns:
             ax obj
@@ -289,13 +293,13 @@ def plt_uFFT(struCase, dofDict, ax, **kwargs):
         if not loc_m== 0:
             y_f = y_f/loc_m
         else:
-            print('Warning: 1/0 found')
+            print('Norm Warning: 1/0 found')
         x_f = np.arange(0,fDef*(len(t)-1),fDef)
         if x_units == 'rad/s':
             x_f = x_f*2*np.pi
         ax.plot(x_f[:(len(t)-1)//2],y_f[:(len(t)-1)//2], label= node_labels[i] +' - DOF: ' + str(original_inds[i])) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
 
-    ax.legend(title='Node(s): ' + keys_to_str(dofDict)) #NOTA: ¿Quiero esta info como titulo?
+    # ax.legend(title='Node(s): ' + keys_to_str(dofDict)) #NOTA: ¿Quiero esta info como titulo?
     ax.set_ylabel(graphs_pack['y_label'])
     ax.legend(title=graphs_pack['legend_title'])
     return(ax)
@@ -306,7 +310,7 @@ def plt_qFFT(struCase, modal_inds, ax, **kwargs):
     inputs: struCase stru class obj
             modal_inds list of modal indexes
             ax matplotlib.pyplot Axes obj
-    kwargs (may contain):
+    kwargs:
             x_units, str: 'rad/s' or 'Hz' (default) - x freqs units
             vel, for in order to calculate and plot the FFT of the modal velocities
             graphs_pack, standard dict for plot customization
@@ -348,7 +352,6 @@ def plt_qFFT(struCase, modal_inds, ax, **kwargs):
             x_f = x_f*2*np.pi
         ax.plot(x_f[:(len(t)-1)//2],y_f[:(len(t)-1)//2], label=' - MODO: ' + str(i)) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
 
-    ax.legend(title='plt_qFFT') #NOTA: ¿Quiero esta info como titulo?
     ax.set_ylabel(graphs_pack['y_label'])
     ax.legend(title=graphs_pack['legend_title'])
     return(ax)
@@ -358,10 +361,12 @@ def plt_qFFT(struCase, modal_inds, ax, **kwargs):
 def plt_uPP(struCase, dofDict,ax,**kwargs):
     """
     Plots phase-plane portraits, du/dt vs u
-    Inputs: struCase is a Stru Class Obj
+    Inputs: 
+            struCase is a Stru Class Obj
             dof_lst is a dict (o lista, ver cual dejar), {node:[DOFs]}
             ax is a matplotlib.pyplot Axes obj
-    kwargs: 'u_type': raw or mdr (default)
+    kwargs: 
+            'u_type': raw or mdr (default)
             'deg', bool - False (defaul) or True (in order to plot rot dofs in degs)
     returns:
             ax obj
@@ -374,6 +379,10 @@ def plt_uPP(struCase, dofDict,ax,**kwargs):
         deg = kwargs.get('deg')
     else:
         deg = False
+    if 'graphs_pack' in kwargs:
+        graphs_pack = kwargs.get('graphs_pack')
+    else:
+        graphs_pack = handle_graph_info(**kwargs)
 
     desired_inds = nodeDof2idx(struCase, dofDict)
     original_inds = flatten_values_list(dofDict.values())
@@ -393,7 +402,6 @@ def plt_uPP(struCase, dofDict,ax,**kwargs):
         
         du = np.gradient(u,struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]])
         ax.plot(u,du, label=str(original_inds[i])) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
-        
     return(ax) #NOTA: ¿Necesito hacer el return? Quizá para actualizar
 
 def plt_qPP(struCase, modal_inds,ax,**kwargs):
@@ -402,15 +410,23 @@ def plt_qPP(struCase, modal_inds,ax,**kwargs):
     Inputs: struCase is a Stru Class Obj
             modal_inds list of modal indexes
             ax is a matplotlib.pyplot Axes obj
-            kwargs: 'u_type': raw or mdr (default)
+    kwargs:
+    returns:
+            ax obj
+                
     """
+    if 'graphs_pack' in kwargs:
+        graphs_pack = kwargs.get('graphs_pack')
+    else:
+        graphs_pack = handle_graph_info(**kwargs)
     if type(modal_inds) == int:
         modal_inds = [modal_inds]
     for loc_ind in modal_inds:
         #NOTA: Esto se puede mejorar tomando u = todos y luego plot(u[desired])
         dq = np.gradient(struCase.q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]],struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]])
-        ax.plot(struCase.q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]],dq, label=str(loc_ind)) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
-    ax.legend(title='plt_qPP')
+        q = struCase.q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+        ax.plot(q,dq, label=str(loc_ind)) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
+    ax.legend(graphs_pack['legend_title'])
     return(ax) #NOTA: ¿Necesito hacer el return? Quizá para actualizar
 
 #Spectrogram
@@ -503,7 +519,7 @@ def plt_uspectr(struCase, dofDict, fig, ax, **kwargs):
             print('f in hz!')
             c = ax.pcolormesh(T,F,S,shading = 'auto', cmap='gray_r')
         fig.colorbar(c, ax = ax)
-        ax.set_title('Node(s): ' + keys_to_str(dofDict) + ', DOF:' + str(original_inds[i]))
+        ax.set_title('Node(s): ' + keys_to_str(dofDict) + ', DOF(s):' + str(original_inds[i]))
     if f_lims:
         ax.set_ylim(f_lims)
     ax.set_ylabel(graphs_pack['y_label'])
@@ -587,7 +603,7 @@ def plt_q_spectr(struCase, modal_inds, fig, ax, **kwargs):
             print('f in hz!')
             c = ax.pcolormesh(T,F,S,shading = 'auto', cmap='gray_r')
         fig.colorbar(c, ax = ax)
-    ax.set_title('MODE: ' + str(loc_ind))
+    ax.set_title('MODE(s): ' + lst2str(modal_inds))
     ax.set_ylabel(graphs_pack['y_label'])
     if f_lims:
         ax.set_ylim(f_lims)
@@ -641,7 +657,7 @@ def plt_uxuy(struCase, vsDict, ax, **kwargs):
     for i in range(len(inds_t)):
         ax.plot(u[ux_inds,inds_t[i]],u[uy_inds,inds_t[i]],label='{0:.2f}, {1:.3f}'.format(desired_t[i],struCase.t[inds_t[i]]))
         
-    ax.legend(title='Time (des vs act)')
+    ax.legend()
     return(ax)
 """
 ------------------------------------------------------------------------------
@@ -1398,6 +1414,30 @@ GENERAL TOOLS functions
 ------------------------------------------------------------------------------
 """
 
+def lst2str(lst, **kwargs):
+    '''
+    Generates a str from a lst
+    inputs:
+        lst, list - items
+    kwargs (may contain):
+        spacer, str - change prnt style
+    returns:
+        str
+    '''
+    if 'spacer' in kwargs:
+        spacer = kwargs.get('spacer') #O se dice separator? no me suena
+    else:
+        spacer = ','
+    
+    if type(lst) == list:
+        ret = ''
+        for loc_itm in lst:
+            ret += str(loc_itm)
+            if not loc_itm == lst[-1]:
+                ret += ' '+spacer
+    else:
+        ret = str(lst)
+    return(ret)
 #tDofDict to dofDict
 def dof2dofDict(struCase, dof):
     '''
@@ -1494,7 +1534,7 @@ def handle_graph_info(**kwargs):
     if 'graphs_pack' in kwargs:
         graphs_pack = kwargs.get('graphs_pack')
     else:
-        graphs_pack = {'fig_title':'Default title', 'x_label': 'Eje x', 'y_label': 'Eje y', 'legend_title':'default'}
+        graphs_pack = {'fig_title':'Default title', 'x_label': 'Eje x', 'y_label': 'Eje y', 'legend_title':''}
         
     #Also, add custom things:
     if 'fig_title' in kwargs:
