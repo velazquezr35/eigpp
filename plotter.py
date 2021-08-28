@@ -650,9 +650,9 @@ def plt_uxuy(struCase, vsDict, ax, **kwargs):
     uy_inds = np.array(nodeDof2idx(struCase,uy_Dict))
     if deg:
         if vsDict['DOFs'][0] in rot_inds:
-            u[ux_inds] = np.deg2rad(u[ux_inds])
+            u[ux_inds] = np.rad2deg(u[ux_inds])
         if vsDict['DOFs'][1] in rot_inds:
-            u[uy_inds] = np.deg2rad(u[uy_inds])
+            u[uy_inds] = np.rad2deg(u[uy_inds])
     
     for i in range(len(inds_t)):
         ax.plot(u[ux_inds,inds_t[i]],u[uy_inds,inds_t[i]],label='{0:.2f}, {1:.3f}'.format(desired_t[i],struCase.t[inds_t[i]]))
