@@ -29,6 +29,13 @@ plt.rcParams.update({'font.size': 15})
 
 """
 ------------------------------------------------------------------------------
+general opts
+------------------------------------------------------------------------------
+"""
+rot_inds = [4,5,6]
+
+"""
+------------------------------------------------------------------------------
 classes
 ------------------------------------------------------------------------------
 """
@@ -48,14 +55,15 @@ def plt_ut(struCase, dofDict, ax, **kwargs):
     """
     Plot DOFs as f(t), u_mdr as default.
     
-    Inputs: struCase Stru Class Obj
+    inputs: struCase Stru Class Obj
             dof_Dict dofDict dict {'NODE': [DOFs]}
             ax matplotlib.pyplot Axes obj
-            kwargs: 'u_type': raw or mdr (default)
-                    'vel': False (default) or True (in order to calculate and plot velocities)
-                    'env': False (default) or True (in order to plot the envelope)
-                    'deg': None (default) or list of DoFs indices (in order to plot rotational DoFs in degrees)
-                           this does not change the values stored
+    kwargs: 
+            'u_type': raw or mdr (default)
+            'vel': False (default) or True (in order to calculate and plot velocities)
+            'env': False (default) or True (in order to plot the envelope)
+            'deg',bool - False (default) or True (in order to plot rotational dofs in degs) this does not change the values stored
+                
                     
     """
     if 'u_type' in kwargs:
@@ -72,15 +80,10 @@ def plt_ut(struCase, dofDict, ax, **kwargs):
         env = kwargs.get('env')
     else:
         env = False
-    
     if 'deg' in kwargs:
         deg = kwargs.get('deg')
     else:
-        deg = None
-    if deg is not None:
-        local_deg=deg.copy()
-        for idx, dof in enumerate(deg):
-            local_deg[idx]=dof-1
+        deg = False
 
     t=struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
     desired_inds = nodeDof2idx(struCase, dofDict)
@@ -93,15 +96,14 @@ def plt_ut(struCase, dofDict, ax, **kwargs):
             u = struCase.u_raw[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         else:
             print('Warning: Bad u_type def')
-        
-        if (desired_inds[i] in local_deg):
-            u = np.rad2deg(u)
-            
+    
+        if deg:
+            if original_inds[i] in rot_inds:
+                print('rot dof to deg', original_inds[i])
+                u = np.rad2deg(u)
         if vel:
             u=np.gradient(u,t) #NOTA: Agregar al plot que es una velocidad
-        
         ax.plot(t,u, label= node_labels[i] +' - DOF: ' + str(original_inds[i])) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
-        
         if env:
             high_idx, low_idx = hl_envelopes_idx(u)
             ax.plot(t[high_idx], u[high_idx])
@@ -118,8 +120,9 @@ def plt_qt(struCase, modal_inds, ax, **kwargs):
     Inputs: struCase is a Stru Class Obj
             modal_inds is a list (indexes)
             ax is a matplotlib.pyplot Axes obj
-            kwargs: 'vel': False (default) or True (in order to calculate and plot modal velocities)
-                    'env': False (default) or True (in order to plot the envelope)
+    kwargs: 
+            'vel': False (default) or True (in order to calculate and plot modal velocities)
+            'env': False (default) or True (in order to plot the envelope)
     """
     if 'vel' in kwargs:
         vel = kwargs.get('vel')
@@ -129,10 +132,9 @@ def plt_qt(struCase, modal_inds, ax, **kwargs):
         env = kwargs.get('env')
     else:
         env = False
-    
-    if not isinstance(modal_inds, list):
-        modal_inds=[modal_inds]
-        
+
+    if type(modal_inds) == int:
+        modal_inds = [modal_inds]
     t=struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
     for loc_ind in modal_inds:
         u = struCase.q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
@@ -144,7 +146,7 @@ def plt_qt(struCase, modal_inds, ax, **kwargs):
             ax.plot(t[high_idx], u[high_idx])
             ax.plot(t[low_idx], u[low_idx])
     ax.legend()
-    return(ax)
+    return(ax) #NOTA: ¿Necesito hacer el return? Quizá para actualizar
 
 #Plot one dof for all nodes for a single t val
 
@@ -156,8 +158,10 @@ def plt_us(struCase, tdof_dict,ax,**kwargs):
     Inputs: struCase is a Stru Class Obj
             tdof_dict is a dict ['DOF':[t_vals]]
             ax is a matplotlib.pyplot Axes obj
-            kwargs: 'u_type': raw or mdr (default)
-                    'vel': False (default) or True (in order to calculate and plot velocities)
+    kwargs: 
+            'u_type': raw or mdr (default)
+            'vel': False (default) or True (in order to calculate and plot velocities)
+            'deg', bool - False (defaul) or True (in order to plot rot dofs in degs)
                     
     """
     if 'u_type' in kwargs:
@@ -169,6 +173,11 @@ def plt_us(struCase, tdof_dict,ax,**kwargs):
         vel = kwargs.get('vel')
     else:
         vel = False
+        
+    if 'deg' in kwargs:
+        deg = kwargs.get('deg')
+    else:
+        deg = False
 
     desired_t = flatten_values_list(tdof_dict.values())
     inds_t = []
@@ -176,8 +185,13 @@ def plt_us(struCase, tdof_dict,ax,**kwargs):
         inds_t.append(search_time(struCase.t,[des_t,0])[0])
     dofDict = tdof2dofDict(struCase,tdof_dict)
     stru_inds = np.array(nodeDof2idx(struCase, dofDict))
-    node_labels = list(dofDict.keys())
-    
+    raw_node_labels = list(dofDict.keys())
+    node_labels = []
+    for loc_node_label in raw_node_labels:
+        pre_node_labels = [loc_node_label]*len(dofDict[loc_node_label])
+        node_labels.append(pre_node_labels)
+    node_labels = flatten_values_list(node_labels)
+    original_inds = flatten_values_list(list(dofDict.values()))
     for i in range(len(inds_t)):
         if u_type=='mdr':
             u = struCase.u_mdr[stru_inds,inds_t[i]]
@@ -185,7 +199,10 @@ def plt_us(struCase, tdof_dict,ax,**kwargs):
             u = struCase.u_raw[stru_inds,inds_t[i]]
         else:
             print('Warning: Bad u_type def')
-            
+        if deg:
+            for j in range(len(original_inds)):
+                if original_inds[j] in rot_inds:
+                    u[j] = np.rad2deg(u[j])
         ax.plot(node_labels,u, label= '{0:.2f}, {1:.3f}'.format(desired_t[i],struCase.t[inds_t[i]])) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
 
     ax.legend(title='Time instants (des vs act):') #NOTA: ¿Quiero esta info como titulo?
@@ -196,13 +213,14 @@ def plt_us(struCase, tdof_dict,ax,**kwargs):
 def plt_qs(struCase, tmode_dict,ax,**kwargs):
     
     """
-    Plot all modal DOFs in particular instants of time, u_mdr as default.
+    Plot all modal DOFs in particular instants of time.
     
     Inputs: struCase is a Stru Class Obj
             tmode_dict is a dict, ['MODE':[t_vals]]
             ax is a matplotlib.pyplot Axes obj
-            kwargs: 'u_type': raw or mdr (default)
-                    'vel': False (default) or True (in order to calculate and plot velocities)
+    kwargs: 
+            'u_type': raw or mdr (default)
+            'vel': False (default) or True (in order to calculate and plot velocities)
                     
     """
     if 'vel' in kwargs:
@@ -216,9 +234,8 @@ def plt_qs(struCase, tmode_dict,ax,**kwargs):
     for des_t in t_lst:
         inds_t.append(search_time(struCase.t,[des_t,0])[0])
     for i in range(len(inds_t)):
-        u = struCase.q[:,inds_t[i]]
-        ax.plot(modal_inds,u, label= '{0:.2f}, {1:.3f}'.format(t_lst[i],struCase.t[inds_t[i]])) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
-
+        q = struCase.q[:,inds_t[i]]
+        ax.plot(modal_inds,q, label= '{0:.2f}, {1:.3f}'.format(t_lst[i],struCase.t[inds_t[i]])) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
     ax.legend(title='Time instants (des vs act):') #NOTA: ¿Quiero esta info como titulo?
     return(ax) #NOTA: ¿Necesito hacer el return? Quizá para actualizar
     
@@ -231,7 +248,9 @@ def plt_uFFT(struCase, dofDict, ax, **kwargs):
             dofDict dict {'NODE': [DOFs]}
             ax matplotlib.pyplot Axes obj
     kwargs (may contain):
+            x_units, str: 'rad/s' or 'Hz' (default) - x freqs units
             graphs_pack, standard dict for plot customization
+            vel, for in order to calculate and plot the FFT of DOF velocities
         
     returns:
             ax obj
@@ -245,6 +264,10 @@ def plt_uFFT(struCase, dofDict, ax, **kwargs):
         vel = kwargs.get('vel')
     else:
         vel = False
+    if 'x_units' in kwargs:
+        x_units = kwargs.get('x_units')
+    else:
+        x_units = 'Hz'
     if 'graphs_pack' in kwargs:
         graphs_pack = kwargs.get('graphs_pack')
     else:
@@ -270,13 +293,13 @@ def plt_uFFT(struCase, dofDict, ax, **kwargs):
         if not loc_m== 0:
             y_f = y_f/loc_m
         else:
-            print('Warning: 1/0 found')
+            print('Norm Warning: 1/0 found')
         x_f = np.arange(0,fDef*(len(t)-1),fDef)
-        x_f = x_f*2*np.pi
+        if x_units == 'rad/s':
+            x_f = x_f*2*np.pi
         ax.plot(x_f[:(len(t)-1)//2],y_f[:(len(t)-1)//2], label= node_labels[i] +' - DOF: ' + str(original_inds[i])) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
 
-    ax.legend(title='Node(s): ' + keys_to_str(dofDict)) #NOTA: ¿Quiero esta info como titulo?
-    ax.set_xlabel(graphs_pack['x_label'])
+    # ax.legend(title='Node(s): ' + keys_to_str(dofDict)) #NOTA: ¿Quiero esta info como titulo?
     ax.set_ylabel(graphs_pack['y_label'])
     ax.legend(title=graphs_pack['legend_title'])
     return(ax)
@@ -287,7 +310,8 @@ def plt_qFFT(struCase, modal_inds, ax, **kwargs):
     inputs: struCase stru class obj
             modal_inds list of modal indexes
             ax matplotlib.pyplot Axes obj
-    kwargs (may contain):
+    kwargs:
+            x_units, str: 'rad/s' or 'Hz' (default) - x freqs units
             vel, for in order to calculate and plot the FFT of the modal velocities
             graphs_pack, standard dict for plot customization
         
@@ -299,6 +323,10 @@ def plt_qFFT(struCase, modal_inds, ax, **kwargs):
         vel = kwargs.get('vel')
     else:
         vel = False
+    if 'x_units' in kwargs:
+        x_units = kwargs.get('x_units')
+    else:
+        x_units = 'Hz'
     if 'graphs_pack' in kwargs:
         graphs_pack = kwargs.get('graphs_pack')
     else:
@@ -306,6 +334,8 @@ def plt_qFFT(struCase, modal_inds, ax, **kwargs):
     
     t = struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
     fDef = 1/(t[-1]-t[0])
+    if type(modal_inds) == int:
+        modal_inds = [modal_inds]
     for i in modal_inds:
         q = struCase.q[i-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         if vel:
@@ -318,11 +348,10 @@ def plt_qFFT(struCase, modal_inds, ax, **kwargs):
             print('Warning: 1/0 found')
         
         x_f = np.arange(0,fDef*(len(t)-1),fDef)
-        x_f = x_f*2*np.pi
+        if x_units == 'rad/s':
+            x_f = x_f*2*np.pi
         ax.plot(x_f[:(len(t)-1)//2],y_f[:(len(t)-1)//2], label=' - MODO: ' + str(i)) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
 
-    ax.legend(title='plt_qFFT') #NOTA: ¿Quiero esta info como titulo?
-    ax.set_xlabel(graphs_pack['x_label'])
     ax.set_ylabel(graphs_pack['y_label'])
     ax.legend(title=graphs_pack['legend_title'])
     return(ax)
@@ -332,29 +361,47 @@ def plt_qFFT(struCase, modal_inds, ax, **kwargs):
 def plt_uPP(struCase, dofDict,ax,**kwargs):
     """
     Plots phase-plane portraits, du/dt vs u
-    Inputs: struCase is a Stru Class Obj
+    Inputs: 
+            struCase is a Stru Class Obj
             dof_lst is a dict (o lista, ver cual dejar), {node:[DOFs]}
             ax is a matplotlib.pyplot Axes obj
-            kwargs: 'u_type': raw or mdr (default)
+    kwargs: 
+            'u_type': raw or mdr (default)
+            'deg', bool - False (defaul) or True (in order to plot rot dofs in degs)
+    returns:
+            ax obj
     """
     if 'u_type' in kwargs:
         u_type = kwargs.get('u_type')
     else:
         u_type = 'mdr'
+    if 'deg' in kwargs:
+        deg = kwargs.get('deg')
+    else:
+        deg = False
+    if 'graphs_pack' in kwargs:
+        graphs_pack = kwargs.get('graphs_pack')
+    else:
+        graphs_pack = handle_graph_info(**kwargs)
 
     desired_inds = nodeDof2idx(struCase, dofDict)
-    for loc_ind in desired_inds:
+    original_inds = flatten_values_list(dofDict.values())
+    for i in range(len(desired_inds)):
         #NOTA: Esto se puede mejorar tomando u = todos y luego plot(u[desired])
         if u_type=='mdr':
-            u = struCase.u_mdr[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+            u = struCase.u_mdr[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         elif u_type=='raw':
-            u = struCase.u_raw[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+            u = struCase.u_raw[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         else:
             print('Warning: Bad u_type def')
         
-        du = np.gradient(u,struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]])
-        ax.plot(u,du, label=str(loc_ind)) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
+        if deg:
+            if original_inds[i] in rot_inds:
+                print('rot rad 2 deg,', original_inds[i])
+                u = np.rad2deg(u)
         
+        du = np.gradient(u,struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]])
+        ax.plot(u,du, label=str(original_inds[i])) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
     return(ax) #NOTA: ¿Necesito hacer el return? Quizá para actualizar
 
 def plt_qPP(struCase, modal_inds,ax,**kwargs):
@@ -363,13 +410,23 @@ def plt_qPP(struCase, modal_inds,ax,**kwargs):
     Inputs: struCase is a Stru Class Obj
             modal_inds list of modal indexes
             ax is a matplotlib.pyplot Axes obj
-            kwargs: 'u_type': raw or mdr (default)
+    kwargs:
+    returns:
+            ax obj
+                
     """
+    if 'graphs_pack' in kwargs:
+        graphs_pack = kwargs.get('graphs_pack')
+    else:
+        graphs_pack = handle_graph_info(**kwargs)
+    if type(modal_inds) == int:
+        modal_inds = [modal_inds]
     for loc_ind in modal_inds:
         #NOTA: Esto se puede mejorar tomando u = todos y luego plot(u[desired])
         dq = np.gradient(struCase.q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]],struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]])
-        ax.plot(struCase.q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]],dq, label=str(loc_ind)) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
-    ax.legend(title='plt_qPP')
+        q = struCase.q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+        ax.plot(q,dq, label=str(loc_ind)) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
+    ax.legend(graphs_pack['legend_title'])
     return(ax) #NOTA: ¿Necesito hacer el return? Quizá para actualizar
 
 #Spectrogram
@@ -380,7 +437,15 @@ def plt_uspectr(struCase, dofDict, fig, ax, **kwargs):
     Inputs: struCase is a Stru Class Obj
             dof_lst is a dict (o lista, ver cual dejar), {node:[DOFs]}
             ax is a matplotlib.pyplot Axes obj
-            kwargs: 'u_type': raw or mdr (default)
+    kwargs: 
+        'u_type': raw or mdr (default)
+        'vel': bool, default False - In order to calculate and plot the modal vel's spectrogram
+        'SP_Winsize': str, default Dt/20 
+        'SP_OvrLapFactor': int, detault 80 (%)
+        'SP_WinType': str, default 'Hann' - Check supported FFT-Windows in scipy.signal
+        'SP_Normalize': bool, default True - In order to normalize the spectrogram
+        'y_units': str, 'Hz' or 'rad/s' - freq units
+            
     """
     if 'u_type' in kwargs:
         u_type = kwargs.get('u_type')
@@ -418,6 +483,10 @@ def plt_uspectr(struCase, dofDict, fig, ax, **kwargs):
         f_lims = kwargs.get('f_lims')
     else:
         f_lims = False
+    if 'y_units' in kwargs:
+        y_units = kwargs.get('y_units')
+    else:
+        print('Missing f units. Set to default (Hz)')
         
     OverLap = np.round(WinSize*OverLapFactor/100)
     fDef = len(t)/D_t
@@ -443,12 +512,16 @@ def plt_uspectr(struCase, dofDict, fig, ax, **kwargs):
                 S = abs(S)/loc_m
             else:
                 print('Warning: 1/0 found')
-        c = ax.pcolormesh(T,F*2*np.pi,S,shading = 'auto', cmap='gray_r')
-        fig.colorbar(c, ax = ax, label= 'DOF: ' + str(original_inds[i]))
-        ax.set_title('Node(s): ' + keys_to_str(dofDict))
+        if y_units == 'rad/s':
+            print('f in rad/s!')
+            c = ax.pcolormesh(T,F*2*np.pi,S,shading = 'auto', cmap='gray_r')
+        elif y_units == 'Hz':
+            print('f in hz!')
+            c = ax.pcolormesh(T,F,S,shading = 'auto', cmap='gray_r')
+        fig.colorbar(c, ax = ax)
+        ax.set_title('Node(s): ' + keys_to_str(dofDict) + ', DOF(s):' + str(original_inds[i]))
     if f_lims:
         ax.set_ylim(f_lims)
-    ax.set_xlabel(graphs_pack['x_label'])
     ax.set_ylabel(graphs_pack['y_label'])
     return(ax)
 
@@ -464,6 +537,7 @@ def plt_q_spectr(struCase, modal_inds, fig, ax, **kwargs):
                 'SP_OvrLapFactor': int, detault 80 (%)
                 'SP_WinType': str, default 'Hann' - Check supported FFT-Windows in scipy.signal
                 'SP_Normalize': bool, default True - In order to normalize the spectrogram
+                'y_units': str, 'Hz' or 'rad/s' - freq units
     """
     if 'vel' in kwargs:
         vel = kwargs.get('vel')
@@ -498,13 +572,18 @@ def plt_q_spectr(struCase, modal_inds, fig, ax, **kwargs):
         f_lims = kwargs.get('f_lims')
     else:
         f_lims = False
+    if 'y_units' in kwargs:
+        y_units = kwargs.get('y_units')
+    else:
+        print('Missing f units. Set to default (Hz)')
         
     OverLap = np.round(WinSize*OverLapFactor/100)
     fDef = len(t)/D_t
     
-
-    for i in modal_inds:
-        q = struCase.q[i-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+    if type(modal_inds) == int:
+        modal_inds = [modal_inds]
+    for loc_ind in modal_inds:
+        q = struCase.q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         if vel:
             q=np.gradient(q,t) #NOTA: Agregar al plot que es una velocidad
         F, T, S = signal.spectrogram(q, fDef,window=WinType, noverlap=OverLap,nperseg=WinSize)
@@ -517,9 +596,14 @@ def plt_q_spectr(struCase, modal_inds, fig, ax, **kwargs):
                 S = abs(S)/loc_m
             else:
                 print('Warning: 1/0 found')
-        c = ax.pcolormesh(T,F*2*np.pi,S,shading = 'auto', cmap='gray_r')
-        fig.colorbar(c, ax = ax, label= 'MODE: ' + str(i))
-    ax.set_xlabel(graphs_pack['x_label'])
+        if y_units == 'rad/s':
+            print('f in rad/s!')
+            c = ax.pcolormesh(T,F*2*np.pi,S,shading = 'auto', cmap='gray_r')
+        elif y_units == 'Hz':
+            print('f in hz!')
+            c = ax.pcolormesh(T,F,S,shading = 'auto', cmap='gray_r')
+        fig.colorbar(c, ax = ax)
+    ax.set_title('MODE(s): ' + lst2str(modal_inds))
     ax.set_ylabel(graphs_pack['y_label'])
     if f_lims:
         ax.set_ylim(f_lims)
@@ -535,6 +619,8 @@ def plt_uxuy(struCase, vsDict, ax, **kwargs):
         vsDict, dict - Contains the two DOFs info and the time vals ['DOFs':[indexes],'t_vals':[t]]
         ax, ax obj
     kwargs:
+        'u_type', str - 'raw' or 'mdr'
+        'deg', bool - False (default) or True (in order to plot rot dofs in deg)
     returns:
         ax obj
     '''
@@ -549,6 +635,10 @@ def plt_uxuy(struCase, vsDict, ax, **kwargs):
         u = struCase.u_raw
     else:
         print('Warning: Bad u_type def')
+    if 'deg' in kwargs:
+        deg = kwargs.get('deg')
+    else:
+        deg = False
         
     desired_t = vsDict['t_vals']
     inds_t = []
@@ -558,11 +648,16 @@ def plt_uxuy(struCase, vsDict, ax, **kwargs):
     ux_inds = np.array(nodeDof2idx(struCase,ux_Dict))
     uy_Dict = dof2dofDict(struCase,vsDict['DOFs'][1])
     uy_inds = np.array(nodeDof2idx(struCase,uy_Dict))
+    if deg:
+        if vsDict['DOFs'][0] in rot_inds:
+            u[ux_inds] = np.deg2rad(u[ux_inds])
+        if vsDict['DOFs'][1] in rot_inds:
+            u[uy_inds] = np.deg2rad(u[uy_inds])
     
     for i in range(len(inds_t)):
         ax.plot(u[ux_inds,inds_t[i]],u[uy_inds,inds_t[i]],label='{0:.2f}, {1:.3f}'.format(desired_t[i],struCase.t[inds_t[i]]))
         
-    ax.legend(title='Time (des vs act)')
+    ax.legend()
     return(ax)
 """
 ------------------------------------------------------------------------------
@@ -573,6 +668,9 @@ HIGH LEVEL PLOT functions
 def fig_uxuy(struCase,vsLIST, **kwargs):
     '''
     Arranges plots of DOF vs DOF @t fixed
+    inputs:
+        struCase, stru class obj
+        vsLIST, list of dicts or dict - ['DOFs':[indexes],'t_vals':[t]]
     kwargs: may contain
         #General:
         fig_save, bool - For saving purp.
@@ -621,9 +719,9 @@ def fig_uxuy(struCase,vsLIST, **kwargs):
     else:
         for ax, vs_dict in zip(axs, vsLIST):
             ax = plt_uxuy(struCase, vs_dict, ax,**kwargs)
-            ax.set_xlabel(graphs_pack['x_label'])
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
+        axs[-1].set_xlabel(graphs_pack['x_label'])
     fig.suptitle(graphs_pack['fig_title'])
     if fig_save:
         save_figure(fig,fig_save_opts,**kwargs)
@@ -683,9 +781,9 @@ def fig_us(struCase, tdofLIST, **kwargs):
     else:
         for ax, tdof_dict in zip(axs, tdofLIST):
             ax = plt_us(struCase, tdof_dict, ax,**kwargs)
-            ax.set_xlabel(graphs_pack['x_label'])
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
+        axs[-1].set_xlabel(graphs_pack['x_label'])
     fig.suptitle(graphs_pack['fig_title'])
     if fig_save:
         save_figure(fig,fig_save_opts,**kwargs)
@@ -741,9 +839,9 @@ def fig_qs(struCase, tmodeLIST, **kwargs):
     else:
         for ax, tmode_dict in zip(axs, tmodeLIST):
             ax = plt_qs(struCase, tmode_dict, ax,**kwargs)
-            ax.set_xlabel(graphs_pack['x_label'])
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
+        axs[-1].set_xlabel(graphs_pack['x_label'])
     fig.suptitle(graphs_pack['fig_title'])
     if fig_save:
         save_figure(fig,fig_save_opts,**kwargs)
@@ -815,10 +913,10 @@ def fig_ut(struCase, dofLIST, **kwargs):
     else:
         for ax, dof_dict in zip(axs, dofLIST):
             ax = plt_ut(struCase, dof_dict, ax,**kwargs)
-            ax.set_xlabel(graphs_pack['x_label'])
             ax.set_ylabel(graphs_pack['y_label'])
             ax.set_aspect(aspect_ratio)
             ax.grid()
+        axs[-1].set_xlabel(graphs_pack['x_label'])
     fig.suptitle(graphs_pack['fig_title'])
     if fig_save:
         save_figure(fig,fig_save_opts,**kwargs)
@@ -829,7 +927,7 @@ def fig_qt(struCase, modeLIST, **kwargs):
     Arranges plots of q(t)
     
     struCase:   stru class object
-    modeLIST:   list of modal_inds or modal_inds list of modal indexes
+    modeLIST:    list of modal_inds or modal_inds list of modal indexes
     kwargs: may contain
         #General:
         fig_save, bool - For saving purp.
@@ -885,9 +983,9 @@ def fig_qt(struCase, modeLIST, **kwargs):
     else:
         for ax, dof_dict in zip(axs, modeLIST):
             ax = plt_qt(struCase, dof_dict, ax,**kwargs)
-            ax.set_xlabel(graphs_pack['x_label'])
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
+        axs[-1].set_xlabel(graphs_pack['x_label'])
     fig.suptitle(graphs_pack['fig_title'])
     if fig_save:
         save_figure(fig,fig_save_opts,**kwargs)
@@ -900,6 +998,7 @@ def fig_u_FFT(struCase, dofLIST, **kwargs):
     struCase: stru class obj
     dofLIST: list of dofDicts or a single dofDict: {'NODE':[DOFs]}
     kwargs: may contain
+        x_units, str: 'Hz' (Default) or 'rad/s' - x axis units
         #General:
         fig_save, bool - For saving purp.
             fig_save_opts, dict - Folder, filecode, etc
@@ -916,7 +1015,11 @@ def fig_u_FFT(struCase, dofLIST, **kwargs):
         sharex = kwargs.get('sharex')
     else:
         sharex = "col"
-        
+    if not 'x_units' in kwargs:
+        kwargs['x_units'] = 'Hz'
+    
+    if not 'x_label' in kwargs:
+        kwargs['x_label'] = '$\Omega$' + ' [' + kwargs['x_units'] + ']'
     if 'p_prow' in kwargs:
         p_prow = kwargs.get('p_prows')
     else:
@@ -949,9 +1052,9 @@ def fig_u_FFT(struCase, dofLIST, **kwargs):
     else:
         for ax, dof_dict in zip(axs, dofLIST):
             ax = plt_uFFT(struCase, dof_dict, ax,**kwargs)
-            ax.set_xlabel(graphs_pack['x_label'])
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
+        axs[-1].set_xlabel(graphs_pack['x_label'])
     fig.suptitle(graphs_pack['fig_title'])
     if fig_save:
         save_figure(fig,fig_save_opts,**kwargs)
@@ -964,6 +1067,7 @@ def fig_q_FFT(struCase, modeLIST, **kwargs):
     struCase: stru class obj
     dofLIST: list of modal_inds or modal_inds list of modal indexes
     kwargs: may contain
+        x_units, str: 'Hz' (Default) or 'rad/s' - x axis units
         #General:
         fig_save, bool - For saving purp.
             fig_save_opts, dict - Folder, filecode, etc
@@ -992,6 +1096,10 @@ def fig_q_FFT(struCase, modeLIST, **kwargs):
     else:
         pass
         #Nada, quedan los indexes que ya vienen con el objeto
+    if not 'x_units' in kwargs:
+        kwargs['x_units'] = 'Hz'
+    if not 'x_label' in kwargs:
+        kwargs['x_label'] = '$\Omega$' + ' [' + kwargs['x_units'] + ']'
     if 'fig_save' in kwargs:
         fig_save = kwargs.get('fig_save')
         if 'fig_save_opts' in kwargs:
@@ -1015,9 +1123,9 @@ def fig_q_FFT(struCase, modeLIST, **kwargs):
     else:
         for ax, mode_dict in zip(axs, modeLIST):
             ax = plt_qFFT(struCase, mode_dict, ax,**kwargs)
-            ax.set_xlabel(graphs_pack['x_label'])
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
+        axs[-1].set_xlabel(graphs_pack['x_label'])
     fig.suptitle(graphs_pack['fig_title'])
     if fig_save:
         save_figure(fig,fig_save_opts,**kwargs)
@@ -1031,6 +1139,7 @@ def fig_u_spect(struCase, dofLIST, **kwargs):
     struCase: stru class obj
     dofLIST: list of dofDicts or a single dofDict: {'NODE':[DOFs]}
     kwargs: may contain
+        y_units, str: 'Hz' or 'rad/s' - spectrogram f units
         #General:
         fig_save, bool - For saving purp.
             fig_save_opts, dict - Folder, filecode, etc
@@ -1058,8 +1167,11 @@ def fig_u_spect(struCase, dofLIST, **kwargs):
     elif 'limit_tinds' in kwargs:
         struCase = sfti_time(struCase,indexes = kwargs.get('limit_tinds'))
     else:
-        pass
-        #Nada, quedan los indexes que ya vienen con el objeto
+        pass #Nada, quedan los indexes que ya vienen con el objeto
+    if not 'y_units' in kwargs:
+       kwargs['y_units'] = 'Hz'
+    if not 'y_label' in kwargs:
+        kwargs['y_label'] = '$\Omega$' + ' [' + kwargs['y_units'] + ']'
     if 'fig_save' in kwargs:
         fig_save = kwargs.get('fig_save')
         if 'fig_save_opts' in kwargs:
@@ -1081,10 +1193,10 @@ def fig_u_spect(struCase, dofLIST, **kwargs):
     else:
         for ax, dof_dict in zip(axs, dofLIST):
             ax = plt_uspectr(struCase, dof_dict, fig, ax,**kwargs)
-            ax.set_xlabel(graphs_pack['x_label'])
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
-    fig.suptitle(graphs_pack['fig_title'])
+        axs[-1].set_xlabel(graphs_pack['x_label'])
+    # fig.suptitle(graphs_pack['fig_title'])
     if fig_save:
         save_figure(fig,fig_save_opts,**kwargs)
     return(fig)
@@ -1096,6 +1208,7 @@ def fig_q_spect(struCase, modeLIST, **kwargs):
     struCase: stru class obj
     dofLIST: list of modal_indexes or modal_inds list of modal indexes
     kwargs: may contain
+        y_units, str: 'Hz' or 'rad' - Spectrogram f units
         #General:
         fig_save, bool - For saving purp.
             fig_save_opts, dict - Folder, filecode, etc
@@ -1125,6 +1238,10 @@ def fig_q_spect(struCase, modeLIST, **kwargs):
     else:
         pass
         #Nada, quedan los indexes que ya vienen con el objeto
+    if not 'y_units' in kwargs:
+       kwargs['y_units'] = 'Hz'
+    if not 'y_label' in kwargs:
+        kwargs['y_label'] = '$\Omega$' + ' [' + kwargs['y_units'] + ']'
     if 'fig_save' in kwargs:
         fig_save = kwargs.get('fig_save')
         if 'fig_save_opts' in kwargs:
@@ -1148,10 +1265,10 @@ def fig_q_spect(struCase, modeLIST, **kwargs):
     else:
         for ax, mode_dict in zip(axs, modeLIST):
             ax = plt_q_spectr(struCase, mode_dict, fig, ax,**kwargs)
-            ax.set_xlabel(graphs_pack['x_label'])
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
-    fig.suptitle(graphs_pack['fig_title'])
+        axs[-1].set_xlabel(graphs_pack['x_label'])
+    # fig.suptitle(graphs_pack['fig_title'])
     if fig_save:
         save_figure(fig,fig_save_opts,**kwargs)
     return(fig)
@@ -1215,6 +1332,7 @@ def fig_ut_vt_pp(struCase, dofDict, **kwargs): #NOTA: No sé si esto refleja lo 
     plt_uPP(struCase, dofDict, ax3,**kwargs)
     for ax in axs:
         ax.grid()
+    axs[-1].set_xlabel(graphs_pack['x_label'])
     fig.suptitle(graphs_pack['fig_title'])
     if fig_save:
         save_figure(fig,fig_save_opts,**kwargs)
@@ -1283,6 +1401,7 @@ def fig_qt_vt_pp(struCase, modal_inds, **kwargs): #NOTA: No sé si esto refleja 
     plt_qPP(struCase, modal_inds, ax3,**kwargs)
     for ax in axs:
         ax.grid()
+    axs[-1].set_xlabel(graphs_pack['x_label'])
     fig.suptitle(graphs_pack['fig_title'])
     if fig_save:
         save_figure(fig,fig_save_opts,**kwargs)
@@ -1295,6 +1414,30 @@ GENERAL TOOLS functions
 ------------------------------------------------------------------------------
 """
 
+def lst2str(lst, **kwargs):
+    '''
+    Generates a str from a lst
+    inputs:
+        lst, list - items
+    kwargs (may contain):
+        spacer, str - change prnt style
+    returns:
+        str
+    '''
+    if 'spacer' in kwargs:
+        spacer = kwargs.get('spacer') #O se dice separator? no me suena
+    else:
+        spacer = ','
+    
+    if type(lst) == list:
+        ret = ''
+        for loc_itm in lst:
+            ret += str(loc_itm)
+            if not loc_itm == lst[-1]:
+                ret += ' '+spacer
+    else:
+        ret = str(lst)
+    return(ret)
 #tDofDict to dofDict
 def dof2dofDict(struCase, dof):
     '''
@@ -1348,7 +1491,7 @@ def keys_to_str(dct_keys):
     """
     word = ''
     for loc_nam in list(dct_keys):
-        word+=str(loc_nam)
+        word+=loc_nam
         word+='-'
     return(word[:-1])
 
@@ -1391,7 +1534,7 @@ def handle_graph_info(**kwargs):
     if 'graphs_pack' in kwargs:
         graphs_pack = kwargs.get('graphs_pack')
     else:
-        graphs_pack = {'fig_title':'Default title', 'x_label': 'Eje x', 'y_label': 'Eje y', 'legend_title':'default'}
+        graphs_pack = {'fig_title':' ', 'x_label': 'Eje x', 'y_label': 'Eje y', 'legend_title':''}
         
     #Also, add custom things:
     if 'fig_title' in kwargs:

@@ -115,8 +115,11 @@ def rd_data(case, **kwargs):
 def modalDecomp(case,**kwargs):
     """
     Applies modal decomposition
-    
-    case: "sim" class object
+    input:
+        case: 'sim' class obj
+    kwargs: (may contain)
+    returns:
+        case, 'sim' class obj
     """
     
     if 'glob_print_output' in kwargs:
@@ -179,7 +182,6 @@ def epp(case, **kwargs):
     svBin(case,**kwargs) #Se exporta todo, finalmente.
     
     return(case)
-
 
 """
 ------------------------------------------------------------------------------
