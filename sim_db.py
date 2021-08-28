@@ -93,7 +93,8 @@ class stru:
         self.loadEigOpt = True                              # True if modal decomposition should be done over external loads
         self.plot_timeInds = np.array([0,-1])               # desired plot indexes
         self.plot_timeVals = np.array([np.inf,np.inf])      # desired plot time values
-        self.intLabOffset = 6                              # offset node labels
+        self.intLabOffset = 6                               # offset node labels
+        self.rot_inds = [4,5,6]                             # rotational DOFs inds (not Python´s)
     #Methods
     #Coming soon...
 
