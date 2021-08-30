@@ -53,10 +53,7 @@ class stru:
         self.iLabl  = np.array([], dtype=int)       # nnode     - label of nodes considered (internal)
         self.ndof   = 0                             # 1         - Total number of DoF considered (including those where BCs are applied)
         self.nt     = 0                             # 1         - number of time steps
-        self.dt_Loads = 0                           # 1         - Loads time step
-        self.dt     = 0                             # 1         - Stru time step
         self.t      = np.array([], dtype=float)     # nt        - Response temporal grid
-        self.t_Loads = np.array([],dtype = float)   # nt        - Loads temporal grid
         self.u_raw  = np.array([], dtype=float)     # ndof x nt - generalized displacements as functions of time - as read from "curvas"
                                                     #           - rotational DoFs (if exist) are expresed as 3-1-3 Euler angles rotations [rad]
         self.u_mdr  = np.array([], dtype=float)     # ndof x nt - generalized displacements as functions of time - avr: axial vector rotations
@@ -187,33 +184,6 @@ def sfti_time(struCase, **kwargs):
         return()
     
     
-    
-
-# handle time indexes
-
-def time_slice(struCase,**kwargs): #NOTA: ¿Tomar otro nombre?
-    '''
-    Delete all values with time > min(max(tf_stru),max(tf_loads))
-    inputs:
-            struCase stru class obj
-    kwargs may contain: none
-    returns: none
-    '''
-    if struCase.t[-1] > struCase.t_Loads[-1]:
-        chg_index = int(struCase.dt_Loads/struCase.dt)
-        struCase.u_raw = struCase.u_raw[:,0:chg_index+1]
-        struCase.u_mdr = struCase.u_mdr[:,0:chg_index+1]
-        struCase.t = struCase.t[:chg_index+1]
-    
-    elif struCase.t_Loads[-1] > struCase.t[-1]:
-        chg_index = int(struCase.t/struCase.dt_Loads)
-        struCase.eLoad = struCase.eLoad[:,0:chg_index+1]
-        struCase.t_Loads = struCase.t_Loads[:chg_index+1]
-
-    #NOTAS (viejas)    
-    #Aprovechar la función definida más abajo para el caso local, y reutilizarla con un factor step correspondiente al mismo tiempo (diferencia de dt entre loads y desp)
-    #No sé si es útil de momento, dado que para tener todo en arrays cada fila (o info asociada a X cosa) debe tener la misma longitud.
-    return(struCase)
 
 # handle data indexes
 
@@ -440,7 +410,6 @@ def rd_u(struCase, **kwargs):
     os.remove(subDir_P11+"temp_file")
     
     struCase.nt = total_ntime
-    struCase.dt = glob_time[1]-glob_time[0]
     struCase.t  = glob_time
     struCase.u_raw = glob_u_raw
     struCase.u_mdr = glob_u_mdr
@@ -812,9 +781,7 @@ def ae_Ftable(struCase, **kwargs): ##NOTA: Si el nombre no gusta, lo cambio
     loc_ittab = np.array(loc_ittab)
     
     #step, instants, loads
-    struCase.t_Loads = loc_ittab[:,1]
     struCase.eLoad = loc_ftab_filt
-    struCase.dt_Loads = loc_ittab[1][1]-loc_ittab[0][1]
     return struCase
 
 

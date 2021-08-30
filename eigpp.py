@@ -24,7 +24,7 @@ importing zone
 ------------------------------------------------------------------------------
 """
 import numpy as np
-from sim_db import svBin, rdBin, sim, check_BN_files, rd_rawRespData, ae_Ftable #NOTA RV: Clases con mayuscula
+from sim_db import svBin, rdBin, sim, check_BN_files, rd_rawRespData, ae_Ftable
 import sim_db
 
 
@@ -115,8 +115,11 @@ def rd_data(case, **kwargs):
 def modalDecomp(case,**kwargs):
     """
     Applies modal decomposition
-    
-    case: "sim" class object
+    input:
+        case: 'sim' class obj
+    kwargs: (may contain)
+    returns:
+        case, 'sim' class obj
     """
     
     if 'glob_print_output' in kwargs:
@@ -179,7 +182,6 @@ def epp(case, **kwargs):
     svBin(case,**kwargs) #Se exporta todo, finalmente.
     
     return(case)
-
 
 """
 ------------------------------------------------------------------------------
