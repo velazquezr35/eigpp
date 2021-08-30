@@ -267,10 +267,13 @@ def line_spliter(line):
                     local_start = i
     filt = []
     for i in range(len(ret)):
-        try:
-            filt.append(float(ret[i]))
-        except:
-            pass
+        if ret[i][0] == '*':
+            filt.append(-1)
+        else:
+            try:
+                filt.append(float(ret[i]))
+            except:
+                pass
     filt = np.array(filt)
     return(filt)
 
@@ -610,9 +613,11 @@ def rd_eig(struCase, **kwargs):
         local_mode_row = []
         for j in range(0, len(raw_mode_table[:, 0])): # number of rows in modes' table
             for a in range(0, struCase.nnode):
-                # if raw_mode_table[j, 0] == struCase.nodes[a]:
                 if struCase.eqInfo[j, 0] == struCase.nodes[a]:
-                    local_mode_row = np.append(local_mode_row, raw_mode_table[j,:])
+                    if len(raw_mode_table[j]) == 6:
+                        local_mode_row = np.append(local_mode_row, raw_mode_table[j,:])
+                    else:
+                        local_mode_row = np.append(local_mode_row, raw_mode_table[j,1:])
                     if glob_print_output:
                         print("Local mode row ---------------")
                         print(local_mode_row)
