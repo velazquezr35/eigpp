@@ -554,7 +554,10 @@ def rd_mass(struCase, **kwargs):
             if struCase.eqInfo[j, 0] == struCase.nodes[a]:
                 # save data
                 struCase.iLabl.append([struCase.nodes[a], struCase.eqInfo[j,-1]]) # NOTA: hay que modificar esto para que lea solo la última columna, así queda funcionando también apra leer los *.rsn de Simpact
-                struCase.mass = np.append(struCase.mass, raw_lumped_matrix[j])
+                if len(raw_lumped_matrix[j]) == 6:
+                    struCase.mass = np.append(struCase.mass, raw_lumped_matrix[j])
+                else:
+                    struCase.mass = np.append(struCase.mass, raw_lumped_matrix[j,1:])
                 if glob_print_output:
                     print("Lumped Mass Matrix")
                     print(struCase.mass)
