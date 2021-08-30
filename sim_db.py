@@ -56,8 +56,8 @@ class stru:
         self.t      = np.array([], dtype=float)     # nt        - Response temporal grid
         self.u_raw  = np.array([], dtype=float)     # ndof x nt - generalized displacements as functions of time - as read from "curvas"
                                                     #           - rotational DoFs (if exist) are expresed as 3-1-3 Euler angles rotations [rad]
-        self.u_mdr  = np.array([], dtype=float)     # ndof x nt - generalized displacements as functions of time - avr: axial vector rotations
-                                                    #           - rotational DoFs (if exist) are expresed as axial vector rotations
+        self.u_mdr  = np.array([], dtype=float)     # ndof x nt - generalized displacements as functions of time - mdr: modal decomposition ready
+                                                    #           - rotational DoFs (if exist) are expresed as axial vector rotations relative to the initial orientation of each node's local system
         self.eLoad  = np.array([], dtype=float)     # ndof x nt - external loads as functions of time
                                                     #           - NOTA: qué onda con los momentos leídos acá? necesitan un tratamiento especial?
                     
@@ -394,17 +394,17 @@ def rd_u(struCase, **kwargs):
     loc_unf_raw = NaN_filter(loc_unf_raw, glob_step_Nan, **kwargs) #Delete all t>t_Nan data
     for a in range(len(struCase.nodes)): #Continue. Esto debería reproducir nuevamente el bucle interrumpido por el filtrado
         loc_table_raw = loc_unf_raw[a]
-        loc_table_avr = np.copy(loc_table_raw)
+        loc_table_mdr = np.copy(loc_table_raw)
         if struCase.rdof: # if rotational DoFs, create field u_mdr
-            loc_table_avr[:,4:]= rotModalDec(loc_table_avr[:,4:])
+            loc_table_mdr[:,4:]= rotModalDec(loc_table_mdr[:,4:])
         if a == 0:
             glob_time = loc_table_raw[:,0]
             total_ntime = len(glob_time)
             glob_u_raw = np.transpose(loc_table_raw)[1:,:]
-            glob_u_mdr = np.transpose(loc_table_avr)[1:,:]
+            glob_u_mdr = np.transpose(loc_table_mdr)[1:,:]
         else:
             glob_u_raw = np.append(glob_u_raw,np.transpose(loc_table_raw)[1:,:],axis=0)
-            glob_u_mdr = np.append(glob_u_mdr,np.transpose(loc_table_avr)[1:,:],axis=0)
+            glob_u_mdr = np.append(glob_u_mdr,np.transpose(loc_table_mdr)[1:,:],axis=0)
     
     
     os.remove(subDir_P11+"temp_file")
