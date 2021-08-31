@@ -24,7 +24,7 @@ importing zone
 ------------------------------------------------------------------------------
 """
 import numpy as np
-from sim_db import svBin, rdBin, sim, check_BN_files, rd_rawRespData, ae_Ftable
+from sim_db import svBin, rdBin, sim, check_BN_files, rd_rawRespData, ae_Ftable, modal_w
 import sim_db
 
 
@@ -153,7 +153,6 @@ def modalDecomp(case,**kwargs):
             
     return case
 
-
 """
 ------------------------------------------------------------------------------
 end-user functs
@@ -178,6 +177,10 @@ def epp(case, **kwargs):
     if case.stru.struEigOpt or case.stru.loadEigOpt:
         case = modalDecomp(case,**kwargs)
     
+    if case.stru.EigWorkOpt:
+        case.stru = modal_w(case.stu, **kwargs)
+        #NOTA: Acá podría ir otro svBIN
+        
     case = check_BN_files(case, **kwargs) #NOTA: ¿Por qué esto acá? Si leo de binario no sirve re-guardar, o sí?
     svBin(case,**kwargs) #Se exporta todo, finalmente.
     

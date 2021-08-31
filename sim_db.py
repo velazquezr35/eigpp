@@ -68,7 +68,8 @@ class stru:
         self.auxMD  = np.array([], dtype=float)     # nm x ndof - auxiliary matix PHI^T * M, used for modal decomposition
         self.q      = np.array([], dtype=float)     # nm x nt   - modal coordinates as functions of time
         self.Q      = np.array([], dtype=float)     # nm x nt   - modal external loads as functions of time
-                    
+        self.W      = np.array([],dtype=float)      # nm x nt   - modal work from external loads, as function of time
+        
         self.p11FN  = ''                            # binary *.p11 file name (without extension - Simpact output) from wich extract generalized displacements (and/or other data)
         self.rsnSi  = ''                            # ASCII *.rsn file name (without extension) - Simpact output
         self.rsnDe  = ''                            # ASCII *.rsn file name (without extension) - Delta output
@@ -88,10 +89,12 @@ class stru:
                                                             #   'non': no external load data available
         self.struEigOpt = True                              # True if modal decomposition should be done over generalized displacements
         self.loadEigOpt = True                              # True if modal decomposition should be done over external loads
+        self.EigWorkOpt = True                              # True if modal work from external loads should be computed
         self.plot_timeInds = np.array([0,None])               # desired plot indexes
         self.plot_timeVals = np.array([np.inf,np.inf])      # desired plot time values
         self.intLabOffset = 0                               # offset node labels
         self.rot_inds = [4,5,6]                             # rotational DOFs inds (not Python´s)
+    
     #Methods
     #Coming soon...
 
@@ -152,6 +155,7 @@ def time_slice(struCase,**kwargs):
     if loc_t_len > loc_load_len:
         struCase.u_raw = struCase.u_raw[:,0:loc_load_len]
         struCase.u_mdr = struCase.u_mdr[:,0:loc_load_len]
+        struCase.q = struCase.q[:,0:loc_load_len]
         struCase.t = struCase.t[:loc_load_len]
     
     elif loc_t_len < loc_load_len:
@@ -842,12 +846,12 @@ def rdBin(file, **kwargs):
 
 def svBin(data, **kwargs):
     
-    """
+    '''
     data: variable to be saved - sim class object
     kwargs:
         glob_print_output, bool - print msg
         subDir_BIN or subDir_P11, str - dir
-    """
+    '''
     if 'subDir_BIN' in kwargs:
         subDir = kwargs.get('subDir_BIN')
     elif 'subDir_P11' in kwargs:
@@ -865,6 +869,20 @@ def svBin(data, **kwargs):
         if print_output:
             print ('bin data file saved (save_bin funct)')
 
+def modal_w(struCase, **kwargs):
+    '''
+    Computes the modal work of eLoads
+    
+    inputs:
+        struCase, stru class obj
+    kwargs may contain:
+    returns:
+        struCase, stru class obj
+    '''
+    
+    struCase.W = np.multiply((struCase.Q[:,1:]+struCase.Q[:,:-1])/2,(struCase.q[:,1:]-struCase.q[:,:-1]))
+    struCase.W = np.append(struCase.W, np.transpose(np.array([struCase.W[:,-1]])), axis = 1)
+    return(struCase)
 """
 ------------------------------------------------------------------------------
 Unit tests
