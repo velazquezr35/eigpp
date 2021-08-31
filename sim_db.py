@@ -32,6 +32,7 @@ import os
 from time import gmtime, strftime
 import re
 from scipy.spatial.transform import Rotation as Rot
+import eigpp
 
 """
 ------------------------------------------------------------------------------
@@ -48,27 +49,28 @@ class stru:
         self.name   = ''                            # short description
         self.descr  = ''                            # description
                     
-        self.nnode  = 0                             # 1         - number of nodes considered
-        self.nodes  = []                            # nnode     - label of nodes considered (external)
-        self.iLabl  = np.array([], dtype=int)       # nnode     - label of nodes considered (internal)
-        self.ndof   = 0                             # 1         - Total number of DoF considered (including those where BCs are applied)
-        self.nt     = 0                             # 1         - number of time steps
-        self.t      = np.array([], dtype=float)     # nt        - Response temporal grid
-        self.u_raw  = np.array([], dtype=float)     # ndof x nt - generalized displacements as functions of time - as read from "curvas"
-                                                    #           - rotational DoFs (if exist) are expresed as 3-1-3 Euler angles rotations [rad]
-        self.u_mdr  = np.array([], dtype=float)     # ndof x nt - generalized displacements as functions of time - mdr: modal decomposition ready
-                                                    #           - rotational DoFs (if exist) are expresed as axial vector rotations relative to the initial orientation of each node's local system
-        self.eLoad  = np.array([], dtype=float)     # ndof x nt - external loads as functions of time
-                                                    #           - NOTA: qué onda con los momentos leídos acá? necesitan un tratamiento especial?
+        self.nnode  = 0                             # 1          - number of nodes considered
+        self.nodes  = []                            # nnode      - label of nodes considered (external)
+        self.iLabl  = np.array([], dtype=int)       # nnode      - label of nodes considered (internal)
+        self.ndof   = 0                             # 1          - Total number of DoF considered (including those where BCs are applied)
+        self.nt     = 0                             # 1          - number of time steps
+        self.t      = np.array([], dtype=float)     # nt         - Response temporal grid
+        self.u_raw  = np.array([], dtype=float)     # ndof x nt  - generalized displacements as functions of time - as read from "curvas"
+                                                    #            - rotational DoFs (if exist) are expresed as 3-1-3 Euler angles rotations [rad]
+        self.u_mdr  = np.array([], dtype=float)     # ndof x nt  - generalized displacements as functions of time - mdr: modal decomposition ready
+                                                    #            - rotational DoFs (if exist) are expresed as axial vector rotations relative to the initial orientation of each node's local system
+        self.eLoad  = np.array([], dtype=float)     # ndof x nt  - external loads as functions of time
+                                                    #            - NOTA: qué onda con los momentos leídos acá? necesitan un tratamiento especial?
                     
-        self.mass   = np.array([], dtype=float)     # ndof      - lumped mass matrix
-        self.nm     = 0                             # 1         - number of modes read
-        self.om     = np.array([], dtype=float)     # nm        - ordered natural frequencies
-        self.phi    = np.array([], dtype=float)     # ndof x nm - modal matrix
-        self.auxMD  = np.array([], dtype=float)     # nm x ndof - auxiliary matix PHI^T * M, used for modal decomposition
-        self.q      = np.array([], dtype=float)     # nm x nt   - modal coordinates as functions of time
-        self.Q      = np.array([], dtype=float)     # nm x nt   - modal external loads as functions of time
-        self.W      = np.array([],dtype=float)      # nm x nt   - modal work from external loads, as function of time
+        self.mass   = np.array([], dtype=float)     # ndof       - lumped mass matrix
+        self.nm     = 0                             # 1          - number of modes read
+        self.om     = np.array([], dtype=float)     # nm         - ordered natural frequencies
+        self.phi    = np.array([], dtype=float)     # ndof x nm  - modal matrix
+        self.phiR   = np.array([], dtype=float)     # ndof x moi - modal matix (using moi)
+        self.auxMD  = np.array([], dtype=float)     # nm x ndof  - auxiliary matix PHI^T * M, used for modal decomposition
+        self.q      = np.array([], dtype=float)     # nm x nt    - modal coordinates as functions of time
+        self.Q      = np.array([], dtype=float)     # nm x nt    - modal external loads as functions of time
+        self.W      = np.array([],dtype=float)      # nm x nt    - modal work from external loads, as function of time
         
         self.p11FN  = ''                            # binary *.p11 file name (without extension - Simpact output) from wich extract generalized displacements (and/or other data)
         self.rsnSi  = ''                            # ASCII *.rsn file name (without extension) - Simpact output
@@ -94,6 +96,7 @@ class stru:
         self.plot_timeVals = np.array([np.inf,np.inf])      # desired plot time values
         self.intLabOffset = 0                               # offset node labels
         self.rot_inds = [4,5,6]                             # rotational DOFs inds (not Python´s)
+        self.moi = []                                       # inds (normal, not Python´s) of modes of interest
     
     #Methods
     #Coming soon...
@@ -136,6 +139,45 @@ class sim:
 functions
 ------------------------------------------------------------------------------
 """
+# update phiR
+
+def upd_phiR(struCase, **kwargs):
+    '''
+    Updates struCase.phiR (and others) using the MOI (from struCase or kwargs (default))
+    inputs:
+        case, sim class obj
+    kwargs (may contain):
+        MOI, list - New modal inds
+        update, str - 'all' (atris), 'phiR' (just the modal matrix, default)
+    '''
+    if 'MOI' in kwargs:
+        MOI = kwargs.get('MOI')
+    else:
+        MOI = struCase.moi
+    
+    if 'update' in kwargs:
+        update = kwargs.get('update')
+    else:
+        update = 'phiR'
+        
+    if len(MOI) == 0:
+        struCase.phiR = struCase.phi
+    else:
+        struCase.moi = MOI
+        MOI_inds = []
+        for i in range(len(MOI)):
+            MOI_inds.append(MOI[i]-1)
+        struCase.phiR = struCase.phi[MOI_inds]
+        
+    if update == 'all':
+        if struCase.struEigOpt or struCase.loadEigOpt:
+            struCase = eigpp.modalDecomp(struCase,**kwargs)
+        
+        if struCase.EigWorkOpt:
+            struCase = modal_w(struCase, **kwargs)
+
+    return(struCase)
+    
 # time slice
 
 def time_slice(struCase,**kwargs):
@@ -352,6 +394,7 @@ def rd_rsn_De(struCase, **kwargs):
     
     struCase = rd_mass(struCase, **kwargs)
     struCase = rd_eig(struCase, **kwargs)
+    stuCase = upd_phiR(struCase, **kwargs)
     
     return struCase
 
@@ -645,6 +688,7 @@ def rd_rawRespData(struCase, **kwargs):
     struCase = rd_eig(struCase, **kwargs)
     struCase = rd_u(struCase, **kwargs)
     struCase = ae_Ftable(struCase, **kwargs)
+    struCase = upd_phiR(struCase,**kwargs)
     
     return struCase
 
@@ -879,7 +923,6 @@ def modal_w(struCase, **kwargs):
     returns:
         struCase, stru class obj
     '''
-    
     struCase.W = np.multiply((struCase.Q[:,1:]+struCase.Q[:,:-1])/2,(struCase.q[:,1:]-struCase.q[:,:-1]))
     struCase.W = np.append(struCase.W, np.transpose(np.array([struCase.W[:,-1]])), axis = 1)
     return(struCase)

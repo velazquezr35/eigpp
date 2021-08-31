@@ -131,6 +131,7 @@ def plt_qt(struCase, modal_inds, ax, **kwargs):
         'data_type': 'mod_desp' or 'mod_eload' (mod_desp as default)
         'vel': False (default) or True (in order to calculate and plot modal velocities)
         'env': False (default) or True (in order to plot the envelope)
+        'modal_inds_type': 'relative' (in order to use MOI´s inds), 'absolute' (phi´s inds, default)
     """
     if 'data_type' in kwargs:
         data_type = kwargs.get('data_type')
@@ -144,9 +145,15 @@ def plt_qt(struCase, modal_inds, ax, **kwargs):
         env = kwargs.get('env')
     else:
         env = False
+        
+    if 'modal_inds_type' in kwargs:
+        modal_inds_type = kwargs.get('modal_inds_type')
+    else:
+        modal_inds_type = 'absolute'
 
     if type(modal_inds) == int:
         modal_inds = [modal_inds]
+    modal_inds = handle_modal_inds(struCase, modal_inds, **kwargs)
     t=struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
     for loc_ind in modal_inds:
         if data_type == 'mod_desp':
@@ -162,9 +169,8 @@ def plt_qt(struCase, modal_inds, ax, **kwargs):
             ax.plot(t[low_idx], y[low_idx])
     ax.legend()
     return(ax)
-
+    
 #Plot one dof for all nodes for a single t val
-
 def plt_us(struCase, tdof_dict,ax,**kwargs):
     
     """
@@ -359,7 +365,7 @@ def plt_qFFT(struCase, modal_inds, ax, **kwargs):
         x_units, str: 'rad/s' or 'Hz' (default) - x freqs units
         vel, for in order to calculate and plot the FFT of the modal velocities
         graphs_pack, standard dict for plot customization
-        
+        'modal_inds_type': 'relative' (in order to use MOI´s inds), 'absolute' (phi´s inds, default)
     returns:
             ax obj
     """
@@ -379,11 +385,17 @@ def plt_qFFT(struCase, modal_inds, ax, **kwargs):
         graphs_pack = kwargs.get('graphs_pack')
     else:
         graphs_pack = handle_graph_info(**kwargs)
+    if 'modal_inds_type' in kwargs:
+        modal_inds_type = kwargs.get('modal_inds_type')
+    else:
+        modal_inds_type = 'absolute'
+
+    if type(modal_inds) == int:
+        modal_inds = [modal_inds]
+    modal_inds = handle_modal_inds(struCase, modal_inds, **kwargs)
     
     t = struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
     fDef = 1/(t[-1]-t[0])
-    if type(modal_inds) == int:
-        modal_inds = [modal_inds]
     for i in modal_inds:
         if data_type == 'mod_desp':
             y = struCase.q[i-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
@@ -473,7 +485,8 @@ def plt_qPP(struCase, modal_inds,ax,**kwargs):
             ax is a matplotlib.pyplot Axes obj
     kwargs (may contain): 
         'data_type': 'mod_desp' or 'mod_eload' (mod_desp as default)
-        graphs_pack, standard dict for plot customization     
+        graphs_pack, standard dict for plot customization   
+        'modal_inds_type': 'relative' (in order to use MOI´s inds), 'absolute' (phi´s inds, default)
     returns:
             ax obj
                 
@@ -486,8 +499,14 @@ def plt_qPP(struCase, modal_inds,ax,**kwargs):
         graphs_pack = kwargs.get('graphs_pack')
     else:
         graphs_pack = handle_graph_info(**kwargs)
+    if 'modal_inds_type' in kwargs:
+        modal_inds_type = kwargs.get('modal_inds_type')
+    else:
+        modal_inds_type = 'absolute'
+
     if type(modal_inds) == int:
         modal_inds = [modal_inds]
+    modal_inds = handle_modal_inds(struCase, modal_inds, **kwargs)
     for loc_ind in modal_inds:
         #NOTA: Esto se puede mejorar tomando u = todos y luego plot(u[desired])
         if data_type == 'mod_desp':
@@ -623,6 +642,7 @@ def plt_q_spectr(struCase, modal_inds, fig, ax, **kwargs):
         'SP_WinType': str, default 'Hann' - Check supported FFT-Windows in scipy.signal
         'SP_Normalize': bool, default True - In order to normalize the spectrogram
         'y_units': str, 'Hz' or 'rad/s' - freq units
+        'modal_inds_type': 'relative' (in order to use MOI´s inds), 'absolute' (phi´s inds, default)
     """
     if 'data_type' in kwargs:
         data_type = kwargs.get('data_type')
@@ -665,12 +685,16 @@ def plt_q_spectr(struCase, modal_inds, fig, ax, **kwargs):
         y_units = kwargs.get('y_units')
     else:
         print('Missing f units. Set to default (Hz)')
-        
+    if 'modal_inds_type' in kwargs:
+        modal_inds_type = kwargs.get('modal_inds_type')
+    else:
+        modal_inds_type = 'absolute'
     OverLap = np.round(WinSize*OverLapFactor/100)
     fDef = len(t)/D_t
     
     if type(modal_inds) == int:
         modal_inds = [modal_inds]
+    modal_inds = handle_modal_inds(struCase, modal_inds, **kwargs)
     for loc_ind in modal_inds:
         if data_type == 'mod_desp':
             y = struCase.q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
@@ -1843,6 +1867,31 @@ def save_figure(fig, opts,**kwargs):
     if fig_close:
         plt.close(fig)
     return('Done!')
+
+#handle moi modal inds
+def handle_modal_inds(struCase, modal_inds, **kwargs):
+    '''
+    Looks for the real modal index in struCase.moi, for labeling purposes
+    '''
+    if 'modal_inds_type' in kwargs:
+        modal_inds_type = kwargs.get('modal_inds_type')
+    else:
+        modal_inds_type = 'absolute'
+    
+    updated_modal_inds = []
+    
+    if modal_inds_type == 'absolute':
+        for loc_ind in modal_inds:
+            if loc_ind in struCase.moi:
+              updated_modal_inds.append(struCase.moi.index(loc_ind)+1)
+            else:
+                 print('Abs modal ind not found in MOI: ', loc_ind)
+        if len(updated_modal_inds)==0:
+            raise ValueError('Empty modal inds!')
+        else:
+            return(updated_modal_inds)
+    else:
+        return(modal_inds)
 """
 ------------------------------------------------------------------------------
 runing things
