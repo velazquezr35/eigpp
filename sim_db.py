@@ -88,9 +88,9 @@ class stru:
                                                             #   'non': no external load data available
         self.struEigOpt = True                              # True if modal decomposition should be done over generalized displacements
         self.loadEigOpt = True                              # True if modal decomposition should be done over external loads
-        self.plot_timeInds = np.array([0,-1])               # desired plot indexes
+        self.plot_timeInds = np.array([0,None])               # desired plot indexes
         self.plot_timeVals = np.array([np.inf,np.inf])      # desired plot time values
-        self.intLabOffset = 6                               # offset node labels
+        self.intLabOffset = 0                               # offset node labels
         self.rot_inds = [4,5,6]                             # rotational DOFs inds (not Python´s)
     #Methods
     #Coming soon...
@@ -133,6 +133,31 @@ class sim:
 functions
 ------------------------------------------------------------------------------
 """
+# time slice
+
+def time_slice(struCase,**kwargs):
+    '''
+    Delete all values with time > min(max(tf_stru),max(tf_loads)) (for now, tf_loads = len(stru.eLoad))
+    inputs:
+            struCase stru class obj
+    kwargs may contain: none
+    returns:
+            struCase stru class obj
+    '''
+    loc_t_len = len(struCase.t)
+    try:
+        loc_load_len = len(struCase.eLoad[0])
+    except:
+        raise ValueError('eLoad prop empty!')
+    if loc_t_len > loc_load_len:
+        struCase.u_raw = struCase.u_raw[:,0:loc_load_len]
+        struCase.u_mdr = struCase.u_mdr[:,0:loc_load_len]
+        struCase.t = struCase.t[:loc_load_len]
+    
+    elif loc_t_len < loc_load_len:
+        struCase.eLoad = struCase.eLoad[:,0:loc_t_len]
+
+    return(struCase)
 
 # searchs for specific time value
 

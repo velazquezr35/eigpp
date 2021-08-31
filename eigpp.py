@@ -178,7 +178,7 @@ def epp(case, **kwargs):
     if case.stru.struEigOpt or case.stru.loadEigOpt:
         case = modalDecomp(case,**kwargs)
     
-    case = check_BN_files(case, **kwargs)
+    case = check_BN_files(case, **kwargs) #NOTA: ¿Por qué esto acá? Si leo de binario no sirve re-guardar, o sí?
     svBin(case,**kwargs) #Se exporta todo, finalmente.
     
     return(case)
