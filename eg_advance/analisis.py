@@ -73,7 +73,7 @@ runing things
 # ANALIZE ONE CASE (ONE SIMULATION)
 # case: v_inf = 170 ft/s
 fName='R1700'
-if False: # creat object, read raw data and save bin
+if True: # creat object, read raw data and save bin
     # 1. create object with basic data
     R1700=sim() # create a simulation object
     R1700.name='170.0'
@@ -88,7 +88,7 @@ if False: # creat object, read raw data and save bin
     R1700.stru.rsnDe='pcolgante' # ASCII *.rsn file name (without extension) - Delta output
     R1700.stru=rd_rsn_De(R1700.stru, **{'subDir_RSN': '020 aeroelástica vigas rígido/frecuencias y modos/'})
     # 3. modal decomposition
-    R1700 = modalDecomp(R1700, **{'subDir_BIN': '020 aeroelástica vigas rígido/020 10 08x40/R100840_1700/'})
+    R1700.stru = modalDecomp(R1700.stru, **{'subDir_BIN': '020 aeroelástica vigas rígido/020 10 08x40/R100840_1700/'})
     # 4. save bin
     svBin(R1700, **{'subDir_BIN': '020 aeroelástica vigas rígido/020 10 08x40/R100840_1700/'})
 else:
@@ -96,8 +96,3 @@ else:
     R1700 = rdBin(fName, **{'subDir_BIN': '020 aeroelástica vigas rígido/020 10 08x40/R100840_1700/'})
 
 
-# print some figures
-# f1=plotter.fig_ut(R1700.stru, [{200000: [3]}, {200000: [4]}], **{'deg':[4]})
-# f2=plotter.fig_u_FFT(R1700.stru, [{200000: [3]}, {200000: [4]}])
-# f3=plotter.fig_u_spect(R1700.stru,[{200000: [3]}, {200000: [4]}])
-# f4=plotter.fig_qt(R1700.stru, [1,2])
