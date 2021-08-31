@@ -394,7 +394,7 @@ def rd_rsn_De(struCase, **kwargs):
     
     struCase = rd_mass(struCase, **kwargs)
     struCase = rd_eig(struCase, **kwargs)
-    stuCase = upd_phiR(struCase, **kwargs)
+    struCase = upd_phiR(struCase, **kwargs)
     
     return struCase
 
