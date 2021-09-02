@@ -111,7 +111,7 @@ def plt_ut(struCase, dofDict, ax, **kwargs): #NOTA: ¿Cambiar nombre? (algo mixt
             
             y = struCase.eLoad[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
     
-        ax.plot(t,y,'ro', label= node_labels[i] +' - DOF: ' + str(original_inds[i])) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
+        ax.plot(t,y, label= node_labels[i] +' - DOF: ' + str(original_inds[i])) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
         if env:
             high_idx, low_idx = hl_envelopes_idx(y)
             ax.plot(t[high_idx], y[high_idx])
