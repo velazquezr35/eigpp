@@ -92,7 +92,7 @@ class stru:
         self.struEigOpt = True                              # True if modal decomposition should be done over generalized displacements
         self.loadEigOpt = True                              # True if modal decomposition should be done over external loads
         self.EigWorkOpt = True                              # True if modal work from external loads should be computed
-        self.plot_timeInds = np.array([0,None], dtype=int)               # desired plot indexes
+        self.plot_timeInds = np.array([0,None])               # desired plot indexes
         self.plot_timeVals = np.array([np.inf,np.inf])      # desired plot time values
         self.intLabOffset = 0                               # offset node labels
         self.rot_inds = [4,5,6]                             # rotational DOFs inds (not Python´s)
@@ -643,8 +643,7 @@ def rd_eig(struCase, **kwargs):
 
     # find reference line and read table
     locs_modes = search_string(x_dat, "linear dynamic eigen-mode analysis")
-    
-    
+    struCase = clean_eqInfo(struCase,**kwargs)    
     struCase.nm = len(locs_modes)
     struCase.om = np.zeros((struCase.nm, 3))
     struCase.phi = np.zeros((struCase.nm, struCase.nnode*6))
@@ -957,6 +956,24 @@ def modal_w(struCase, **kwargs):
     struCase.W = np.multiply((struCase.Q[:,1:]+struCase.Q[:,:-1])/2,(struCase.q[:,1:]-struCase.q[:,:-1]))
     struCase.W = np.append(struCase.W, np.transpose(np.array([struCase.W[:,-1]])), axis = 1)
     return(struCase)
+
+def clean_eqInfo(struCase,**kwargs):
+    '''
+    Deletes non-useful nodes from eqInfo Table
+    inputs:
+        struCase, stru class obj
+    kwargs:
+    returns:
+        strCase, stru class obj
+    '''
+    rem_inds = []
+    for i in range(len(struCase.eqInfo)):
+        if sum(struCase.eqInfo[i,1:-2])==0:
+            rem_inds.append(i)
+    
+    struCase.eqInfo = np.delete(struCase.eqInfo, rem_inds,axis=0)
+    return(struCase)
+    
 """
 ------------------------------------------------------------------------------
 Unit tests
