@@ -32,7 +32,8 @@ plt.rcParams.update({'font.size': 15})
 general opts
 ------------------------------------------------------------------------------
 """
-
+if True:
+    plt.close('all')
 
 """
 ------------------------------------------------------------------------------
@@ -295,7 +296,8 @@ def plt_uFFT(struCase, dofDict, ax, **kwargs):
         elif 'FCS' (may contain):
         global (may contain):
             x_units, str: 'rad/s' or 'Hz' (default) - x freqs units
-            graphs_pack, standard dict for plot customization        
+            graphs_pack, standard dict for plot customization     
+            'x_lims', 'y_lims', list: Plotting lims
     returns:
             ax obj
     """
@@ -320,7 +322,14 @@ def plt_uFFT(struCase, dofDict, ax, **kwargs):
         graphs_pack = kwargs.get('graphs_pack')
     else:
         graphs_pack = handle_graph_info(**kwargs)
-    
+    if 'y_lims' in kwargs:
+        y_lims = kwargs.get('y_lims')
+    else:
+        y_lims = False
+    if 'x_lims' in kwargs:
+        x_lims = kwargs.get('x_lims')
+    else:
+        x_lims = False
     t = struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
     desired_inds = nodeDof2idx(struCase,dofDict)
     original_inds = flatten_values_list(dofDict.values())
@@ -350,6 +359,10 @@ def plt_uFFT(struCase, dofDict, ax, **kwargs):
             x_f = x_f*2*np.pi
         ax.plot(x_f[:(len(t)-1)//2],y_f[:(len(t)-1)//2], label= node_labels[i] +' - DOF: ' + str(original_inds[i]))
     ax.set_ylabel(graphs_pack['y_label'])
+    if y_lims:
+        ax.set_ylim(y_lims)
+    if x_lims:
+        ax.set_xlim(x_lims)
     ax.legend(title=graphs_pack['legend_title'])
     return(ax)
     
@@ -362,10 +375,11 @@ def plt_qFFT(struCase, modal_inds, ax, **kwargs):
     kwargs (may contain): 
         'data_type': 'mod_desp' or 'mod_eload' (mod_desp as default)
         'vel': False (default) or True (in order to calculate and plot velocities)
-        x_units, str: 'rad/s' or 'Hz' (default) - x freqs units
-        vel, for in order to calculate and plot the FFT of the modal velocities
-        graphs_pack, standard dict for plot customization
+        'x_units', str: 'rad/s' or 'Hz' (default) - x freqs units
+        'vel', for in order to calculate and plot the FFT of the modal velocities
+        'graphs_pack', standard dict for plot customization
         'modal_inds_type': 'relative' (in order to use MOI´s inds), 'absolute' (phi´s inds, default)
+        'x_lims', 'y_lims', list: Plotting lims
     returns:
             ax obj
     """
@@ -389,7 +403,14 @@ def plt_qFFT(struCase, modal_inds, ax, **kwargs):
         modal_inds_type = kwargs.get('modal_inds_type')
     else:
         modal_inds_type = 'absolute'
-
+    if 'y_lims' in kwargs:
+        y_lims = kwargs.get('y_lims')
+    else:
+        y_lims = False
+    if 'x_lims' in kwargs:
+        x_lims = kwargs.get('x_lims')
+    else:
+        x_lims = False
     if type(modal_inds) == int:
         modal_inds = [modal_inds]
     modal_inds = handle_modal_inds(struCase, modal_inds, **kwargs)
@@ -414,6 +435,10 @@ def plt_qFFT(struCase, modal_inds, ax, **kwargs):
             x_f = x_f*2*np.pi
         ax.plot(x_f[:(len(t)-1)//2],y_f[:(len(t)-1)//2], label=' - MODO: ' + str(i)) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
     ax.set_ylabel(graphs_pack['y_label'])
+    if y_lims:
+        ax.set_ylim(y_lims)
+    if x_lims:
+        ax.set_xlim(x_lims)
     ax.legend(title=graphs_pack['legend_title'])
     return(ax)
 
@@ -539,7 +564,8 @@ def plt_uspectr(struCase, dofDict, fig, ax, **kwargs):
             'SP_WinType': str, default 'Hann' - Check supported FFT-Windows in scipy.signal
             'SP_Normalize': bool, default True - In order to normalize the spectrogram
             'y_units': str, 'Hz' or 'rad/s' - freq units
-            graphs_pack, standard dict for plot customization        
+            graphs_pack, standard dict for plot customization 
+            'x_lims', 'y_lims', list: Plotting lims
     returns:
             ax obj
     """
@@ -579,10 +605,10 @@ def plt_uspectr(struCase, dofDict, fig, ax, **kwargs):
         b_norm = kwargs.get('SP_normalize')
     else:
         b_norm = True #NOTA: Default normalizar el spectrogram
-    if 'f_lims' in kwargs:
-        f_lims = kwargs.get('f_lims')
+    if 'y_lims' in kwargs:
+        y_lims = kwargs.get('y_lims')
     else:
-        f_lims = False
+        y_lims = False
     if 'y_units' in kwargs:
         y_units = kwargs.get('y_units')
     else:
@@ -623,8 +649,8 @@ def plt_uspectr(struCase, dofDict, fig, ax, **kwargs):
             c = ax.pcolormesh(T,F,S,shading = 'auto', cmap='gray_r')
         fig.colorbar(c, ax = ax)
         ax.set_title('Node(s): ' + keys_to_str(dofDict) + ', DOF(s):' + str(original_inds[i]))
-    if f_lims:
-        ax.set_ylim(f_lims)
+    if y_lims:
+        ax.set_ylim(y_lims)
     ax.set_ylabel(graphs_pack['y_label'])
     return(ax)
 
@@ -643,6 +669,7 @@ def plt_q_spectr(struCase, modal_inds, fig, ax, **kwargs):
         'SP_Normalize': bool, default True - In order to normalize the spectrogram
         'y_units': str, 'Hz' or 'rad/s' - freq units
         'modal_inds_type': 'relative' (in order to use MOI´s inds), 'absolute' (phi´s inds, default)
+        'x_lims', 'y_lims', list: Plotting lims
     """
     if 'data_type' in kwargs:
         data_type = kwargs.get('data_type')
@@ -677,10 +704,10 @@ def plt_q_spectr(struCase, modal_inds, fig, ax, **kwargs):
     else:
         b_norm = True #NOTA: Default normalizar el spectrogram
         
-    if 'f_lims' in kwargs:
-        f_lims = kwargs.get('f_lims')
+    if 'y_lims' in kwargs:
+        y_lims = kwargs.get('y_lims')
     else:
-        f_lims = False
+        y_lims = False
     if 'y_units' in kwargs:
         y_units = kwargs.get('y_units')
     else:
@@ -721,8 +748,8 @@ def plt_q_spectr(struCase, modal_inds, fig, ax, **kwargs):
         fig.colorbar(c, ax = ax)
     ax.set_title('INDX(s): ' + lst2str(modal_inds))
     ax.set_ylabel(graphs_pack['y_label'])
-    if f_lims:
-        ax.set_ylim(f_lims)
+    if y_lims:
+        ax.set_ylim(y_lims)
     return(ax)
 
 #Vs DOFs
@@ -1395,6 +1422,80 @@ def fig_q_spect(struCase, modeLIST, **kwargs):
             ax.grid()
         axs[-1].set_xlabel(graphs_pack['x_label'])
     # fig.suptitle(graphs_pack['fig_title'])
+    if fig_save:
+        save_figure(fig,fig_save_opts,**kwargs)
+    return(fig)
+
+def fig_u_PP(struCase, dofLIST, **kwargs):
+    '''
+    Arranges plots of PP(u(t)) or PP(load(t))
+    
+    struCase: stru class obj
+    dofLIST: a single dofDict: {'NODE':[DOFs]}
+    kwargs: may contain
+        #General:
+        fig_save, bool - For saving purp.
+            fig_save_opts, dict - Folder, filecode, etc
+        sharex: matplotlib.pyplot.subplots() argument - default 'col'
+        p_prow: plots per row for the global figure - default 1
+        limit_tvals or limit_tinds: list or ndarray - time limits for plotting, values or indexes
+        #Plot customization:
+            fig_title
+            x_label
+            y_label
+            legend_title
+    '''
+    if 'sharex' in kwargs:
+        sharex = kwargs.get('sharex')
+    else:
+        sharex = "col"
+        
+    if 'p_prow' in kwargs:
+        p_prow = kwargs.get('p_prows')
+    else:
+        p_prow = 1
+        
+    if 'limit_tvals' in kwargs:
+        struCase = sfti_time(struCase,time_vals=kwargs.get('limit_tvals'))
+    elif 'limit_tinds' in kwargs:
+        struCase = sfti_time(struCase,indexes = kwargs.get('limit_tinds'))
+    else:
+        pass
+        #Nada, quedan los indexes que ya vienen con el objeto
+    if 'fig_save' in kwargs:
+        fig_save = kwargs.get('fig_save')
+        if 'fig_save_opts' in kwargs:
+            fig_save_opts = kwargs.get('fig_save_opts')
+        else:
+            fig_save_opts = {}
+    else:
+        fig_save = False 
+    if 'aspect_ratio' in kwargs:
+        aspect_ratio = kwargs.get('aspect_ratio')
+    else:
+        aspect_ratio = 'auto'
+    graphs_pack = handle_graph_info(**kwargs)
+    
+    if type(dofLIST) == dict: #Para comodidad end-user
+        dofLIST = [dofLIST]
+
+    n = len(dofLIST)
+    
+    fig, axs = plt.subplots(n, p_prow, sharex = sharex)
+    if n == 1: #Esto falla si ax no es un iterable (cuando n = 1 es sólo ax, no ax[:])
+        axs = plt_uPP(struCase, dofLIST[0], axs, **kwargs)
+        axs.set_xlabel(graphs_pack['x_label'])
+        axs.set_ylabel(graphs_pack['y_label'])
+        axs.set_aspect(aspect_ratio)
+        axs.grid()
+    else:
+        for ax, dof_dict in zip(axs, dofLIST):
+            ax = plt_uPP(struCase, dof_dict, ax,**kwargs)
+            ax.set_ylabel(graphs_pack['y_label'])
+            ax.set_aspect(aspect_ratio)
+            ax.grid()
+        axs[-1].set_xlabel(graphs_pack['x_label'])
+    fig.suptitle(graphs_pack['fig_title'])
     if fig_save:
         save_figure(fig,fig_save_opts,**kwargs)
     return(fig)

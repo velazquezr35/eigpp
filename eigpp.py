@@ -24,7 +24,6 @@ importing zone
 ------------------------------------------------------------------------------
 """
 import numpy as np
-# from sim_db import svBin, rdBin, sim, check_BN_files, rd_rawRespData, ae_Ftable, modal_w
 import sim_db
 
 

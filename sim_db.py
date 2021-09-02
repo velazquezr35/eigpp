@@ -92,7 +92,7 @@ class stru:
         self.struEigOpt = True                              # True if modal decomposition should be done over generalized displacements
         self.loadEigOpt = True                              # True if modal decomposition should be done over external loads
         self.EigWorkOpt = True                              # True if modal work from external loads should be computed
-        self.plot_timeInds = np.array([0,None])               # desired plot indexes
+        self.plot_timeInds = np.array([0,None], dtype=int)               # desired plot indexes
         self.plot_timeVals = np.array([np.inf,np.inf])      # desired plot time values
         self.intLabOffset = 0                               # offset node labels
         self.rot_inds = [4,5,6]                             # rotational DOFs inds (not Python´s)
@@ -906,7 +906,10 @@ def rdBin(file, **kwargs):
     else:
         print_output = False
     try:
-        f = open(subDir+file+'.sim','rb')
+        if file[-4:] == '.sim':
+            f = open(subDir+file,'rb')
+        else:
+            f = open(subDir+file+'.sim','rb')
     except:
         raise NameError('File not found: '+file)
     data = pickle.load(f)
