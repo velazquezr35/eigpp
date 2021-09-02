@@ -852,10 +852,38 @@ def ae_Ftable(struCase, **kwargs): ##NOTA: Si el nombre no gusta, lo cambio
         counter = counter + 1
     loc_ftab_filt = np.transpose(loc_ftab_filt)
     loc_ittab = np.array(loc_ittab)
-    
-    #step, instants, loads
-    struCase.eLoad = loc_ftab_filt
+
+    struCase = FTable_fit(struCase, loc_ftab_filt, loc_ittab[:,1], **kwargs)
     return struCase
+
+# fit eLoad table to stru time array
+
+def FTable_fit(struCase, y_loads, t_loads,**kwargs):
+    '''
+    Fits the eLoads to the stru-shaped time arr
+    inputs:
+        struCase, stru class obj
+        loc_ftab_filt, external loads
+        loc_ittab, external loads time arr
+    kwargs:
+    returns:
+        struCase, stru class obj
+    '''
+    final_y = []
+    t_stru = struCase.t
+    pre_count = 0
+    len_t_stru = len(t_stru)
+    for i in range(1,len(t_loads)):
+        corr_count = 0
+        if not pre_count + corr_count > len_t_stru:
+            while t_stru[pre_count+corr_count] < t_loads[i]:
+                final_y.append(y_loads[:,i-1])
+                corr_count +=1
+        pre_count = pre_count+corr_count
+    #if t_stru[-1] == t_loads[-1]:
+    final_y.append(y_loads[:,-1]) #NOTA: Esto supone que terminan en igual tf
+    struCase.eLoad = np.transpose(final_y)
+    return(struCase)
 
 
 # handle postprocessed data files --------------------------------------------

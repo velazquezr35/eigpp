@@ -172,7 +172,7 @@ def epp(case, **kwargs):
         case.stru = modalDecomp(case.stru,**kwargs)
     
     if case.stru.EigWorkOpt:
-        case.stru = sim_db.time_slice(case.stru, **kwargs)
+        # case.stru = sim_db.time_slice(case.stru, **kwargs)
         case.stru = sim_db.modal_w(case.stru, **kwargs)
         #NOTA: Acá podría ir otro svBIN
         
