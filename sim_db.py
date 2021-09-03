@@ -281,7 +281,25 @@ def nodeDof2idx(struCase, nodeDOFs):
                 print('Error - Revisar datos: nodo:', nodes[i], ', DOF: ', (dofs[i][j]-1))
                 break
     return loc_indexes
-    
+
+# handle shape indexes
+
+def modalDof2idx(struCase, modalDOF, **kwargs):
+    '''
+    Returns modal indexes for a particular shape-DOF
+    inputs:
+        struCase, stru class obj
+        modalDOF, int - desired DOF
+    kwargs:
+    returns:
+        loc_indexes, list
+    '''
+    loc_indexes = []
+    if modalDOF > 6 or modalDOF < 1:
+        raise ValueError('Warning: Bad modal DOF', modalDOF)
+    for i in range(len(struCase.nodes)):
+        loc_indexes.append(6*i+modalDOF-1)
+    return np.array(loc_indexes)
     
 
 # read Simpact and Delta output files ----------------------------------------

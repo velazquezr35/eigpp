@@ -22,7 +22,7 @@ import numpy as np
 from scipy import signal
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
-from sim_db import nodeDof2idx, sfti_time, search_time
+from sim_db import nodeDof2idx, sfti_time, search_time, modalDof2idx
 from scipy.fft import fft
 import os
 plt.rcParams.update({'font.size': 15})
@@ -243,12 +243,12 @@ def plt_us(struCase, tdof_dict,ax,**kwargs):
 
 #Plot modal shapes
 
-def plt_phi(struCase, shape_inds, ax, **kwargs):
+def plt_phi(struCase, modedofDict, ax, **kwargs):
     '''
     Plot modal shapes
     inputs:
         struCase, stru class obj
-        shape_inds, list: phi inds (not python´s)
+        modedofDict, dict {'mode_ind':[DOFs]}
         ax, matplotlib.pyplot Axes obj
     kwargs:
         graphs_pack, dict - Standard graphs pack
@@ -261,8 +261,13 @@ def plt_phi(struCase, shape_inds, ax, **kwargs):
         graphs_pack = handle_graph_info(**kwargs)
     x_labels = nodes2labels(struCase, **kwargs)
     
-    for loc_ind in shape_inds:
-        ax.plot(x_labels, struCase.phi[loc_ind-1,:], label = loc_ind)
+    mode_inds = list(modedofDict.keys())
+    
+    for loc_mode in mode_inds:
+        # if modedofDict[loc_mode] == int:
+        for loc_ind in modedofDict[loc_mode]:
+            des_inds = modalDof2idx(struCase, loc_ind, **kwargs)
+            ax.plot(x_labels, struCase.phi[des_inds,int(loc_mode)-1], label = 'M: '+loc_mode + ',dof: '+str(loc_ind))
     ax.legend(title=graphs_pack['legend_title'])
     return(ax)
 
@@ -1669,12 +1674,12 @@ def fig_qt_vt_pp(struCase, modal_inds, **kwargs): #NOTA: No sé si esto refleja 
 
 #Plot modal shapes
 
-def fig_phi(struCase, shapeLIST, **kwargs):
+def fig_phi(struCase, modedofLIST, **kwargs):
     '''
     Arranges plots of modal shapes
     
     struCase:   stru class object
-    shapeLIST: nested list or list, phi inds
+    mdofLIST: list or dict or a single mdofLIST [{'mode_ind':[DOFs]}]
     kwargs: may contain
         #General:
         fig_save, bool - For saving purp.
@@ -1708,17 +1713,18 @@ def fig_phi(struCase, shapeLIST, **kwargs):
         fig_save = False
     graphs_pack = handle_graph_info(**kwargs)
 
-    n = len(shapeLIST)
-    
+    if type(modedofLIST)==dict:
+        modedofLIST = [modedofLIST]
+    n = len(modedofLIST)
     fig, axs = plt.subplots(n, p_prow, sharex = sharex)
     if n == 1: #Esto falla si ax no es un iterable (cuando n = 1 es sólo ax, no ax[:])
-        axs = plt_phi(struCase, shapeLIST[0], axs, **kwargs)
+        axs = plt_phi(struCase, modedofLIST[0], axs, **kwargs)
         axs.set_xlabel(graphs_pack['x_label'])
         axs.set_ylabel(graphs_pack['y_label'])
         axs.grid()
     else:
-        for ax, shape_ind in zip(axs, shapeLIST):
-            ax = plt_phi(struCase, shape_ind, ax,**kwargs)
+        for ax, shape_dict in zip(axs, modedofLIST):
+            ax = plt_phi(struCase, shape_dict, ax,**kwargs)
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
         axs[-1].set_xlabel(graphs_pack['x_label'])
