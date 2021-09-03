@@ -70,7 +70,8 @@ class stru:
         self.auxMD  = np.array([], dtype=float)     # nm x ndof  - auxiliary matix PHI^T * M, used for modal decomposition
         self.q      = np.array([], dtype=float)     # nm x nt    - modal coordinates as functions of time
         self.Q      = np.array([], dtype=float)     # nm x nt    - modal external loads as functions of time
-        self.W      = np.array([],dtype=float)      # nm x nt    - modal work from external loads, as function of time
+        self.W      = np.array([], dtype=float)     # nm x nt    - modal work from external loads, as function of time
+        self.W_u    = np.array([], dtype=float)     # ndof x nt  - work from external loads (over DOFs), as function of time
         
         self.p11FN  = ''                            # binary *.p11 file name (without extension - Simpact output) from wich extract generalized displacements (and/or other data)
         self.rsnSi  = ''                            # ASCII *.rsn file name (without extension) - Simpact output
@@ -955,6 +956,20 @@ def modal_w(struCase, **kwargs):
     '''
     struCase.W = np.multiply((struCase.Q[:,1:]+struCase.Q[:,:-1])/2,(struCase.q[:,1:]-struCase.q[:,:-1]))
     struCase.W = np.append(struCase.W, np.transpose(np.array([struCase.W[:,-1]])), axis = 1)
+    return(struCase)
+
+def loads_w(struCase, **kwargs):
+    '''
+    Computes the work of eLoads over DOFs
+    
+    inputs:
+        struCase, stru class obj
+    kwargs may contain:
+    returns:
+        struCase, stru class obj
+    '''
+    struCase.W_u = np.multiply((struCase.eLoad[:,1:]+struCase.eLoad[:,:-1])/2,(struCase.u_mdr[:,1:]-struCase.u_mdr[:,:-1]))
+    struCase.W_u = np.append(struCase.W_u, np.transpose(np.array([struCase.W_u[:,-1]])), axis = 1)
     return(struCase)
 
 def clean_eqInfo(struCase,**kwargs):

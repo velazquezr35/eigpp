@@ -129,7 +129,7 @@ def plt_qt(struCase, modal_inds, ax, **kwargs):
             modal_inds is a list (indexes)
             ax is a matplotlib.pyplot Axes obj
     kwargs (may contain): 
-        'data_type': 'mod_desp' or 'mod_eload' (mod_desp as default)
+        'data_type': 'mod_desp' or 'mod_eload' or 'mod_W' (mod_desp as default)
         'vel': False (default) or True (in order to calculate and plot modal velocities)
         'env': False (default) or True (in order to plot the envelope)
         'modal_inds_type': 'relative' (in order to use MOI´s inds), 'absolute' (phi´s inds, default)
@@ -161,6 +161,8 @@ def plt_qt(struCase, modal_inds, ax, **kwargs):
             y = struCase.q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         elif data_type == 'mod_eload':
             y = struCase.Q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+        elif data_type == 'mod_W':
+            y = struCase.W[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         if vel:
             y=np.gradient(y,t)
         ax.plot(t,y, label=str(loc_ind))
@@ -237,6 +239,31 @@ def plt_us(struCase, tdof_dict,ax,**kwargs):
             y = struCase.eLoad[stru_inds, inds_t[i]]
         ax.plot(node_labels,y, label= '{0:.2f}, {1:.3f}'.format(desired_t[i],struCase.t[inds_t[i]]))
     ax.legend(title='Time instants (des vs act):')
+    return(ax)
+
+#Plot modal shapes
+
+def plt_phi(struCase, shape_inds, ax, **kwargs):
+    '''
+    Plot modal shapes
+    inputs:
+        struCase, stru class obj
+        shape_inds, list: phi inds (not python´s)
+        ax, matplotlib.pyplot Axes obj
+    kwargs:
+        graphs_pack, dict - Standard graphs pack
+    returns:
+        ax, matplotlib.pyplot Axes obj
+    '''
+    if 'graphs_pack' in kwargs:
+        graphs_pack = kwargs.get('graphs_pack')
+    else:
+        graphs_pack = handle_graph_info(**kwargs)
+    x_labels = nodes2labels(struCase, **kwargs)
+    
+    for loc_ind in shape_inds:
+        ax.plot(x_labels, struCase.phi[loc_ind-1,:], label = loc_ind)
+    ax.legend(title=graphs_pack['legend_title'])
     return(ax)
 
 #Plot all modes for a single t val
@@ -590,7 +617,7 @@ def plt_uspectr(struCase, dofDict, fig, ax, **kwargs):
     if 'SP_Winsize' in kwargs:
         WinSize = int(len(t)/kwargs.get('SP_Winsize'))
     else:
-        WinSize = int(len(t)/20) #NOTA: Esto asume un único winsize para el struCase. Ver si agregar info en un dict aparte para más customización
+        WinSize = int(len(t)/5) #NOTA: Esto asume un único winsize para el struCase. Ver si agregar info en un dict aparte para más customización
     if 'SP_OvrLapFactor' in kwargs:
         OverLapFactor = kwargs.get('SP_OvrLapFactor')
     else:
@@ -609,6 +636,10 @@ def plt_uspectr(struCase, dofDict, fig, ax, **kwargs):
         y_lims = kwargs.get('y_lims')
     else:
         y_lims = False
+    if 'x_lims' in kwargs:
+        x_lims = kwargs.get('x_lims')
+    else:
+        x_lims = False
     if 'y_units' in kwargs:
         y_units = kwargs.get('y_units')
     else:
@@ -651,6 +682,8 @@ def plt_uspectr(struCase, dofDict, fig, ax, **kwargs):
         ax.set_title('Node(s): ' + keys_to_str(dofDict) + ', DOF(s):' + str(original_inds[i]))
     if y_lims:
         ax.set_ylim(y_lims)
+    if x_lims:
+        ax.set_xlim(x_lims)
     ax.set_ylabel(graphs_pack['y_label'])
     return(ax)
 
@@ -746,7 +779,7 @@ def plt_q_spectr(struCase, modal_inds, fig, ax, **kwargs):
             print('f in hz!')
             c = ax.pcolormesh(T,F,S,shading = 'auto', cmap='gray_r')
         fig.colorbar(c, ax = ax)
-    ax.set_title('INDX(s): ' + lst2str(modal_inds))
+    ax.set_title('Modo: ' + lst2str(modal_inds))
     ax.set_ylabel(graphs_pack['y_label'])
     if y_lims:
         ax.set_ylim(y_lims)
@@ -1634,7 +1667,65 @@ def fig_qt_vt_pp(struCase, modal_inds, **kwargs): #NOTA: No sé si esto refleja 
         save_figure(fig,fig_save_opts,**kwargs)
     return(fig)
 
+#Plot modal shapes
 
+def fig_phi(struCase, shapeLIST, **kwargs):
+    '''
+    Arranges plots of modal shapes
+    
+    struCase:   stru class object
+    shapeLIST: nested list or list, phi inds
+    kwargs: may contain
+        #General:
+        fig_save, bool - For saving purp.
+        fig_save_opts, dict - Folder, filecode, etc
+        sharex: matplotlib.pyplot.subplots() argument - default 'col'
+        p_prow: plots per row for the global figure - default 1
+        limit_tvals or limit_tinds: list or ndarray - time limits for plotting, values or indexes
+        #Plot customization:
+            fig_title
+            x_label
+            y_label
+            legend_title
+    '''
+    
+    if 'sharex' in kwargs:
+        sharex = kwargs.get('sharex')
+    else:
+        sharex = "col"
+        
+    if 'p_prow' in kwargs:
+        p_prow = kwargs.get('p_prows')
+    else:
+        p_prow = 1
+    if 'fig_save' in kwargs:
+        fig_save = kwargs.get('fig_save')
+        if 'fig_save_opts' in kwargs:
+            fig_save_opts = kwargs.get('fig_save_opts')
+        else:
+            fig_save_opts = {}
+    else:
+        fig_save = False
+    graphs_pack = handle_graph_info(**kwargs)
+
+    n = len(shapeLIST)
+    
+    fig, axs = plt.subplots(n, p_prow, sharex = sharex)
+    if n == 1: #Esto falla si ax no es un iterable (cuando n = 1 es sólo ax, no ax[:])
+        axs = plt_phi(struCase, shapeLIST[0], axs, **kwargs)
+        axs.set_xlabel(graphs_pack['x_label'])
+        axs.set_ylabel(graphs_pack['y_label'])
+        axs.grid()
+    else:
+        for ax, shape_ind in zip(axs, shapeLIST):
+            ax = plt_phi(struCase, shape_ind, ax,**kwargs)
+            ax.set_ylabel(graphs_pack['y_label'])
+            ax.grid()
+        axs[-1].set_xlabel(graphs_pack['x_label'])
+    fig.suptitle(graphs_pack['fig_title'])
+    if fig_save:
+        save_figure(fig,fig_save_opts,**kwargs)
+    return(fig)
 """
 ------------------------------------------------------------------------------
 GENERAL TOOLS functions
@@ -1679,7 +1770,8 @@ def dof2dofDict(struCase, dof):
     for a in struCase.nodes:
         dofdict[str(a)]=[dof]
     return(dofdict)
-    
+
+#Special tool
 def tdof2dofDict(struCase, tdof_dict):
     '''Generates a dofDict for a desired DOF using all the available nodes in struCase
     inputs:
@@ -1695,6 +1787,22 @@ def tdof2dofDict(struCase, tdof_dict):
     for a in struCase.nodes:
         dofdict[str(a)]=loc_lst
     return(dofdict)
+
+#Nodes to x-labels (or y)
+def nodes2labels(struCase, **kwargs):
+    '''
+    Generates a list of strings from struCase.nodes
+    inputs:
+        struCase, stru class obj
+    kwargs:
+    returns:
+        labels
+    '''
+    loc_lst = []
+    for loc_node in struCase.nodes:
+        loc_lst.append(str(loc_node))
+    return(loc_lst)
+    
 
 #Search closest t index
 
@@ -1988,7 +2096,7 @@ def handle_modal_inds(struCase, modal_inds, **kwargs):
             else:
                  print('Abs modal ind not found in MOI: ', loc_ind)
         if len(updated_modal_inds)==0:
-            raise ValueError('Empty modal inds!')
+            raise ValueError('Empty modal inds! - ¿MOI? or try modal_inds_type = relative')
         else:
             return(updated_modal_inds)
     else:
