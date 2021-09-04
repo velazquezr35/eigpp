@@ -972,8 +972,9 @@ def modal_w(struCase, **kwargs):
     returns:
         struCase, stru class obj
     '''
-    struCase.W = np.multiply((struCase.Q[:,1:]+struCase.Q[:,:-1])/2,(struCase.q[:,1:]-struCase.q[:,:-1]))
+    struCase.W = np.multiply((struCase.Q[:,1:]+struCase.Q[:,:-1])*0.5,(struCase.q[:,1:]-struCase.q[:,:-1]))
     struCase.W = np.append(struCase.W, np.transpose(np.array([struCase.W[:,-1]])), axis = 1)
+    struCase.W_total = sum(struCase.W)
     return(struCase)
 
 def loads_w(struCase, **kwargs):
@@ -986,7 +987,7 @@ def loads_w(struCase, **kwargs):
     returns:
         struCase, stru class obj
     '''
-    struCase.W_u = np.multiply((struCase.eLoad[:,1:]+struCase.eLoad[:,:-1])/2,(struCase.u_mdr[:,1:]-struCase.u_mdr[:,:-1]))
+    struCase.W_u = np.multiply((struCase.eLoad[:,1:]+struCase.eLoad[:,:-1])*0.5,(struCase.u_mdr[:,1:]-struCase.u_mdr[:,:-1]))
     struCase.W_u = np.append(struCase.W_u, np.transpose(np.array([struCase.W_u[:,-1]])), axis = 1)
     return(struCase)
 

@@ -136,13 +136,15 @@ def modalDecomp(struCase,**kwargs):
             print("no mass and modal data for modal decomposition")
     
     if struCase.struEigOpt:
-        struCase.q = np.matmul(struCase.auxMD, struCase.u_mdr )
+        struCase.q = np.matmul(struCase.auxMD, struCase.u_mdr)
     
     if struCase.loadEigOpt:
         if (struCase.eLoad.shape[0]!=0):
             struCase.Q = np.matmul(struCase.auxMD, struCase.eLoad)
-        elif glob_print_output:
-            print("no external load data for modal decomposition")
+        
+        else:
+            if glob_print_output:
+                print("no external load data for modal decomposition")
             
     return struCase
 
@@ -171,7 +173,6 @@ def epp(case, **kwargs):
         case.stru = modalDecomp(case.stru,**kwargs)
     
     if case.stru.EigWorkOpt:
-        # case.stru = sim_db.time_slice(case.stru, **kwargs)
         case.stru = sim_db.modal_w(case.stru, **kwargs)
         #NOTA: Acá podría ir otro svBIN
         

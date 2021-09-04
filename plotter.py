@@ -850,11 +850,127 @@ def plt_uxuy(struCase, vsDict, ax, **kwargs):
         ax.plot(y[ux_inds,inds_t[i]],y[uy_inds,inds_t[i]],label='{0:.2f}, {1:.3f}'.format(desired_t[i],struCase.t[inds_t[i]]))
     ax.legend()
     return(ax)
+
+def plt_general(struCase, inds, ax, **kwargs):
+    '''
+    Plots general props as f(t) using some inds (not Python´s)
+    inputs:
+        struCase, stru class obj
+        inds, list: list of inds to plot
+        ax, matplotlib.pyplot ax obj
+    kwargs:
+        (must contain)
+        loc_data_type, str: 'E, W, W_u', etc - Data type
+        (may contain)
+        vel, bool - False(default) or True (in order to compute and plot dy/dt)
+    returns:
+        ax, matplotlib.pyplot ax obj
+    '''
+    if 'loc_data_type' in kwargs:
+        loc_data_type = kwargs.get('loc_data_type')
+    else:
+        raise NameError('Data type str error')
+    if 'vel' in kwargs:
+        vel = kwargs.get('vel')
+    else:
+        vel = False
+    graphs_pack = handle_graph_info(**kwargs)
+    t=struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+    for i in range(len(inds)):
+        try:
+            raw_y = getattr(struCase,loc_data_type[i])
+            if len(raw_y.shape) == 1:
+                y = raw_y[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+            else:
+                y = raw_y[inds[i]-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+        except:
+            raise NameError('Wrong data type code - pls check')
+        if vel:
+            y = np.gradient(y, t)
+        ax.plot(t, y, label = loc_data_type[i] + ' - ' + str(inds[i]))
+    ax.legend(title=graphs_pack['legend_title'])
+    return(ax)
 """
 ------------------------------------------------------------------------------
 HIGH LEVEL PLOT functions
 ------------------------------------------------------------------------------
 """
+
+def fig_general(struCase, indLIST, **kwargs):
+    '''
+    Arranges plots of general props as f(t) using some inds (not Python´s)
+    inputs:
+        struCase, stru class obj
+        indLIST, nested list, [[IND]]
+    kwargs: 
+        (must contain)
+        data_type, nested list of str: 'E, W_load, W_modal' - Data type (for each 0-list)
+        (may contain)
+        #General:
+        fig_save, bool - For saving purp.
+            fig_save_opts, dict - Folder, filecode, etc
+        sharex: matplotlib.pyplot.subplots() argument - default 'col'
+        p_prow: plots per row for the global figure - default 1
+        limit_tvals or limit_tinds: list or ndarray - time limits for plotting, values or indexes
+        #Plot customization:
+            fig_title
+            x_label
+            y_label
+            y_label_setting
+            legend_title
+    returns:
+        fig, fig obj
+    '''    
+    if 'sharex' in kwargs:
+        sharex = kwargs.get('sharex')
+    else:
+        sharex = "col"
+        
+    if 'p_prow' in kwargs:
+        p_prow = kwargs.get('p_prows')
+    else:
+        p_prow = 1
+    if 'fig_save' in kwargs:
+        fig_save = kwargs.get('fig_save')
+        if 'fig_save_opts' in kwargs:
+            fig_save_opts = kwargs.get('fig_save_opts')
+        else:
+            fig_save_opts = {}
+    else:
+        fig_save = False
+    graphs_pack = handle_graph_info(**kwargs)
+    
+    if not 'data_type' in kwargs:
+        raise NameError('Wrong data type')
+    else:
+        data_type = kwargs.get('data_type')
+    
+    if type(data_type) == str:
+        kwargs['data_type'] = list(kwargs['data_type'])
+    
+    if type(indLIST)==int:
+        indLIST=list(indLIST)
+    n = len(indLIST)
+    
+    fig, axs = plt.subplots(n, p_prow, sharex = sharex)
+    if n == 1: #Esto falla si ax no es un iterable (cuando n = 1 es sólo ax, no ax[:])
+        kwargs['loc_data_type'] = data_type[0]
+        axs = plt_general(struCase, indLIST[0], axs, **kwargs)
+        axs.set_xlabel(graphs_pack['x_label'])
+        axs.set_ylabel(graphs_pack['y_label'])
+        axs.grid()
+    else:
+        for ax, inds in zip(axs, indLIST):
+            kwargs['loc_data_type'] = data_type[np.where(axs==ax)[0][0]]
+            ax = plt_general(struCase, inds, ax,**kwargs)
+            ax.set_ylabel(graphs_pack['y_label'])
+            ax.grid()
+        axs[-1].set_xlabel(graphs_pack['x_label'])
+    fig.suptitle(graphs_pack['fig_title'])
+    if fig_save:
+        save_figure(fig,fig_save_opts,**kwargs)
+    return(fig)
+
 
 def fig_uxuy(struCase,vsLIST, **kwargs):
     '''
