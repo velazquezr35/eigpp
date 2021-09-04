@@ -142,41 +142,58 @@ functions
 """
 # update phiR
 
-def upd_phiR(struCase, **kwargs):
+def modal_updnorm(struCase, update_mode, **kwargs):
     '''
     Updates struCase.phiR (and others) using the MOI (from struCase or kwargs (default))
     inputs:
         case, sim class obj
+        update_mode, str - 'raw_phiR' (just pass the modal matrix, default), 'norm_modalphiR' (post modalDecomp)
     kwargs (may contain):
         MOI, list - New modal inds
-        update, str - 'all' (atris), 'phiR' (just the modal matrix, default)
+        norm, str: 'mass' (default), 'stiff', 'max', 'normal' - In order to normalize phiR
     '''
     if 'MOI' in kwargs:
         MOI = kwargs.get('MOI')
     else:
         MOI = struCase.moi
     
-    if 'update' in kwargs:
-        update = kwargs.get('update')
+    if 'norm' in kwargs:
+        norm = kwargs.get('norm')
     else:
-        update = 'phiR'
+        norm = 'mass'
+    
+    if update_mode == 'raw_phiR': #Modos como vienen
+        if len(MOI) == 0:
+            struCase.phiR = struCase.phi
+        else:
+            struCase.moi = MOI
+            MOI_inds = []
+            for i in range(len(MOI)):
+                MOI_inds.append(MOI[i]-1)
+            struCase.phiR = struCase.phi[MOI_inds]
+            
+    elif update_mode == 'norm_modalphiR': #Normalizar y actualizar demás
+        if norm == 'mass':
+            alpha = 1
+    
+        elif norm == 'stiff':
+            alpha = 1/struCase.om[:,2]
+            
+        elif norm == 'normal':
+            alpha = 1/np.linalg.norm(struCase.phiR,axis=0)
         
-    if len(MOI) == 0:
-        struCase.phiR = struCase.phi
+        elif norm == 'max':
+            alpha = 1/np.max(struCase.phiR, axis=0)
+            
+        struCase.phiR = struCase.phiR*alpha
+        
+        if struCase.struEigOpt:
+            struCase.q = np.multiply(struCase.q,np.transpose([1/alpha]))
+        
+        if struCase.loadEigOpt:
+            struCase.Q = np.multiply(struCase.Q,np.transpose([1/alpha]))
     else:
-        struCase.moi = MOI
-        MOI_inds = []
-        for i in range(len(MOI)):
-            MOI_inds.append(MOI[i]-1)
-        struCase.phiR = struCase.phi[MOI_inds]
-        
-    if update == 'all':
-        if struCase.struEigOpt or struCase.loadEigOpt:
-            struCase = eigpp.modalDecomp(struCase,**kwargs)
-        
-        if struCase.EigWorkOpt:
-            struCase = modal_w(struCase, **kwargs)
-
+        raise NameError('Wrong update mode, check:', update_mode)
     return(struCase)
     
 # time slice
@@ -413,7 +430,7 @@ def rd_rsn_De(struCase, **kwargs):
     
     struCase = rd_mass(struCase, **kwargs)
     struCase = rd_eig(struCase, **kwargs)
-    struCase = upd_phiR(struCase, **kwargs)
+    struCase = modal_updnorm(struCase, 'raw_phiR', **kwargs)
     
     return struCase
 
@@ -706,7 +723,7 @@ def rd_rawRespData(struCase, **kwargs):
     struCase = rd_eig(struCase, **kwargs)
     struCase = rd_u(struCase, **kwargs)
     struCase = ae_Ftable(struCase, **kwargs)
-    struCase = upd_phiR(struCase,**kwargs)
+    struCase = modal_updnorm(struCase,'raw_phiR', **kwargs)
     
     return struCase
 

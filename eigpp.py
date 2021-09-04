@@ -145,7 +145,8 @@ def modalDecomp(struCase,**kwargs):
         else:
             if glob_print_output:
                 print("no external load data for modal decomposition")
-            
+    
+    struCase = sim_db.modal_updnorm(struCase, 'norm_modalphiR', **kwargs)        
     return struCase
 
 """
