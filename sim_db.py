@@ -164,7 +164,7 @@ def modal_updnorm(struCase, update_mode, **kwargs):
     
     if update_mode == 'raw_phiR': #Modos como vienen
         if len(MOI) == 0:
-            struCase.phiR = struCase.phi
+            struCase.phiR = np.copy(struCase.phi)
         else:
             struCase.moi = MOI
             MOI_inds = []
