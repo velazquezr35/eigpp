@@ -57,7 +57,7 @@ class stru:
         self.t      = np.array([], dtype=float)     # nt         - Response temporal grid
         self.u_raw  = np.array([], dtype=float)     # ndof x nt  - generalized displacements as functions of time - as read from "curvas"
                                                     #            - rotational DoFs (if exist) are expresed as 3-1-3 Euler angles rotations [rad]
-        self.u_mdr  = np.array([], dtype=float)     # ndof x nt  - generalized displacements as functions of time - mdr: modal decomposition ready
+        self.u_mdr  = np.array([], dtype=np.longdouble)     # ndof x nt  - generalized displacements as functions of time - mdr: modal decomposition ready
                                                     #            - rotational DoFs (if exist) are expresed as axial vector rotations relative to the initial orientation of each node's local system
         self.eLoad  = np.array([], dtype=float)     # ndof x nt  - external loads as functions of time
                                                     #            - NOTA: qué onda con los momentos leídos acá? necesitan un tratamiento especial?
@@ -65,13 +65,13 @@ class stru:
         self.mass   = np.array([], dtype=float)     # ndof       - lumped mass matrix
         self.nm     = 0                             # 1          - number of modes read
         self.om     = np.array([], dtype=float)     # nm         - ordered natural frequencies
-        self.phi    = np.array([], dtype=float)     # ndof x nm  - modal matrix
-        self.phiR   = np.array([], dtype=float)     # ndof x moi - modal matix (using moi)
-        self.auxMD  = np.array([], dtype=float)     # nm x ndof  - auxiliary matix PHI^T * M, used for modal decomposition
-        self.q      = np.array([], dtype=float)     # nm x nt    - modal coordinates as functions of time
-        self.Q      = np.array([], dtype=float)     # nm x nt    - modal external loads as functions of time
-        self.W      = np.array([], dtype=float)     # nm x nt    - modal work from external loads, as function of time
-        self.W_u    = np.array([], dtype=float)     # ndof x nt  - work from external loads (over DOFs), as function of time
+        self.phi    = np.array([], dtype=np.longdouble)     # ndof x nm  - modal matrix
+        self.phiR   = np.array([], dtype=np.longdouble)     # ndof x moi - modal matix (using moi)
+        self.auxMD  = np.array([], dtype=np.longdouble)     # nm x ndof  - auxiliary matix PHI^T * M, used for modal decomposition
+        self.q      = np.array([], dtype=np.longdouble)     # nm x nt    - modal coordinates as functions of time
+        self.Q      = np.array([], dtype=np.longdouble)     # nm x nt    - modal external loads as functions of time
+        self.W      = np.array([], dtype=np.longdouble)     # nm x nt    - modal work from external loads, as function of time
+        self.W_u    = np.array([], dtype=np.longdouble)     # ndof x nt  - work from external loads (over DOFs), as function of time
         
         self.p11FN  = ''                            # binary *.p11 file name (without extension - Simpact output) from wich extract generalized displacements (and/or other data)
         self.rsnSi  = ''                            # ASCII *.rsn file name (without extension) - Simpact output
@@ -989,8 +989,8 @@ def modal_w(struCase, **kwargs):
     returns:
         struCase, stru class obj
     '''
-    struCase.W = np.multiply((struCase.Q[:,1:]+struCase.Q[:,:-1])*0.5,(struCase.q[:,1:]-struCase.q[:,:-1]))
-    struCase.W = np.append(struCase.W, np.transpose(np.array([struCase.W[:,-1]])), axis = 1)
+    struCase.W = np.cumsum(np.multiply((struCase.Q[:,1:]+struCase.Q[:,:-1])*0.5,np.diff(struCase.q)),axis=1)
+    struCase.W = np.append(np.zeros((struCase.W.shape[0],1)), struCase.W, axis = 1)
     struCase.W_total = sum(struCase.W)
     return(struCase)
 
@@ -1004,8 +1004,9 @@ def loads_w(struCase, **kwargs):
     returns:
         struCase, stru class obj
     '''
-    struCase.W_u = np.multiply((struCase.eLoad[:,1:]+struCase.eLoad[:,:-1])*0.5,(struCase.u_mdr[:,1:]-struCase.u_mdr[:,:-1]))
-    struCase.W_u = np.append(struCase.W_u, np.transpose(np.array([struCase.W_u[:,-1]])), axis = 1)
+    struCase.W_u = np.cumsum(np.multiply((struCase.eLoad[:,1:]+struCase.eLoad[:,:-1])*0.5,np.diff(struCase.u_mdr)),axis=1)
+    struCase.W_u = np.append(np.zeros((struCase.W_u.shape[0],1)),struCase.W_u, axis = 1)
+    struCase.W_u_total = sum(struCase.W_u)
     return(struCase)
 
 def clean_eqInfo(struCase,**kwargs):
