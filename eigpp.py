@@ -140,7 +140,7 @@ def modalDecomp(struCase,**kwargs):
     
     if struCase.loadEigOpt:
         if (struCase.eLoad.shape[0]!=0):
-            struCase.Q = np.matmul(struCase.auxMD, struCase.eLoad)
+            struCase.Q = np.matmul(struCase.phiR.T, struCase.eLoad)
         
         else:
             if glob_print_output:

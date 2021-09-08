@@ -991,7 +991,7 @@ def modal_w(struCase, **kwargs):
     '''
     struCase.W = np.cumsum(np.multiply((struCase.Q[:,1:]+struCase.Q[:,:-1])*0.5,np.diff(struCase.q)),axis=1)
     struCase.W = np.append(np.zeros((struCase.W.shape[0],1)), struCase.W, axis = 1)
-    struCase.W_total = sum(struCase.W)
+    struCase.W_total = np.sum(struCase.W, axis=0)
     return(struCase)
 
 def loads_w(struCase, **kwargs):
@@ -1006,7 +1006,7 @@ def loads_w(struCase, **kwargs):
     '''
     struCase.W_u = np.cumsum(np.multiply((struCase.eLoad[:,1:]+struCase.eLoad[:,:-1])*0.5,np.diff(struCase.u_mdr)),axis=1)
     struCase.W_u = np.append(np.zeros((struCase.W_u.shape[0],1)),struCase.W_u, axis = 1)
-    struCase.W_u_total = sum(struCase.W_u)
+    struCase.W_u_total = np.sum(struCase.W_u, axis=0)
     return(struCase)
 
 def clean_eqInfo(struCase,**kwargs):
