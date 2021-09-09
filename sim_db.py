@@ -46,32 +46,45 @@ class stru:
     
     # instance attributes
     def __init__(self):
-        self.name   = ''                            # short description
-        self.descr  = ''                            # description
+        self.name   = ''                                    # short description
+        self.descr  = ''                                    # description
                     
-        self.nnode  = 0                             # 1          - number of nodes considered
-        self.nodes  = []                            # nnode      - label of nodes considered (external)
-        self.iLabl  = np.array([], dtype=int)       # nnode      - label of nodes considered (internal)
-        self.ndof   = 0                             # 1          - Total number of DoF considered (including those where BCs are applied)
-        self.nt     = 0                             # 1          - number of time steps
-        self.t      = np.array([], dtype=float)     # nt         - Response temporal grid
-        self.u_raw  = np.array([], dtype=float)     # ndof x nt  - generalized displacements as functions of time - as read from "curvas"
-                                                    #            - rotational DoFs (if exist) are expresed as 3-1-3 Euler angles rotations [rad]
+        self.nnode  = 0                                     # 1          - number of nodes considered
+        self.nodes  = []                                    # nnode      - label of nodes considered (external)
+        self.iLabl  = np.array([], dtype=int)               # nnode      - label of nodes considered (internal)
+        self.ndof   = 0                                     # 1          - Total number of DoF considered (including those where BCs are applied)
+        self.nt     = 0                                     # 1          - number of time steps
+        self.t      = np.array([], dtype=float)             # nt         - Response temporal grid
+        self.u_raw  = np.array([], dtype=float)             # ndof x nt  - generalized displacements as functions of time - as read from "curvas"
+                                                            #            - rotational DoFs (if exist) are expresed as 3-1-3 Euler angles rotations [rad]
         self.u_mdr  = np.array([], dtype=np.longdouble)     # ndof x nt  - generalized displacements as functions of time - mdr: modal decomposition ready
-                                                    #            - rotational DoFs (if exist) are expresed as axial vector rotations relative to the initial orientation of each node's local system
-        self.eLoad  = np.array([], dtype=float)     # ndof x nt  - external loads as functions of time
-                                                    #            - NOTA: qué onda con los momentos leídos acá? necesitan un tratamiento especial?
-                    
-        self.mass   = np.array([], dtype=float)     # ndof       - lumped mass matrix
-        self.nm     = 0                             # 1          - number of modes read
-        self.om     = np.array([], dtype=float)     # nm         - ordered natural frequencies
-        self.phi    = np.array([], dtype=np.longdouble)     # ndof x nm  - modal matrix
-        self.phiR   = np.array([], dtype=np.longdouble)     # ndof x moi - modal matix (using moi)
-        self.auxMD  = np.array([], dtype=np.longdouble)     # nm x ndof  - auxiliary matix PHI^T * M, used for modal decomposition
-        self.q      = np.array([], dtype=np.longdouble)     # nm x nt    - modal coordinates as functions of time
-        self.Q      = np.array([], dtype=np.longdouble)     # nm x nt    - modal external loads as functions of time
-        self.W      = np.array([], dtype=np.longdouble)     # nm x nt    - modal work from external loads, as function of time
-        self.W_u    = np.array([], dtype=np.longdouble)     # ndof x nt  - work from external loads (over DOFs), as function of time
+                                                            #            - rotational DoFs (if exist) are expresed as axial vector rotations relative to the initial orientation of each node's local system
+        self.aLoad  = np.array([], dtype=float)             # ndof x nt  - aerodynamic loads as functions of time
+        self.LW     = np.array([], dtype=np.longdouble)     # ndof x nt  - work from external loads (over GDoFs), as functions of time
+        self.LWtot  = np.array([], dtype=np.longdouble)     # 1 x nt     - sum of LW over the GDoFs, as a function of time
+        
+        self.mass   = np.array([], dtype=float)             # ndof       - lumped mass matrix
+        self.nm     = 0                                     # 1          - number of modes read
+        self.om     = np.array([], dtype=float)             # nm         - ordered natural frequencies
+        self.phi    = np.array([], dtype=np.longdouble)     # ndof x nm  - modal matrix - as read from *.RSN - must be normalized w.r.t. the mass
+        self.moi    = []                                    # 1          - modes of interest indices
+        self.nmoi   = 0                                     # 1          - number of modes of interest indices
+        self.mnorm  = 'mass'                                # str        - moi normalization criteria
+        self.omR    = np.array([], dtype=float)             # nmoi       - reduced ordered natural frequencies (using moi) - if moi=[] => omR=om
+        self.phiR   = np.array([], dtype=np.longdouble)     # ndof x nmoi- reduced modal matix (using moi) - if moi=[] => phiR=phi
+        self.mmass  = np.array([], dtype=np.longdouble)     # nmoi       - modal mass matrix (diagonal) - reduced (for moi only)
+        self.mstif  = np.array([], dtype=np.longdouble)     # nmoi       - modal stiffness matrix (diagonal) - reduced (for moi only)
+        self.auxMD  = np.array([], dtype=np.longdouble)     # nmoi x ndof- auxiliary matix PHI^T * M, used for modal decomposition
+        self.q      = np.array([], dtype=np.longdouble)     # nmoi x nt  - modal coordinates as functions of time
+        self.Q      = np.array([], dtype=np.longdouble)     # nmoi x nt  - modal external loads as functions of time
+        self.mKE    = np.array([], dtype=np.longdouble)     # nmoi x nt  - modal Kinetic Energy as functions of time
+        self.mPE    = np.array([], dtype=np.longdouble)     # nmoi x nt  - modal Potential Energy as functions of time
+        self.mME    = np.array([], dtype=np.longdouble)     # nmoi x nt  - modal Mechanical Energy as functions of time
+        self.mKEtot = np.array([], dtype=np.longdouble)     # 1 x nt     - sum of mKE over the MDoFs, as a function of time
+        self.mPEtot = np.array([], dtype=np.longdouble)     # 1 x nt     - sum of mPE over the MDoFs, as a function of time
+        self.mMEtot = np.array([], dtype=np.longdouble)     # 1 x nt     - sum of mME over the MDoFs, as a function of time
+        self.QW     = np.array([], dtype=np.longdouble)     # nmoi x nt  - modal work from external loads, as function of time
+        self.QWtot  = np.array([], dtype=np.longdouble)     # 1 x nt     - sum of QW over the MDoFs, as a function of time
         
         self.p11FN  = ''                            # binary *.p11 file name (without extension - Simpact output) from wich extract generalized displacements (and/or other data)
         self.rsnSi  = ''                            # ASCII *.rsn file name (without extension) - Simpact output
@@ -97,7 +110,6 @@ class stru:
         self.plot_timeVals = np.array([np.inf,np.inf])      # desired plot time values
         self.intLabOffset = 0                               # offset node labels
         self.rot_inds = [4,5,6]                             # rotational DOFs inds (not Python´s)
-        self.moi = []                                       # inds (normal, not Python´s) of modes of interest
     
     #Methods
     #Coming soon...
@@ -140,8 +152,141 @@ class sim:
 functions
 ------------------------------------------------------------------------------
 """
-# update phiR
+# modal analysis
+def upd_phiR(struCase):
+    '''
+    Updates struCase.phiR and struCase.omR.
+    inputs:
+        struCase, stru class obj
+    '''
 
+    if len(struCase.moi) == 0:
+        struCase.phiR = np.copy(struCase.phi)
+        struCase.omR = np.copy(struCase.om)
+    else:
+        moi_inds = []
+        for i in range(len(struCase.moi)):
+            moi_inds.append(struCase.moi[i]-1)
+        struCase.phiR = struCase.phi[moi_inds]
+        struCase.omR = struCase.om[moi_inds]
+        
+    return(struCase)
+
+
+def upd_modalMK(struCase):
+    '''
+    Determines struCase.mmass and struCase.mstif
+    from struCase.phiR and struCase.mass.
+    inputs:
+        struCase, stru class obj
+    '''
+    
+    struCase.mmass = np.diag( np.matmul( struCase.phiR.T, np.matmul( np.diag(struCase.mass), struCase.phiR ) ) )
+    struCase.mstif = np.multiply( struCase.mmass, np.power( struCase.omR[:,1], 2 ) )
+        
+    return(struCase)
+
+
+def upd_mnorm(struCase):
+    '''
+    Updates struCase.phiR, struCase.q, struCase.Q,
+    struCase.mmass and struCase.mstif from struCase.mnorm.
+    
+    struCase.phiR, struCase.q, struCase.Q before this
+    function is called must have been determined using
+    mass-normalized modes.
+    
+    inputs:
+        struCase, stru class obj
+    '''
+
+    if struCase.norm == 'mass':
+        alpha = 1
+
+    elif struCase.norm == 'stiff':
+        alpha = 1/struCase.om[:,2]
+        
+    elif struCase.norm == 'norm':
+        alpha = 1/np.linalg.norm(struCase.phiR,axis=0)
+    
+    elif struCase.norm == 'max':
+        alpha = 1/np.max(struCase.phiR, axis=0)
+        
+    struCase.phiR = struCase.phiR*alpha
+    
+    if struCase.struEigOpt:
+        struCase.q = np.multiply(struCase.q,np.transpose([1/alpha]))
+    
+    if struCase.loadEigOpt:
+        struCase.Q = np.multiply(struCase.Q,np.transpose([1/alpha]))
+        
+    struCase = upd_modalMK(struCase)
+    
+    return(struCase)
+
+
+def modalDecomp(struCase,**kwargs):
+    """
+    Applies modal decomposition
+    input:
+        struCase: 'stru' class obj
+    kwargs: (may contain)
+    returns:
+        struCase, 'stru' class obj
+    """
+    
+    if 'glob_print_output' in kwargs:
+        glob_print_output = kwargs.get('glob_print_output')
+    else:
+        glob_print_output = False
+        
+    struCase = upd_phiR(struCase)
+        
+    if (len(struCase.mass)!=0) and (struCase.phiR.shape[0]!=0):
+        struCase.auxMD = np.zeros(struCase.phiR.T.shape)
+        for i in range(struCase.auxMD.shape[0]):
+           struCase.auxMD[i] = np.multiply(struCase.mass, struCase.phiR[:,i])
+    elif glob_print_output:
+        print("no mass and modal data for modal decomposition")
+    
+    if struCase.struEigOpt:
+        struCase.q = np.matmul(struCase.auxMD, struCase.u_mdr)
+    
+    if struCase.loadEigOpt:
+        if (struCase.aLoad.shape[0]!=0):
+            struCase.Q = np.matmul(struCase.phiR.T, struCase.aLoad)
+        else:
+            if glob_print_output:
+                print("no external load data for modal decomposition")
+    
+    if struCase.mnorm == 'mass':
+        struCase = upd_modalMK(struCase)
+    else:
+        struCase = upd_mnorm(struCase)
+        
+    return struCase
+
+
+def modal_mechEnergy(struCase):
+    '''
+    Determines mechanical energy related to each mode.
+    input:
+        struCase: 'stru' class obj
+    '''
+    
+    dq = np.gradient( struCase.q, struCase.t, axis=1 )
+    struCase.mKE = 0.5*np.multiply( struCase.mmass, np.power(dq,2).T ).T
+    struCase.mPE = 0.5*np.multiply( struCase.mstif, np.power(struCase.q,2).T ).T
+    struCase.mME = struCase.mKE + struCase.mPE
+    
+    struCase.mKEtot = np.sum(struCase.mKE, axis=0 )
+    struCase.mPEtot = np.sum(struCase.mPE, axis=0 )
+    struCase.mMEtot = np.sum(struCase.mME, axis=0 )
+        
+    return struCase
+
+
+"""
 def modal_updnorm(struCase, update_mode, **kwargs):
     '''
     Updates struCase.phiR (and others) using the MOI (from struCase or kwargs (default))
@@ -195,12 +340,44 @@ def modal_updnorm(struCase, update_mode, **kwargs):
     else:
         raise NameError('Wrong update mode, check:', update_mode)
     return(struCase)
+"""
     
+def modal_w(struCase, **kwargs):
+    '''
+    Computes the work of Q over MDoFs
+    
+    inputs:
+        struCase, stru class obj
+    kwargs may contain:
+    returns:
+        struCase, stru class obj
+    '''
+    struCase.QW = np.cumsum(np.multiply((struCase.Q[:,1:]+struCase.Q[:,:-1])*0.5,np.diff(struCase.q)),axis=1)
+    struCase.QW = np.append(np.zeros((struCase.QW.shape[0],1)), struCase.QW, axis = 1)
+    struCase.QWtot = np.sum(struCase.QW, axis=0)
+    return(struCase)
+
+def loads_w(struCase, **kwargs):
+    '''
+    Computes the work of aLoads over GDoFs
+    
+    inputs:
+        struCase, stru class obj
+    kwargs may contain:
+    returns:
+        struCase, stru class obj
+    '''
+    struCase.LW = np.cumsum(np.multiply((struCase.aLoad[:,1:]+struCase.aLoad[:,:-1])*0.5,np.diff(struCase.u_mdr)),axis=1)
+    struCase.LW = np.append(np.zeros((struCase.LW.shape[0],1)),struCase.LW, axis = 1)
+    struCase.LWtot = np.sum(struCase.LW, axis=0)
+    return(struCase)
+    
+
 # time slice
 
 def time_slice(struCase,**kwargs):
     '''
-    Delete all values with time > min(max(tf_stru),max(tf_loads)) (for now, tf_loads = len(stru.eLoad))
+    Delete all values with time > min(max(tf_stru),max(tf_loads)) (for now, tf_loads = len(stru.aLoad))
     inputs:
             struCase stru class obj
     kwargs may contain: none
@@ -209,9 +386,9 @@ def time_slice(struCase,**kwargs):
     '''
     loc_t_len = len(struCase.t)
     try:
-        loc_load_len = len(struCase.eLoad[0])
+        loc_load_len = len(struCase.aLoad[0])
     except:
-        raise ValueError('eLoad prop empty!')
+        raise ValueError('aLoad prop empty!')
     if loc_t_len > loc_load_len:
         struCase.u_raw = struCase.u_raw[:,0:loc_load_len]
         struCase.u_mdr = struCase.u_mdr[:,0:loc_load_len]
@@ -219,7 +396,7 @@ def time_slice(struCase,**kwargs):
         struCase.t = struCase.t[:loc_load_len]
     
     elif loc_t_len < loc_load_len:
-        struCase.eLoad = struCase.eLoad[:,0:loc_t_len]
+        struCase.aLoad = struCase.aLoad[:,0:loc_t_len]
 
     return(struCase)
 
@@ -430,7 +607,8 @@ def rd_rsn_De(struCase, **kwargs):
     
     struCase = rd_mass(struCase, **kwargs)
     struCase = rd_eig(struCase, **kwargs)
-    struCase = modal_updnorm(struCase, 'raw_phiR', **kwargs)
+    struCase = modalDecomp(struCase,**kwargs)
+    # struCase = modal_updnorm(struCase, 'raw_phiR', **kwargs)
     
     return struCase
 
@@ -833,7 +1011,7 @@ def ae_Ftable(struCase, **kwargs): ##NOTA: Si el nombre no gusta, lo cambio
     Extracts loads from .DAT files
     struCase: stru obj
     kwargs:
-    returns: stru obj, with some attributes updated (t_Loads, eLoad)
+    returns: stru obj, with some attributes updated (t_Loads, aLoad)
     '''   
     if 'subDir_FCS' in kwargs:
         subDir_FCS = kwargs.get('subDir_FCS')
@@ -891,11 +1069,11 @@ def ae_Ftable(struCase, **kwargs): ##NOTA: Si el nombre no gusta, lo cambio
     struCase = FTable_fit(struCase, loc_ftab_filt, loc_ittab[:,1], **kwargs)
     return struCase
 
-# fit eLoad table to stru time array
+# fit aLoad table to stru time array
 
 def FTable_fit(struCase, y_loads, t_loads,**kwargs):
     '''
-    Fits the eLoads to the stru-shaped time arr
+    Fits the aLoads to the stru-shaped time arr
     inputs:
         struCase, stru class obj
         loc_ftab_filt, external loads
@@ -917,7 +1095,7 @@ def FTable_fit(struCase, y_loads, t_loads,**kwargs):
         pre_count = pre_count+corr_count
     #if t_stru[-1] == t_loads[-1]:
     final_y.append(y_loads[:,-1]) #NOTA: Esto supone que terminan en igual tf
-    struCase.eLoad = np.transpose(final_y)
+    struCase.aLoad = np.transpose(final_y)
     return(struCase)
 
 
@@ -978,36 +1156,6 @@ def svBin(data, **kwargs):
         f.close()
         if print_output:
             print ('bin data file saved (save_bin funct)')
-
-def modal_w(struCase, **kwargs):
-    '''
-    Computes the modal work of eLoads
-    
-    inputs:
-        struCase, stru class obj
-    kwargs may contain:
-    returns:
-        struCase, stru class obj
-    '''
-    struCase.W = np.cumsum(np.multiply((struCase.Q[:,1:]+struCase.Q[:,:-1])*0.5,np.diff(struCase.q)),axis=1)
-    struCase.W = np.append(np.zeros((struCase.W.shape[0],1)), struCase.W, axis = 1)
-    struCase.W_total = np.sum(struCase.W, axis=0)
-    return(struCase)
-
-def loads_w(struCase, **kwargs):
-    '''
-    Computes the work of eLoads over DOFs
-    
-    inputs:
-        struCase, stru class obj
-    kwargs may contain:
-    returns:
-        struCase, stru class obj
-    '''
-    struCase.W_u = np.cumsum(np.multiply((struCase.eLoad[:,1:]+struCase.eLoad[:,:-1])*0.5,np.diff(struCase.u_mdr)),axis=1)
-    struCase.W_u = np.append(np.zeros((struCase.W_u.shape[0],1)),struCase.W_u, axis = 1)
-    struCase.W_u_total = np.sum(struCase.W_u, axis=0)
-    return(struCase)
 
 def clean_eqInfo(struCase,**kwargs):
     '''
