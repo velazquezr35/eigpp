@@ -110,15 +110,15 @@ def rd_data(case, **kwargs):
             print("no external load data read")
     return case
 
-'''
+
 def modalDecomp(struCase,**kwargs):
     """
     Applies modal decomposition
     input:
-        struCase: 'stru' class obj
+        case: 'sim' class obj
     kwargs: (may contain)
     returns:
-        struCase, 'stru' class obj
+        case, 'sim' class obj
     """
     
     if 'glob_print_output' in kwargs:
@@ -126,37 +126,29 @@ def modalDecomp(struCase,**kwargs):
     else:
         glob_print_output = False
     
-    if len(struCase.moi) == 0:
-        struCase.phiR = np.copy(struCase.phi)
-    elif struCase.mnorm != 'mass': # we need mass-normalized modes here
-        struCase = upd_moi(struCase, struCase.moi, callModalDec=False)
-        
-    if (len(struCase.mass)!=0) and (struCase.phiR.shape[0]!=0):
-        struCase.auxMD = np.zeros(struCase.phiR.T.shape)
-        for i in range(struCase.auxMD.shape[0]):
-           struCase.auxMD[i] = np.multiply(struCase.mass, struCase.phiR[:,i])
-    elif glob_print_output:
-        print("no mass and modal data for modal decomposition")
+    
+    if len(struCase.auxMD) == 0:
+        if (len(struCase.mass)!=0) and (struCase.phiR.shape[0]!=0):
+            struCase.auxMD = np.zeros(struCase.phiR.T.shape)
+            for i in range(struCase.auxMD.shape[0]):
+               struCase.auxMD[i] = np.multiply(struCase.mass, struCase.phiR[:,i])
+        elif glob_print_output:
+            print("no mass and modal data for modal decomposition")
     
     if struCase.struEigOpt:
         struCase.q = np.matmul(struCase.auxMD, struCase.u_mdr)
     
     if struCase.loadEigOpt:
-        if (struCase.aLoad.shape[0]!=0):
-            struCase.Q = np.matmul(struCase.phiR.T, struCase.aLoad)
+        if (struCase.eLoad.shape[0]!=0):
+            struCase.Q = np.matmul(struCase.auxMD, struCase.eLoad)
         
         else:
             if glob_print_output:
                 print("no external load data for modal decomposition")
     
-    if struCase.mnorm == 'mass':
-        # calcular mmass y mstif
-    elif:
-        # llamar a la actualización de norma
-        
-    # struCase = sim_db.modal_updnorm(struCase, 'norm_modalphiR', **kwargs)        
+    struCase = sim_db.modal_updnorm(struCase, 'norm_modalphiR', **kwargs)        
     return struCase
-'''
+
 """
 ------------------------------------------------------------------------------
 end-user functs
