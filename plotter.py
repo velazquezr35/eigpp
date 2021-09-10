@@ -110,7 +110,7 @@ def plt_ut(struCase, dofDict, ax, **kwargs): #NOTA: ¿Cambiar nombre? (algo mixt
                 y=np.gradient(y,t) #NOTA: Agregar al plot que es una velocidad
         elif data_type == 'FCS':
             
-            y = struCase.eLoad[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+            y = struCase.aLoad[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
     
         ax.plot(t,y, label= node_labels[i] +' - DOF: ' + str(original_inds[i])) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
         if env:
@@ -129,7 +129,7 @@ def plt_qt(struCase, modal_inds, ax, **kwargs):
             modal_inds is a list (indexes)
             ax is a matplotlib.pyplot Axes obj
     kwargs (may contain): 
-        'data_type': 'mod_desp' or 'mod_eload' or 'mod_W' (mod_desp as default)
+        'data_type': 'mod_desp' or 'mod_aLoad' or 'mod_W' (mod_desp as default)
         'vel': False (default) or True (in order to calculate and plot modal velocities)
         'env': False (default) or True (in order to plot the envelope)
         'modal_inds_type': 'relative' (in order to use MOI´s inds), 'absolute' (phi´s inds, default)
@@ -159,10 +159,10 @@ def plt_qt(struCase, modal_inds, ax, **kwargs):
     for loc_ind in modal_inds:
         if data_type == 'mod_desp':
             y = struCase.q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
-        elif data_type == 'mod_eload':
+        elif data_type == 'mod_aLoad':
             y = struCase.Q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         elif data_type == 'mod_W':
-            y = struCase.W[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+            y = struCase.QW[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         if vel:
             y=np.gradient(y,t)
         ax.plot(t,y, label=str(loc_ind))
@@ -236,7 +236,7 @@ def plt_us(struCase, tdof_dict,ax,**kwargs):
                     if original_inds[j] in struCase.rot_inds:
                         y[j] = np.rad2deg(y[j])
         elif data_type == 'FCS':
-            y = struCase.eLoad[stru_inds, inds_t[i]]
+            y = struCase.aLoad[stru_inds, inds_t[i]]
         ax.plot(node_labels,y, label= '{0:.2f}, {1:.3f}'.format(desired_t[i],struCase.t[inds_t[i]]))
     ax.legend(title='Time instants (des vs act):')
     return(ax)
@@ -283,7 +283,7 @@ def plt_qs(struCase, tmode_dict,ax,**kwargs):
             ax is a matplotlib.pyplot Axes obj
 
     kwargs (may contain): 
-        'data_type': 'mod_desp' or 'mod_eload' (mod_desp as default)
+        'data_type': 'mod_desp' or 'mod_aLoad' (mod_desp as default)
         'vel': False (default) or True (in order to calculate and plot velocities)
                     
     """
@@ -297,7 +297,7 @@ def plt_qs(struCase, tmode_dict,ax,**kwargs):
         vel = False
     if data_type == 'modal_desp':
         modal_inds = np.linspace(1,len(struCase.q),len(struCase.q))
-    elif data_type == 'modal_eload':
+    elif data_type == 'modal_aLoad':
         modal_inds = np.linspace(1,len(struCase.Q),len(struCase.Q))
     inds_t = []
     t_lst = flatten_values_list(tmode_dict.values())
@@ -306,7 +306,7 @@ def plt_qs(struCase, tmode_dict,ax,**kwargs):
     for i in range(len(inds_t)):
         if data_type == 'modal_desp':
             y = struCase.q[:,inds_t[i]]
-        elif data_type == 'modal_eload':
+        elif data_type == 'modal_aLoad':
            y = struCase.Q[:,inds_t[i]]
         ax.plot(modal_inds,y, label= '{0:.2f}, {1:.3f}'.format(t_lst[i],struCase.t[inds_t[i]]))
     ax.legend(title='Time instants (des vs act):')
@@ -379,7 +379,7 @@ def plt_uFFT(struCase, dofDict, ax, **kwargs):
             if vel:
                 y=np.gradient(y,t) #NOTA: Agregar al plot que es una velocidad
         elif data_type == 'FCS':
-            y = struCase.eLoad[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+            y = struCase.aLoad[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         y_f = abs(fft(y))
         loc_m = max(y_f)
         if not loc_m== 0:
@@ -405,7 +405,7 @@ def plt_qFFT(struCase, modal_inds, ax, **kwargs):
             modal_inds list of modal indexes
             ax matplotlib.pyplot Axes obj
     kwargs (may contain): 
-        'data_type': 'mod_desp' or 'mod_eload' (mod_desp as default)
+        'data_type': 'mod_desp' or 'mod_aLoad' (mod_desp as default)
         'vel': False (default) or True (in order to calculate and plot velocities)
         'x_units', str: 'rad/s' or 'Hz' (default) - x freqs units
         'vel', for in order to calculate and plot the FFT of the modal velocities
@@ -454,7 +454,7 @@ def plt_qFFT(struCase, modal_inds, ax, **kwargs):
             y = struCase.q[i-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
             if vel:
                 y=np.gradient(y,t) #NOTA: Agregar al plot que es una velocidad
-        elif data_type == 'mod_eload':
+        elif data_type == 'mod_aLoad':
             y = struCase.Q[i-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         y_f = abs(fft(y))
         loc_m = max(y_f)
@@ -528,7 +528,7 @@ def plt_uPP(struCase, dofDict,ax,**kwargs):
                     print('rot rad 2 deg,', original_inds[i])
                     y = np.rad2deg(y)
         elif data_type=='FCS':
-            y = struCase.eLoad[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+            y = struCase.aLoad[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         
         dy = np.gradient(y,struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]])
         ax.plot(y,dy, label=str(original_inds[i])) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
@@ -541,7 +541,7 @@ def plt_qPP(struCase, modal_inds,ax,**kwargs):
             modal_inds list of modal indexes
             ax is a matplotlib.pyplot Axes obj
     kwargs (may contain): 
-        'data_type': 'mod_desp' or 'mod_eload' (mod_desp as default)
+        'data_type': 'mod_desp' or 'mod_aLoad' (mod_desp as default)
         graphs_pack, standard dict for plot customization   
         'modal_inds_type': 'relative' (in order to use MOI´s inds), 'absolute' (phi´s inds, default)
     returns:
@@ -569,7 +569,7 @@ def plt_qPP(struCase, modal_inds,ax,**kwargs):
         if data_type == 'mod_desp':
             dy = np.gradient(struCase.q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]],struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]])
             y = struCase.q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
-        elif data_type == 'mod_eload':
+        elif data_type == 'mod_aLoad':
             dy = np.gradient(struCase.Q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]],struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]])
             y = struCase.Q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         ax.plot(y,dy, label=str(loc_ind))
@@ -666,7 +666,7 @@ def plt_uspectr(struCase, dofDict, fig, ax, **kwargs):
             if vel:
                 y=np.gradient(y,t) #NOTA: Agregar al plot que es una velocidad
         elif data_type =='FCS':
-            y = struCase.eLoad[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+            y = struCase.aLoad[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         F, T, S = signal.spectrogram(y, fDef,window=WinType, noverlap=OverLap,nperseg=WinSize)
         if b_norm:
             loc_m = 0
@@ -699,7 +699,7 @@ def plt_q_spectr(struCase, modal_inds, fig, ax, **kwargs):
             dof_lst is a dict (o lista, ver cual dejar), {node:[DOFs]}
             ax is a matplotlib.pyplot Axes obj
     kwargs (may contain):
-        'data_type': 'mod_desp' or 'mod_eload' (mod_desp as default)
+        'data_type': 'mod_desp' or 'mod_aLoad' (mod_desp as default)
         'vel': bool, default False - In order to calculate and plot the modal vel's spectrogram
         'SP_Winsize': str, default Dt/20 
         'SP_OvrLapFactor': int, detault 80 (%)
@@ -765,7 +765,7 @@ def plt_q_spectr(struCase, modal_inds, fig, ax, **kwargs):
             y = struCase.q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
             if vel:
                 y=np.gradient(y,t) #NOTA: Agregar al plot que es una velocidad
-        elif data_type == 'mod_eload':
+        elif data_type == 'mod_aLoad':
             y = struCase.Q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         F, T, S = signal.spectrogram(y, fDef,window=WinType, noverlap=OverLap,nperseg=WinSize)
         if b_norm:
@@ -831,7 +831,7 @@ def plt_uxuy(struCase, vsDict, ax, **kwargs):
         else:
             print('Warning: Bad u_type def')
     elif data_type == 'FCS':
-        y = struCase.eLoad
+        y = struCase.aLoad
     desired_t = vsDict['t_vals']
     inds_t = []
     for des_t in desired_t:
@@ -860,9 +860,12 @@ def plt_general(struCase, inds, ax, **kwargs):
         ax, matplotlib.pyplot ax obj
     kwargs:
         (must contain)
-        loc_data_type, str: 'E, W, W_u', etc - Data type
+        special_mode, str or bool - Flag for special plots (default False), 'max_vs_q'
+        loc_data_type, str: 'E, QW, LW', etc - Data type
         (may contain)
         vel, bool - False(default) or True (in order to compute and plot dy/dt)
+        (if special_mode = 'max_vs_q')
+        x_vals, list or numpy.array - x values to plot
     returns:
         ax, matplotlib.pyplot ax obj
     '''
@@ -870,24 +873,51 @@ def plt_general(struCase, inds, ax, **kwargs):
         loc_data_type = kwargs.get('loc_data_type')
     else:
         raise NameError('Data type str error')
-    if 'vel' in kwargs:
-        vel = kwargs.get('vel')
+    if 'special_mode' in kwargs:
+        special_mode = kwargs.get('special_mode')
     else:
-        vel = False
+        special_mode = False
     graphs_pack = handle_graph_info(**kwargs)
-    t=struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
-    for i in range(len(inds)):
-        try:
-            raw_y = getattr(struCase,loc_data_type[i])
-            if len(raw_y.shape) == 1:
-                y = raw_y[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+    if not special_mode:
+        if 'vel' in kwargs:
+            vel = kwargs.get('vel')
+        else:
+            vel = False
+        t=struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+        for i in range(len(inds)):
+            try:
+                raw_y = getattr(struCase,loc_data_type[i])
+                if len(raw_y.shape) == 1:
+                    y = raw_y[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+                else:
+                    y = raw_y[inds[i]-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+            except:
+                raise NameError('Wrong data type code - pls check')
+            if vel:
+                y = np.gradient(y, t)
+            ax.plot(t, y, label = loc_data_type[i] + ' - ' + str(inds[i]))
+    elif special_mode == 'max_vs_q':
+        if 'x_vals' in kwargs:
+            x_vals = kwargs.get('x_vals')
+        else:
+            if struCase.moi == []:
+                x_vals = np.arange(1,struCase.nm+1,1)
             else:
-                y = raw_y[inds[i]-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
-        except:
-            raise NameError('Wrong data type code - pls check')
-        if vel:
-            y = np.gradient(y, t)
-        ax.plot(t, y, label = loc_data_type[i] + ' - ' + str(inds[i]))
+                x_vals = struCase.moi
+        if 'extra_inds' in kwargs:
+            extra_inds = kwargs.get('extra_inds')
+        else:
+            extra_inds = [0,None]
+        for i in range(len(inds)):
+            try:
+                y_vals = getattr(struCase,loc_data_type[i])
+            except:
+                raise NameError('Wrong data type code - pls check')
+            if len(y_vals.shape) == 2:
+                ax.plot(x_vals, y_vals[:,0], label = 'envMAX - ' + str(inds[i]))
+                ax.plot(x_vals, y_vals[:,1], label = 'envMIN - ' + str(inds[i]))
+            else:
+                ax.plot(x_vals, y_vals, label = loc_data_type[i] + ' - ' + str(inds[i]))
     ax.legend(title=graphs_pack['legend_title'])
     return(ax)
 """
@@ -904,6 +934,7 @@ def fig_general(struCase, indLIST, **kwargs):
         indLIST, nested list, [[IND]]
     kwargs: 
         (must contain)
+        special_mode, str or bool - Flag for special plots (default False), 'max_vs_q'
         data_type, nested list of str: 'E, W_load, W_modal' - Data type (for each 0-list)
         (may contain)
         #General:
