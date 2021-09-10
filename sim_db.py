@@ -200,16 +200,16 @@ def upd_mnorm(struCase):
         struCase, stru class obj
     '''
 
-    if struCase.norm == 'mass':
+    if struCase.mnorm == 'mass':
         alpha = 1
 
-    elif struCase.norm == 'stiff':
+    elif struCase.mnorm == 'stiff':
         alpha = 1/struCase.om[:,2]
         
-    elif struCase.norm == 'norm':
-        alpha = 1/np.linalg.norm(struCase.phiR,axis=0)
+    elif struCase.mnorm == 'norm':
+        alpha = 1/np.linalg.mnorm(struCase.phiR,axis=0)
     
-    elif struCase.norm == 'max':
+    elif struCase.mnorm == 'max':
         alpha = 1/np.max(struCase.phiR, axis=0)
         
     struCase.phiR = struCase.phiR*alpha
@@ -901,7 +901,6 @@ def rd_rawRespData(struCase, **kwargs):
     struCase = rd_eig(struCase, **kwargs)
     struCase = rd_u(struCase, **kwargs)
     struCase = ae_Ftable(struCase, **kwargs)
-    struCase = modal_updnorm(struCase,'raw_phiR', **kwargs)
     
     return struCase
 
