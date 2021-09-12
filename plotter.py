@@ -129,7 +129,7 @@ def plt_qt(struCase, modal_inds, ax, **kwargs):
             modal_inds is a list (indexes)
             ax is a matplotlib.pyplot Axes obj
     kwargs (may contain): 
-        'data_type': 'mod_desp' or 'mod_aLoad' or 'mod_W' (mod_desp as default)
+        'data_type': attr name (q, Q, etc.)
         'vel': False (default) or True (in order to calculate and plot modal velocities)
         'env': False (default) or True (in order to plot the envelope)
         'modal_inds_type': 'relative' (in order to use MOI´s inds), 'absolute' (phi´s inds, default)
@@ -137,7 +137,7 @@ def plt_qt(struCase, modal_inds, ax, **kwargs):
     if 'data_type' in kwargs:
         data_type = kwargs.get('data_type')
     else:
-        data_type = 'mod_desp'
+        data_type = 'q'
     if 'vel' in kwargs:
         vel = kwargs.get('vel')
     else:
@@ -157,12 +157,7 @@ def plt_qt(struCase, modal_inds, ax, **kwargs):
     modal_inds = handle_modal_inds(struCase, modal_inds, **kwargs)
     t=struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
     for loc_ind in modal_inds:
-        if data_type == 'mod_desp':
-            y = struCase.q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
-        elif data_type == 'mod_aLoad':
-            y = struCase.Q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
-        elif data_type == 'mod_W':
-            y = struCase.QW[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+        y = getattr(struCase,data_type)[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         if vel:
             y=np.gradient(y,t)
         ax.plot(t,y, label=str(loc_ind))
@@ -405,7 +400,7 @@ def plt_qFFT(struCase, modal_inds, ax, **kwargs):
             modal_inds list of modal indexes
             ax matplotlib.pyplot Axes obj
     kwargs (may contain): 
-        'data_type': 'mod_desp' or 'mod_aLoad' (mod_desp as default)
+        'data_type': attr name (q, Q, etc...)
         'vel': False (default) or True (in order to calculate and plot velocities)
         'x_units', str: 'rad/s' or 'Hz' (default) - x freqs units
         'vel', for in order to calculate and plot the FFT of the modal velocities
@@ -418,7 +413,7 @@ def plt_qFFT(struCase, modal_inds, ax, **kwargs):
     if 'data_type' in kwargs:
         data_type = kwargs.get('data_type')
     else:
-        data_type = 'mod_desp'   
+        data_type = 'q'   
     if 'vel' in kwargs:
         vel = kwargs.get('vel')
     else:
@@ -450,12 +445,9 @@ def plt_qFFT(struCase, modal_inds, ax, **kwargs):
     t = struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
     fDef = 1/(t[-1]-t[0])
     for i in modal_inds:
-        if data_type == 'mod_desp':
-            y = struCase.q[i-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
-            if vel:
-                y=np.gradient(y,t) #NOTA: Agregar al plot que es una velocidad
-        elif data_type == 'mod_aLoad':
-            y = struCase.Q[i-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+        y = getattr(struCase, data_type)[i-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+        if vel:
+            y=np.gradient(y,t) #NOTA: Agregar al plot que es una velocidad
         y_f = abs(fft(y))
         loc_m = max(y_f)
         if not loc_m== 0:
@@ -465,13 +457,30 @@ def plt_qFFT(struCase, modal_inds, ax, **kwargs):
         x_f = np.arange(0,fDef*(len(t)-1),fDef)
         if x_units == 'rad/s':
             x_f = x_f*2*np.pi
-        ax.plot(x_f[:(len(t)-1)//2],y_f[:(len(t)-1)//2], label=' - MODO: ' + str(i)) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
+        x_values = x_f[:(len(t)-1)//2]
+        y_values = y_f[:(len(t)-1)//2]
+        ax.plot(x_values,y_values, label=' - MODO: ' + str(i)) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
     ax.set_ylabel(graphs_pack['y_label'])
     if y_lims:
-        ax.set_ylim(y_lims)
+        if type(y_lims) == str:
+            if y_lims == 'individual':
+                if not 'y_lims_FFT' in kwargs:
+                    print('y_lims not set - FFT')
+                else:
+                    y_lims = kwargs.get('y_lims_FFT')
+                    ax.set_ylim(y_lims)
+        else:
+            ax.set_ylim(y_lims)
     if x_lims:
-        ax.set_xlim(x_lims)
-    ax.legend(title=graphs_pack['legend_title'])
+        if type(x_lims) == str:
+            if x_lims == 'individual':
+                if not 'x_lims_FFT' in kwargs:
+                    print('x_lims not set - FFT')
+                else:
+                    x_lims = kwargs.get('x_lims_FFT')
+                    ax.set_xlim(x_lims)
+        else:
+            ax.set_xlim(x_lims)
     return(ax)
 
 #Retratos de fase
@@ -699,7 +708,7 @@ def plt_q_spectr(struCase, modal_inds, fig, ax, **kwargs):
             dof_lst is a dict (o lista, ver cual dejar), {node:[DOFs]}
             ax is a matplotlib.pyplot Axes obj
     kwargs (may contain):
-        'data_type': 'mod_desp' or 'mod_aLoad' (mod_desp as default)
+        'data_type': attr name (q, Q, etc...)
         'vel': bool, default False - In order to calculate and plot the modal vel's spectrogram
         'SP_Winsize': str, default Dt/20 
         'SP_OvrLapFactor': int, detault 80 (%)
@@ -712,7 +721,7 @@ def plt_q_spectr(struCase, modal_inds, fig, ax, **kwargs):
     if 'data_type' in kwargs:
         data_type = kwargs.get('data_type')
     else:
-        data_type = 'mod_desp'  
+        data_type = 'q'  
     if 'vel' in kwargs:
         vel = kwargs.get('vel')
     else:
@@ -750,6 +759,7 @@ def plt_q_spectr(struCase, modal_inds, fig, ax, **kwargs):
         y_units = kwargs.get('y_units')
     else:
         print('Missing f units. Set to default (Hz)')
+        y_units = 'Hz'
     if 'modal_inds_type' in kwargs:
         modal_inds_type = kwargs.get('modal_inds_type')
     else:
@@ -761,33 +771,36 @@ def plt_q_spectr(struCase, modal_inds, fig, ax, **kwargs):
         modal_inds = [modal_inds]
     modal_inds = handle_modal_inds(struCase, modal_inds, **kwargs)
     for loc_ind in modal_inds:
-        if data_type == 'mod_desp':
-            y = struCase.q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
-            if vel:
-                y=np.gradient(y,t) #NOTA: Agregar al plot que es una velocidad
-        elif data_type == 'mod_aLoad':
-            y = struCase.Q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+        y = getattr(struCase, data_type)[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+        if vel:
+            y=np.gradient(y,t) #NOTA: Agregar al plot que es una velocidad
         F, T, S = signal.spectrogram(y, fDef,window=WinType, noverlap=OverLap,nperseg=WinSize)
         if b_norm:
-            loc_m = 0
-            for j in range(len(S)):
-                if max(S[j,:]) > loc_m:
-                    loc_m = max(S[j,:])
+            loc_m = np.max(S)
             if not loc_m == 0:
                 S = abs(S)/loc_m
             else:
                 print('Warning: 1/0 found')
         if y_units == 'rad/s':
             print('f in rad/s!')
-            c = ax.pcolormesh(T,F*2*np.pi,S,shading = 'auto', cmap='gray_r')
+            y_values = F*2*np.pi
         elif y_units == 'Hz':
             print('f in hz!')
-            c = ax.pcolormesh(T,F,S,shading = 'auto', cmap='gray_r')
+            y_values = F
+        c = ax.pcolormesh(T,y_values,S,shading = 'auto', cmap='gray_r')
         fig.colorbar(c, ax = ax)
     ax.set_title('Modo: ' + lst2str(modal_inds))
     ax.set_ylabel(graphs_pack['y_label'])
     if y_lims:
-        ax.set_ylim(y_lims)
+        if type(y_lims) == str:
+            if y_lims == 'individual':
+                if not 'y_lims_SPEC' in kwargs:
+                    print('y_lims not set - SPECT')
+                else:
+                    y_lims = kwargs.get('y_lims_SPEC')
+                ax.set_ylim(y_lims)
+        else:
+            ax.set_ylim(y_lims)
     return(ax)
 
 #Vs DOFs
@@ -926,6 +939,59 @@ HIGH LEVEL PLOT functions
 ------------------------------------------------------------------------------
 """
 
+def fig_special_comb(struCase, indsLIST, **kwargs):
+    '''
+    Plots special axs schemes using presets
+    inputs:
+        struCase, stru class obj
+        indsLIST, nested list or list, inds (not Python´s)
+    kwargs: 
+        (may contain)
+        #General:
+        fig_save, bool - For saving purp.
+            fig_save_opts, dict - Folder, filecode, etc
+        sharex: matplotlib.pyplot.subplots() argument - default 'col'
+        p_prow: plots per row for the global figure - default 1
+        limit_tvals or limit_tinds: list or ndarray - time limits for plotting, values or indexes
+        #Plot customization:
+            fig_title
+            x_label
+            y_label
+            y_label_setting
+            legend_title
+    returns:
+        fig, fig obj
+        
+    returns:
+    '''
+    if 'preset' in kwargs:
+        preset = kwargs.get('preset')
+    else:
+        preset = 'default'        
+    graphs_pack = handle_graph_info(**kwargs)
+    
+    if len(np.shape(indsLIST)) == 1:
+        indsLIST = [indsLIST]
+        
+    n = np.shape(indsLIST)[0]
+    
+    if preset == 'q_spectr_FFT':
+        fig, axs = plt.subplots(3,n)
+        if n == 1:
+            axs[0] = plt_qt(struCase, indsLIST[0], axs[0], **kwargs)
+            axs[1] = plt_q_spectr(struCase, indsLIST[0],fig, axs[1], **kwargs)
+            axs[2] = plt_qFFT(struCase, indsLIST[0], axs[2], **kwargs)
+        else:
+            for ax, inds in zip(axs, indsLIST):
+                ax = plt_qt(struCase, inds, ax, **kwargs)
+                ax = plt_q_spectr(struCase, inds,ax, **kwargs)
+                ax = plt_qFFT(struCase, inds, ax, **kwargs)
+        fig.suptitle(graphs_pack['fig_title'])
+        for ax in axs:
+            ax.grid()
+    else:
+        print('Other presets under construction')
+    return(fig)
 def fig_general(struCase, indLIST, **kwargs):
     '''
     Arranges plots of general props as f(t) using some inds (not Python´s)
