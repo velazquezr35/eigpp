@@ -1066,7 +1066,7 @@ def fig_general(struCase, indLIST, **kwargs):
     fig.suptitle(graphs_pack['fig_title'])
     if fig_save:
         save_figure(fig,fig_save_opts,**kwargs)
-    return(fig)
+    return(fig, axs)
 
 
 def fig_uxuy(struCase,vsLIST, **kwargs):
@@ -2320,6 +2320,25 @@ def handle_modal_inds(struCase, modal_inds, **kwargs):
             return(updated_modal_inds)
     else:
         return(modal_inds)
+    
+def do_grid_and_labels(ax, **kwargs):
+    '''
+    Auto grid and legend for a set of ax
+    inputs:
+        ax, a set of 
+    '''
+    try:
+        for loc_ax in ax:
+            loc_ax.grid()
+            loc_ax.legend()
+    except:
+        try:
+            ax.grid()
+            ax.legend()
+        except:
+            raise NameError('Warning: Error handling ax')
+    return(ax)
+
 """
 ------------------------------------------------------------------------------
 runing things
