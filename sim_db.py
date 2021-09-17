@@ -163,6 +163,7 @@ def upd_phiR(struCase):
     if len(struCase.moi) == 0:
         struCase.phiR = np.copy(struCase.phi)
         struCase.omR = np.copy(struCase.om)
+        struCase.moi=list(range(1,struCase.nm+1))
     else:
         moi_inds = []
         for i in range(len(struCase.moi)):
@@ -884,6 +885,7 @@ def rd_eig(struCase, **kwargs):
     y.close()
     
     struCase.phi = np.transpose(struCase.phi)
+    struCase.nm = struCase.phi.shape[1]
     
     return struCase
 
