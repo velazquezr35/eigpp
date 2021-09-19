@@ -429,7 +429,7 @@ def plt_qFFT(struCase, modal_inds, ax, **kwargs):
     if 'modal_inds_type' in kwargs:
         modal_inds_type = kwargs.get('modal_inds_type')
     else:
-        modal_inds_type = 'absolute'
+        modal_inds_type = 'relative'
     if 'y_lims' in kwargs:
         y_lims = kwargs.get('y_lims')
     else:
@@ -445,7 +445,11 @@ def plt_qFFT(struCase, modal_inds, ax, **kwargs):
     t = struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
     fDef = 1/(t[-1]-t[0])
     for i in modal_inds:
-        y = getattr(struCase, data_type)[i-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+        y = getattr(struCase, data_type)
+        if len(y.shape) == 1:
+            y = y[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+        else:
+            y = y[i-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
         if vel:
             y=np.gradient(y,t) #NOTA: Agregar al plot que es una velocidad
         y_f = abs(fft(y))
@@ -459,7 +463,7 @@ def plt_qFFT(struCase, modal_inds, ax, **kwargs):
             x_f = x_f*2*np.pi
         x_values = x_f[:(len(t)-1)//2]
         y_values = y_f[:(len(t)-1)//2]
-        ax.plot(x_values,y_values, label=' - MODO: ' + str(i)) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
+        ax.plot(x_values,y_values, label=data_type + '-' + str(i)) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
     ax.set_ylabel(graphs_pack['y_label'])
     if y_lims:
         if type(y_lims) == str:
@@ -882,6 +886,10 @@ def plt_general(struCase, inds, ax, **kwargs):
     returns:
         ax, matplotlib.pyplot ax obj
     '''
+    if 'marker' in kwargs:
+        marker = kwargs.get('marker')
+    else:
+        marker = None
     if 'loc_data_type' in kwargs:
         loc_data_type = kwargs.get('loc_data_type')
     else:
@@ -908,7 +916,7 @@ def plt_general(struCase, inds, ax, **kwargs):
                 raise NameError('Wrong data type code - pls check')
             if vel:
                 y = np.gradient(y, t)
-            ax.plot(t, y, label = loc_data_type[i] + ' - ' + str(inds[i]))
+            ax.plot(t, y, label = loc_data_type[i] + ' - ' + str(inds[i]), marker = marker)
     elif special_mode == 'max_vs_q':
         if 'x_vals' in kwargs:
             x_vals = kwargs.get('x_vals')
@@ -927,10 +935,10 @@ def plt_general(struCase, inds, ax, **kwargs):
             except:
                 raise NameError('Wrong data type code - pls check')
             if len(y_vals.shape) == 2:
-                ax.plot(x_vals, y_vals[:,0], label = 'envMAX - ' + str(inds[i]))
-                ax.plot(x_vals, y_vals[:,1], label = 'envMIN - ' + str(inds[i]))
+                ax.plot(x_vals, y_vals[:,0], label = 'envMAX - ' + str(inds[i]), marker = marker)
+                ax.plot(x_vals, y_vals[:,1], label = 'envMIN - ' + str(inds[i]), marker = marker)
             else:
-                ax.plot(x_vals, y_vals, label = loc_data_type[i] + ' - ' + str(inds[i]))
+                ax.plot(x_vals, y_vals, label = loc_data_type[i] + ' - ' + str(inds[i]), marker = marker)
     ax.legend(title=graphs_pack['legend_title'])
     return(ax)
 """
@@ -1044,6 +1052,7 @@ def fig_general(struCase, indLIST, **kwargs):
     
     if type(data_type) == str:
         kwargs['data_type'] = list(kwargs['data_type'])
+        
     
     if type(indLIST)==int:
         indLIST=list(indLIST)
@@ -1524,11 +1533,13 @@ def fig_q_FFT(struCase, modeLIST, **kwargs):
         axs.set_xlabel(graphs_pack['x_label'])
         axs.set_ylabel(graphs_pack['y_label'])
         axs.grid()
+        axs.legend()
     else:
         for ax, mode_dict in zip(axs, modeLIST):
             ax = plt_qFFT(struCase, mode_dict, ax,**kwargs)
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
+            ax.legend()
         axs[-1].set_xlabel(graphs_pack['x_label'])
     fig.suptitle(graphs_pack['fig_title'])
     if fig_save:
@@ -2304,7 +2315,7 @@ def handle_modal_inds(struCase, modal_inds, **kwargs):
     if 'modal_inds_type' in kwargs:
         modal_inds_type = kwargs.get('modal_inds_type')
     else:
-        modal_inds_type = 'absolute'
+        modal_inds_type = 'relative'
     
     updated_modal_inds = []
     
