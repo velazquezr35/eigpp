@@ -254,6 +254,10 @@ def plt_phi(struCase, modedofDict, ax, **kwargs):
         graphs_pack = kwargs.get('graphs_pack')
     else:
         graphs_pack = handle_graph_info(**kwargs)
+    if 'color_scheme' in kwargs:
+        color_scheme = kwargs.get('color_scheme')
+    else:
+        color_scheme = None
     x_labels = nodes2labels(struCase, **kwargs)
     
     mode_inds = list(modedofDict.keys())
@@ -262,7 +266,10 @@ def plt_phi(struCase, modedofDict, ax, **kwargs):
         # if modedofDict[loc_mode] == int:
         for loc_ind in modedofDict[loc_mode]:
             des_inds = modalDof2idx(struCase, loc_ind, **kwargs)
-            ax.plot(x_labels, struCase.phi[des_inds,int(loc_mode)-1], label = 'M: '+loc_mode + ',dof: '+str(loc_ind))
+            if not color_scheme == None:
+                ax.plot(x_labels, struCase.phi[des_inds,int(loc_mode)-1], label = 'M: '+loc_mode + ',dof: '+str(loc_ind), color = color_scheme[loc_ind-1])
+            else:
+                ax.plot(x_labels, struCase.phi[des_inds,int(loc_mode)-1], label = 'M: '+loc_mode + ',dof: '+str(loc_ind))
     ax.legend(title=graphs_pack['legend_title'])
     return(ax)
 
@@ -939,7 +946,8 @@ def plt_general(struCase, inds, ax, **kwargs):
                 ax.plot(x_vals, y_vals[:,1], label = 'envMIN - ' + str(inds[i]), marker = marker)
             else:
                 ax.plot(x_vals, y_vals, label = loc_data_type[i] + ' - ' + str(inds[i]), marker = marker)
-    ax.legend(title=graphs_pack['legend_title'])
+    if graphs_pack['legend_bool']:
+        ax.legend(title=graphs_pack['legend_title'])
     return(ax)
 """
 ------------------------------------------------------------------------------
@@ -2113,7 +2121,11 @@ def handle_graph_info(**kwargs):
         
     if 'legend_title' in kwargs:
         graphs_pack['legend_title'] = kwargs.get('legend_title')
-        
+    
+    if 'legend_bool' in kwargs:
+        graphs_pack['legend_bool'] = kwargs.get('legend_bool')
+    else:
+        graphs_pack['legend_bool'] = False
     return(graphs_pack)
 
 def hl_envelopes_idx(y, dmin=1, dmax=1, split=False):
@@ -2331,21 +2343,78 @@ def handle_modal_inds(struCase, modal_inds, **kwargs):
             return(updated_modal_inds)
     else:
         return(modal_inds)
+
+def hide_axes(ax, **kwargs):
+    '''
+    Auto hide x or y axis for a set of ax
+    inputs: 
+        ax, set or single
+    '''
+    if 'hide_x' in kwargs:
+        hide_x = kwargs.get('hide_x')
+    else:
+        hide_x = False
+    if 'hide_y' in kwargs:
+        hide_y = kwargs.get('hide_y')
+    else:
+        hide_y = False
+    if 'inds' in kwargs:
+        inds = kwargs.get('inds')
+    else:
+        inds = False
     
+    if not inds:
+        try:
+            for loc_ax in ax[:-1]:
+                if hide_x:
+                    loc_ax.axes.xaxis.set_visible(False)
+                if hide_y:
+                    loc_ax.axes.yaxis.set_visible(False)
+        except:
+            try:
+                if hide_x:
+                    ax.axes.xaxis.set_visible(False)
+                if hide_y:
+                    ax.axes.yaxis.set_visible(False)
+            except:
+                raise NameError('Warning: Error handling ax')
+    return(ax)
+                        
 def do_grid_and_labels(ax, **kwargs):
     '''
     Auto grid and legend for a set of ax
     inputs:
-        ax, a set of 
+
     '''
+    if 'grid' in kwargs:
+        grid = kwargs.get('grid')
+    else:
+        grid = True
+    if 'legend' in kwargs:
+        legend = kwargs.get('legend')
+    else:
+        legend = True
+    if 'y_label' in kwargs:
+        y_label_bl = True
+    else:
+        y_label_bl = False
+        
     try:
         for loc_ax in ax:
-            loc_ax.grid()
-            loc_ax.legend()
+            if grid:
+                loc_ax.grid()
+            if legend:
+                loc_ax.legend()
+            if y_label_bl:
+                loc_ax.set_ylabel(kwargs.get('y_label'))
     except:
         try:
-            ax.grid()
-            ax.legend()
+            if grid:
+                ax.grid()
+            if legend:
+                ax.legend()
+            if y_label_bl:
+                ax.set_ylabel(kwargs.get('y_label'))
         except:
             raise NameError('Warning: Error handling ax')
     return(ax)

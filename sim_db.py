@@ -421,7 +421,7 @@ def search_time(t_array, t_values, **kwargs):
 
 # handle sim objs for specific time plotting
 
-def sfti_time(struCase, **kwargs):
+def sfti_time(struCase, *reset, **kwargs):
     '''
     Searchs for time indexes - Updates the desired indexes for plotting purposes
     inputs:
@@ -434,20 +434,24 @@ def sfti_time(struCase, **kwargs):
     
     returns: struCase
     '''
-    if 'indexes' in kwargs:
-        time_inds = kwargs.get('indexes') #NOTA: El default por ahora es para los u
-        struCase.plot_timeInds[:] = time_inds[:]
-        return(struCase)
-    elif 'time_vals' in kwargs:
-        time_vals = kwargs.get('time_vals')
-        time_inds = search_time(struCase.t,time_vals)
-        struCase.plot_timeInds[:] = time_inds[:]
-        struCase.plot_timeVals[0] = struCase.t[time_inds[0]]
-        struCase.plot_timeVals[1] = struCase.t[time_inds[1]]
-        return(struCase)
+    if not reset:
+        if 'indexes' in kwargs:
+            time_inds = kwargs.get('indexes')
+            struCase.plot_timeInds[:] = time_inds[:]
+            return(struCase)
+        elif 'time_vals' in kwargs:
+            time_vals = kwargs.get('time_vals')
+            time_inds = search_time(struCase.t,time_vals)
+            struCase.plot_timeInds[:] = time_inds[:]
+            struCase.plot_timeVals[0] = struCase.t[time_inds[0]]
+            struCase.plot_timeVals[1] = struCase.t[time_inds[1]]
+            return(struCase)
+        else:
+            print('Warning: Time interval not set')
     else:
-        print('Warning: Time interval not set')
-        return()
+        struCase.plot_timeInds = [0,None]
+        struCase.plot_timeVals = [struCase.t[0],struCase.t[-1]]
+    return(struCase)
     
     
 
