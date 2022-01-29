@@ -1176,7 +1176,386 @@ def clean_eqInfo(struCase,**kwargs):
     
     struCase.eqInfo = np.delete(struCase.eqInfo, rem_inds,axis=0)
     return(struCase)
+
+
+"""
+Funcs from análisis.py
+"""
+
+def mult_int(struCase, **kwargs):
+    '''
+    Searchs for integer multiples in data, computing a[i] % a[:]. Also, it saves the original a[i] value in the main diag
+    inputs:
+        struCase, stru Class obj
+    kwargs:
+        data_type, str: Type of attri, 'om' as default
+        new_name, str: New name for the attri
+        extra_inds, lst or int: Extra inds for tables, if req.
+    returns:
+        struCase
+    '''
+    if 'data_type' in kwargs:
+        data_type = kwargs.get('data_type')
+    else:
+        data_type = 'om'
+    if 'new_name' in kwargs:
+        new_name = kwargs.get('new_name')
+    else:
+        new_name = data_type +'_mults_matrix'
+    if 'norm' in kwargs:
+        norm = kwargs.get('norm')
+    else:
+        norm = True
     
+    if data_type == 'om':
+        data = getattr(struCase, data_type)[:,1]
+    if 's_inds_0' in kwargs:
+        s_inds_0 = kwargs.get('s_inds_0')
+        data = data[s_inds_0]
+    mults_matrix = []
+    if not type(data) == np.ndarray:
+        data = np.array(data)
+    for i in range(len(data)):
+        mults_matrix.append(data/data[i])
+        #Alternativa: (no sé si anda muy bien)
+        # mults_matrix.append(np.mod(data,data[i]))
+        # mults_matrix[i][i] = data[i]
+    setattr(struCase, new_name, np.array(mults_matrix)) 
+    
+    return(struCase)
+
+def geomDOF_comp(struCase, dofDict, **kwargs):
+    '''
+    Computes the modal composition u = \Phi \cdot q but element-wise
+    inputs:
+        struCase, stru Class obj
+        dofDict, dict: {'node':[DOF]} - Desired geom. DOF
+    kwargs:
+        norm, bool: Default False (norm using u_mdr)
+        new_name, str: New attr name, default: 'qcomp_DOF'
+        otp, str: 'default' or 'comp' - For internal use ('default' updates struCase)
+    returns:
+        struCase, stru Class obj
+    '''
+    if 'norm' in kwargs:
+        norm = kwargs.get('norm')
+    else:
+        norm = False
+    if 'new_name' in kwargs:
+        new_name = kwargs.get('new_name')
+    else:
+        new_name = None    
+    
+    if 'otp' in kwargs:
+        otp = kwargs.get('otp')
+    else:
+        otp = 'default'
+    
+    desired_ind = plotter.nodeDof2idx(struCase, dofDict)
+    loc_phi = struCase.phiR[desired_ind]
+    dec_u = np.multiply(np.transpose(loc_phi), struCase.q)
+    if norm:
+        dec_u *= 1/struCase.u_mdr[desired_ind]
+    if new_name == None:
+        new_name = 'qcomp_'+ str(list(dofDict.keys())[0]) + '_'+str(list(dofDict.values())[0][0]) + '_g' + str(desired_ind[0]+1)
+    
+    if otp == 'default':
+        setattr(struCase, new_name, dec_u)
+        return struCase
+    elif otp == 'comp':
+        return(dec_u)
+    
+def act_mINDS(struCase, dofDict, **kwargs):
+    '''
+    Determines active modal inds
+    inputs:
+        struCase, stru class obj
+        dofDict, dict - {'node':[DOF]}
+    kwargs:
+        tol, float - Desired tolerance (default 1e-2)
+        des_name, str - Desired attr name (default: 'node_dof_amINDS')
+    returns:
+        struCase, stru class obj
+    '''
+    if 'tol' in kwargs:
+        tol = kwargs.get('tol')
+    else:
+        tol = 1e-3
+    if 'des_name' in kwargs:
+        des_name = kwargs.get('des_name')
+    else:
+        des_name = None
+    
+    dec_u = geomDOF_comp(struCase, dofDict, otp = 'comp')
+    inds = []
+    for i in range(dec_u.shape[0]):
+        if np.max(dec_u[i]) >= tol:
+            inds.append(i+1)
+    
+    if des_name == None:
+        dof_name = str(list(dofDict.keys())[0])
+        des_name = 'amINDS_' + dof_name + '_' +str(list(dofDict.values())[0][0]) + '_g' + str(plotter.nodeDof2idx(struCase, dofDict)[0]+1)
+    if not inds == []:
+        setattr(struCase, des_name, inds)
+        struCase.part_active_modes.append({des_name:inds})
+    else:
+        print('Not active modes found - ', dofDict)
+    return struCase
+
+def sum_data(struCase, **kwargs):
+    '''
+    Sums some stru.data[inds,:]
+    inputs:
+        struCase, stru class obj
+    kwargs:
+        data_type, str: data to sum
+        inds, list: absolute-inds pos (not Python´s)
+        sum_name, str: stru.sum_name = sum(QW[inds,:])
+    '''
+    if 'data_type' in kwargs:
+        data_type = kwargs.get('data_type')
+    else:
+        raise NameError('Data type str error')
+    if 'inds' in kwargs:
+        inds = kwargs.get('inds')
+    else:
+        raise NameError('inds error')
+    if 'sum_name' in kwargs:
+        sum_name = kwargs.get('sum_name')
+    else:
+        raise NameError('sum_name erorr')
+        
+    for i in range(len(inds)):
+        try:
+            if i == 0:
+                y = getattr(struCase,data_type)[inds[i]-1,:]
+            else:
+                y = y + getattr(struCase,data_type)[inds[i]-1,:]
+        except:
+            raise NameError('Wron data_type, pls check')
+    setattr(struCase, sum_name, y)
+    return(struCase)
+
+def case_tag(**kwargs):
+    '''
+    Creates fnames and tags
+    inputs:
+    kwargs:
+        'case_type', str: 'R' (rigid), '' ()
+        'case_vel', str: 'xxxx' (vel)
+        'vel_otp', str: '.' or '' (default)
+    returns:
+        tag, str
+    '''
+    tag = ''
+    if 'case_type' in kwargs:
+        case_type = kwargs.get('case_type')
+    else:
+        case_type = ''
+    if 'case_vel' in kwargs:
+        case_vel = kwargs.get('case_vel')
+    else:
+        case_vel = ''
+    if 'vel_otp' in kwargs:
+        vel_otp = kwargs.get('vel_otp')
+    else:
+        vel_otp = ''
+    tag += case_type
+    if not case_type == '':
+        tag += '_'
+    if vel_otp == '.':
+        try:
+            case_vel = float(case_vel)
+            case_vel = case_vel // 10
+            case_vel = str(case_vel)
+        except:
+            print('Bad vel to float')
+    tag += case_vel
+    
+    if tag =='':
+        tag = 'no_name'
+    return(tag)
+
+def amp_search(struCase, **kwargs):
+    '''
+    Determines the amplitude of a signal
+    inputs:
+        struCase - stru class obj or a single data-ndarray
+    kwargs:
+        mode, str - 'normal' or 'object' (default 'object')
+            if 'object':
+                data_type, str - signal attr name
+                pos_ind, int - row selector ind, real, not Python´s
+        start_type, int - start index (default -1)
+        reverse, int - search dir (default -1, end > start)
+        otp, str - returns just 'amp' (amplitude) or 'full' (amplitude, inds), 'inds' (inds), 'obj_attr' (attr, default)
+    returns:
+        amplitude or inds or mid_value (or all of them) or a dict in obj.attr {'amplitude', 'mid_value', 'inds'}
+    '''
+    #NOTA:
+        #Se puede agregar un np.where para localizar el índice de un kwarg "t" determinado...
+    if 'mode' in kwargs:
+        mode = kwargs.get('mode')
+    else:
+        mode = 'object'
+    
+    if mode == 'object':
+        if 'data_type' in kwargs:
+            data_type = kwargs.get('data_type')
+        else:
+            raise NameError('No data_type (attr)')
+        if 'pos_ind' in kwargs:
+            pos_ind = kwargs.get('pos_ind')
+        else:
+            pos_ind = None
+        
+        try:
+            y = getattr (struCase,data_type)
+            if not pos_ind == None:
+                y = y[pos_ind-1]
+        except:
+            raise NameError('Wrong data type or pos ind')
+
+    if 'start_type' in kwargs:
+        start_type = kwargs.get('start_type')
+    else:
+        start_type= -1
+    if 'reverse' in kwargs:
+        reverse = kwargs.get('reverse')
+    else:
+        reverse = -1
+    
+    if 'otp' in kwargs:
+        otp = kwargs.get('otp')
+    else:
+        otp = 'obj_attr'
+    if 'use' in kwargs:
+        use = kwargs.get('use')
+    else:
+        use = 'env'
+    
+    if start_type == -1:
+        start_ind = len(y)-2
+    elif start_type == 0:
+        start_ind = 1
+    else:
+        start_ind = start_type
+    
+    inds = []
+    
+    if use == 'loc_extr':
+        #max local    
+        while y[start_ind-1] >= y[start_ind] or y[start_ind+1] >= y[start_ind]:
+            start_ind += reverse
+        inds.append(start_ind)
+        #Min local
+        while y[start_ind-1] <= y[start_ind] or y[start_ind+1] <= y[start_ind]:
+            start_ind += reverse
+        inds.append(start_ind)
+    elif use == 'env':
+        lmin,lmax = plotter.hl_envelopes_idx(y)
+        inds.append(lmax[-2])
+        inds.append(lmin[-2])
+        
+    amplitude = abs(y[inds[1]]-y[inds[0]])
+    mid_value = y[inds[1]]+amplitude/2
+    
+    if otp == 'full':
+        return(amplitude, mid_value, inds)
+    elif otp == 'amp':
+        return(amplitude)
+    elif otp == 'inds':
+        return(inds)
+    elif otp == 'mid_value':
+        return(mid_value)
+    elif otp == 'obj_attr':
+        setattr(struCase, data_type + '_amp_data', {'amplitude':amplitude, 'mid_value':mid_value, 'inds':inds})
+        return(struCase)
+    
+def handle_act_modes(struCase, **kwargs):
+    '''
+    Creates a single list of inds (real, not Python´s) for active and pasive modes
+    #Versión primera, si moi está vacío, va a los modos comunes
+    inputs:
+        struCase, stru class obj
+    kwargs:
+        top, int - Max pasiv modal (real, not Python´s)
+    output:
+        struCase, stru class obj - Updated attr 'active_minds' and 'pasive_minds'
+    '''
+    if 'top' in kwargs:
+        top = kwargs.get('top')
+    else:
+        top = -1
+    activ_inds = []
+    pasiv_inds = []
+    if not struCase.part_active_modes == []:
+        for loc_dct in struCase.part_active_modes:
+            for loc_ind in list(loc_dct.values())[0]:
+                if not loc_ind in activ_inds:
+                    activ_inds.append(loc_ind)
+    
+    if struCase.moi == []:
+        for loc_ind in np.arange(1,struCase.nm+1,1):
+            if top > loc_ind:
+                if not loc_ind in activ_inds:
+                    pasiv_inds.append(loc_ind)
+    else:
+        for loc_ind in struCase.moi:
+            if top > loc_ind:
+                if not loc_ind in activ_inds:
+                    pasiv_inds.append(loc_ind)
+
+    setattr(struCase, 'active_minds', activ_inds)
+    setattr(struCase, 'pasive_minds', pasiv_inds)
+    return struCase
+
+
+"""
+General tools from análisis.py
+"""
+
+def lst_av_dirs(path, **kwargs):
+    '''
+    Lists av. cases
+    inputs:
+        path, str - abs path to data dir
+    kwargs:
+    output:
+        lst, list - subdir names
+    '''
+    if path == '':
+        return(os.listdir())
+    else:
+        try:
+            return(os.listdir(path))
+        except:
+            raise NameError('bad path')
+
+def delete_av_bins(path, **kwargs):
+    '''
+    Deletes all bin files
+    inputs:
+        path, str: global or rel
+    kwargs:
+        filecode, str: 'R' or 'D' (only those, default: all)
+    output:
+        none, ur files are gone
+    '''
+    if 'filecode' in kwargs:
+        filecode = kwargs.get('filecode')
+    else:
+        filecode = ''
+    
+    av_files = lst_av_dirs(path, **kwargs)
+    for loc_file in av_files:
+        if not filecode == '':
+            if loc_file[0] == filecode:
+                os.remove(path+loc_file)
+        else:
+            os.remove(path+loc_file) 
+    return('Done!')
+
 """
 ------------------------------------------------------------------------------
 Unit tests
