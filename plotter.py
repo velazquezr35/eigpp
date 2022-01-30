@@ -843,60 +843,6 @@ HIGH LEVEL PLOT functions
 ------------------------------------------------------------------------------
 """
 
-def fig_special_comb(struCase, indsLIST, **kwargs):
-    '''
-    Plots special axs schemes using presets
-    inputs:
-        struCase, stru class obj
-        indsLIST, nested list or list, inds (not Python´s)
-    kwargs: 
-        (may contain)
-        #General:
-        fig_save, bool - For saving purp.
-            fig_save_opts, dict - Folder, filecode, etc
-        sharex: matplotlib.pyplot.subplots() argument - default 'col'
-        p_prow: plots per row for the global figure - default 1
-        limit_tvals or limit_tinds: list or ndarray - time limits for plotting, values or indexes
-        #Plot customization:
-            fig_title
-            x_label
-            y_label
-            y_label_setting
-            legend_title
-    returns:
-        fig, fig obj
-        
-    returns:
-    '''
-    if 'preset' in kwargs:
-        preset = kwargs.get('preset')
-    else:
-        preset = 'default'        
-    graphs_pack = handle_graph_info(**kwargs)
-    
-    if len(np.shape(indsLIST)) == 1:
-        indsLIST = [indsLIST]
-        
-    n = np.shape(indsLIST)[0]
-    
-    if preset == 'q_spectr_FFT':
-        fig, axs = plt.subplots(3,n)
-        if n == 1:
-            axs[0] = plt_qt(struCase, indsLIST[0], axs[0], **kwargs)
-            axs[1] = plt_q_spectr(struCase, indsLIST[0],fig, axs[1], **kwargs)
-            axs[2] = plt_qFFT(struCase, indsLIST[0], axs[2], **kwargs)
-        else:
-            for ax, inds in zip(axs, indsLIST):
-                ax = plt_qt(struCase, inds, ax, **kwargs)
-                ax = plt_q_spectr(struCase, inds,ax, **kwargs)
-                ax = plt_qFFT(struCase, inds, ax, **kwargs)
-        fig.suptitle(graphs_pack['fig_title'])
-        for ax in axs:
-            ax.grid()
-    else:
-        print('Other presets under construction')
-    return(fig)
-
 def fig_general(struCase, indLIST, **kwargs):
     '''
     Arranges plots of general props as f(t) using some inds (not Python´s)
@@ -1037,7 +983,7 @@ def fig_uxuy(struCase,vsLIST, **kwargs):
         save_figure(fig,fig_save_opts,**kwargs)
     return(fig)
 
-def fig_us(struCase, tdofLIST, **kwargs):
+def fig_uqs(struCase, DATA_indc, **kwargs):
     '''
     Arranges plots of DOF(nodes) or FC(nodes) @t fixed
     
@@ -1055,52 +1001,6 @@ def fig_us(struCase, tdofLIST, **kwargs):
             x_label
             y_label
             legend_title
-    '''
-    
-    if 'sharex' in kwargs:
-        sharex = kwargs.get('sharex')
-    else:
-        sharex = "col"
-        
-    if 'p_prow' in kwargs:
-        p_prow = kwargs.get('p_prows')
-    else:
-        p_prow = 1
-        
-    if 'fig_save' in kwargs:
-        fig_save = kwargs.get('fig_save')
-        if 'fig_save_opts' in kwargs:
-            fig_save_opts = kwargs.get('fig_save_opts')
-        else:
-            fig_save_opts = {}
-    else:
-        fig_save = False
-    graphs_pack = handle_graph_info(**kwargs)
-    
-    if type(tdofLIST) == dict: #Para comodidad end-user
-        tdofLIST = [tdofLIST]
-
-    n = len(tdofLIST)
-    
-    fig, axs = plt.subplots(n, p_prow, sharex = sharex)
-    if n == 1: #Esto falla si ax no es un iterable (cuando n = 1 es sólo ax, no ax[:])
-        axs = plt_us(struCase, tdofLIST[0], axs, **kwargs)
-        axs.set_xlabel(graphs_pack['x_label'])
-        axs.set_ylabel(graphs_pack['y_label'])
-        axs.grid()
-    else:
-        for ax, tdof_dict in zip(axs, tdofLIST):
-            ax = plt_us(struCase, tdof_dict, ax,**kwargs)
-            ax.set_ylabel(graphs_pack['y_label'])
-            ax.grid()
-        axs[-1].set_xlabel(graphs_pack['x_label'])
-    fig.suptitle(graphs_pack['fig_title'])
-    if fig_save:
-        save_figure(fig,fig_save_opts,**kwargs)
-    return(fig)
-
-def fig_qs(struCase, tmodeLIST, **kwargs):
-    '''
     Arranges plots of mode(nodes) or modal external loads (nodes) @t fixed
     
     struCase:   stru class object
@@ -1118,7 +1018,10 @@ def fig_qs(struCase, tmodeLIST, **kwargs):
             y_label
             legend_title
     '''
-    
+    if not 'data_type' in kwargs:
+        print('Warning - No data_type in kwargs, using DEFAULT') #Acomodar
+        kwargs['data_type'] = 'modal_desp' #ACOMODAR Y SET UN DEF
+        
     if 'sharex' in kwargs:
         sharex = kwargs.get('sharex')
     else:
@@ -1128,6 +1031,7 @@ def fig_qs(struCase, tmodeLIST, **kwargs):
         p_prow = kwargs.get('p_prows')
     else:
         p_prow = 1
+        
     if 'fig_save' in kwargs:
         fig_save = kwargs.get('fig_save')
         if 'fig_save_opts' in kwargs:
@@ -1137,18 +1041,27 @@ def fig_qs(struCase, tmodeLIST, **kwargs):
     else:
         fig_save = False
     graphs_pack = handle_graph_info(**kwargs)
-
-    n = len(tmodeLIST)
     
+    if kwargs['data_type'] == 'modal_desp' or kwargs['data_type'] == 'modal_aLoad':
+        fig_type = 'modal'
+        if type(DATA_indc) == dict: #Para comodidad end-user
+            DATA_indc = [DATA_indc]
+    elif kwargs['data_type'] == 'DOF_u' or kwargs['data_type'] == 'DOF_FCS':
+        fig_type = 'DOF'
+        
+    n = len(DATA_indc)
+        
     fig, axs = plt.subplots(n, p_prow, sharex = sharex)
     if n == 1: #Esto falla si ax no es un iterable (cuando n = 1 es sólo ax, no ax[:])
-        axs = plt_qs(struCase, tmodeLIST, axs, **kwargs)
+        if fig_type == 'DOF':
+            DATA_indc = DATA_indc[0]
+        axs = plt_tfixed(struCase, DATA_indc, axs, **kwargs)
         axs.set_xlabel(graphs_pack['x_label'])
         axs.set_ylabel(graphs_pack['y_label'])
         axs.grid()
     else:
-        for ax, tmode_dict in zip(axs, tmodeLIST):
-            ax = plt_qs(struCase, tmode_dict, ax,**kwargs)
+        for ax, exp_DATA_indc in zip(axs, DATA_indc):
+            ax = plt_tfixed(struCase,  exp_DATA_indc, ax,**kwargs)
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
         axs[-1].set_xlabel(graphs_pack['x_label'])
@@ -1157,7 +1070,8 @@ def fig_qs(struCase, tmodeLIST, **kwargs):
         save_figure(fig,fig_save_opts,**kwargs)
     return(fig)
 
-def fig_ut(struCase, dofLIST, **kwargs):
+
+def fig_uqt(struCase, DATA_indc, **kwargs):
     '''
     Arranges plots of u(t) or load(t)
     
@@ -1176,7 +1090,27 @@ def fig_ut(struCase, dofLIST, **kwargs):
             y_label
             legend_title
             plot_exp, dict - fig saving purposes
+
+    Arranges plots of q(t) or Q(t)
+    
+    struCase:   stru class object
+    modeLIST:    list of modal_inds or modal_inds list of modal indexes
+    kwargs: may contain
+        #General:
+        fig_save, bool - For saving purp.
+            fig_save_opts, dict - Folder, filecode, etc
+        sharex: matplotlib.pyplot.subplots() argument - default 'col'
+        p_prow: plots per row for the global figure - default 1
+        limit_tvals or limit_tinds: list or ndarray - time limits for plotting, values or indexes
+        #Plot customization:
+            fig_title
+            x_label
+            y_label
+            legend_title
     '''
+    if not 'data_type' in kwargs:
+        print('Warning - No data_type in kwargs, using default')
+        kwargs['data_type'] = 'sadsd'
     
     if 'sharex' in kwargs:
         sharex = kwargs.get('sharex')
@@ -1208,21 +1142,26 @@ def fig_ut(struCase, dofLIST, **kwargs):
         fig_save = False
     graphs_pack = handle_graph_info(**kwargs)
     
-    if type(dofLIST) == dict: #Para comodidad end-user
-        dofLIST = [dofLIST]
+    if kwargs['data_type'] == 'FCS' or kwargs['data_type'] == 'UDS':
+        fig_type = 'DOF'
+        if type(DATA_indc) == dict: #Para comodidad end-user
+            DATA_indc = [DATA_indc]
 
-    n = len(dofLIST)
+    n = len(DATA_indc)
     
     fig, axs = plt.subplots(n, p_prow, sharex = sharex)
     if n == 1: #Esto falla si ax no es un iterable (cuando n = 1 es sólo ax, no ax[:])
-        axs = plt_ut(struCase, dofLIST[0], axs, **kwargs)
+        if fig_type == 'modal':
+            if type(DATA_indc[0]) == int:
+                DATA_indc = [DATA_indc]
+        axs = plt_ut(struCase, DATA_indc[0], axs, **kwargs)
         axs.set_xlabel(graphs_pack['x_label'])
         axs.set_ylabel(graphs_pack['y_label'])
         axs.set_aspect(aspect_ratio)
         axs.grid()
     else:
-        for ax, dof_dict in zip(axs, dofLIST):
-            ax = plt_ut(struCase, dof_dict, ax,**kwargs)
+        for ax, exp_DATA_indc in zip(axs, DATA_indc):
+            ax = plt_ut(struCase, exp_DATA_indc, ax,**kwargs)
             ax.set_ylabel(graphs_pack['y_label'])
             ax.set_aspect(aspect_ratio)
             ax.grid()
@@ -1232,76 +1171,7 @@ def fig_ut(struCase, dofLIST, **kwargs):
         save_figure(fig,fig_save_opts,**kwargs)
     return(fig)
 
-def fig_qt(struCase, modeLIST, **kwargs):
-    '''
-    Arranges plots of q(t) or Q(t)
-    
-    struCase:   stru class object
-    modeLIST:    list of modal_inds or modal_inds list of modal indexes
-    kwargs: may contain
-        #General:
-        fig_save, bool - For saving purp.
-            fig_save_opts, dict - Folder, filecode, etc
-        sharex: matplotlib.pyplot.subplots() argument - default 'col'
-        p_prow: plots per row for the global figure - default 1
-        limit_tvals or limit_tinds: list or ndarray - time limits for plotting, values or indexes
-        #Plot customization:
-            fig_title
-            x_label
-            y_label
-            legend_title
-    '''
-    
-    if 'sharex' in kwargs:
-        sharex = kwargs.get('sharex')
-    else:
-        sharex = "col"
-        
-    if 'p_prow' in kwargs:
-        p_prow = kwargs.get('p_prows')
-    else:
-        p_prow = 1
-    if 'limit_tvals' in kwargs:
-        struCase = sfti_time(struCase,time_vals=kwargs.get('limit_tvals'))
-    elif 'limit_tinds' in kwargs:
-        struCase = sfti_time(struCase,indexes = kwargs.get('limit_tinds'))
-    else:
-        pass
-        #Nada, quedan los indexes que ya vienen con el objeto
-    if 'fig_save' in kwargs:
-        fig_save = kwargs.get('fig_save')
-        if 'fig_save_opts' in kwargs:
-            fig_save_opts = kwargs.get('fig_save_opts')
-        else:
-            fig_save_opts = {}
-    else:
-        fig_save = False
-        
-    graphs_pack = handle_graph_info(**kwargs)
-
-    n = len(modeLIST)
-    
-    fig, axs = plt.subplots(n, p_prow, sharex = sharex)
-    
-    if n == 1: #Esto falla si ax no es un iterable (cuando n = 1 es sólo ax, no ax[:])
-        if type(modeLIST[0]) == int:
-            modeLIST = [modeLIST]
-        axs = plt_qt(struCase, modeLIST[0], axs, **kwargs)
-        axs.set_xlabel(graphs_pack['x_label'])
-        axs.set_ylabel(graphs_pack['y_label'])
-        axs.grid()
-    else:
-        for ax, dof_dict in zip(axs, modeLIST):
-            ax = plt_qt(struCase, dof_dict, ax,**kwargs)
-            ax.set_ylabel(graphs_pack['y_label'])
-            ax.grid()
-        axs[-1].set_xlabel(graphs_pack['x_label'])
-    fig.suptitle(graphs_pack['fig_title'])
-    if fig_save:
-        save_figure(fig,fig_save_opts,**kwargs)
-    return(fig)
-
-def fig_u_FFT(struCase, dofLIST, **kwargs):
+def fig_FFT(struCase, DATA_indic, **kwargs):
     '''
     Arranges plots of FFT(u(t)) or FFT(load(t))
     
@@ -1320,58 +1190,7 @@ def fig_u_FFT(struCase, dofLIST, **kwargs):
             x_label
             y_label
             legend_title
-    '''
-    if 'sharex' in kwargs:
-        sharex = kwargs.get('sharex')
-    else:
-        sharex = "col"
-    if not 'x_units' in kwargs:
-        kwargs['x_units'] = 'Hz'
-    
-    if not 'x_label' in kwargs:
-        kwargs['x_label'] = '$\Omega$' + ' [' + kwargs['x_units'] + ']'
-    if 'p_prow' in kwargs:
-        p_prow = kwargs.get('p_prows')
-    else:
-        p_prow = 1
-    if 'limit_tvals' in kwargs:
-        struCase = sfti_time(struCase,time_vals=kwargs.get('limit_tvals'))
-    elif 'limit_tinds' in kwargs:
-        struCase = sfti_time(struCase,indexes = kwargs.get('limit_tinds'))
-    else:
-        pass
-        #Nada, quedan los indexes que ya vienen con el objeto
-    if 'fig_save' in kwargs:
-        fig_save = kwargs.get('fig_save')
-        if 'fig_save_opts' in kwargs:
-            fig_save_opts = kwargs.get('fig_save_opts')
-        else:
-            fig_save_opts = {}
-    else:
-        fig_save = False
-    graphs_pack = handle_graph_info(**kwargs)
-    if type(dofLIST) == dict: #Para comodidad end-user
-        dofLIST = [dofLIST]
-    n = len(dofLIST)
-    fig, axs = plt.subplots(n,p_prow, sharex=sharex)
-    if n == 1: #Esto falla si ax no es un iterable (cuando n = 1 es sólo ax, no ax[:])
-        axs = plt_uFFT(struCase, dofLIST[0], axs, **kwargs)
-        axs.set_xlabel(graphs_pack['x_label'])
-        axs.set_ylabel(graphs_pack['y_label'])
-        axs.grid()
-    else:
-        for ax, dof_dict in zip(axs, dofLIST):
-            ax = plt_uFFT(struCase, dof_dict, ax,**kwargs)
-            ax.set_ylabel(graphs_pack['y_label'])
-            ax.grid()
-        axs[-1].set_xlabel(graphs_pack['x_label'])
-    fig.suptitle(graphs_pack['fig_title'])
-    if fig_save:
-        save_figure(fig,fig_save_opts,**kwargs)
-    return(fig)
-
-def fig_q_FFT(struCase, modeLIST, **kwargs):
-    '''
+            
     Arranges plots of FFT(q(t)) or FFT(Q(t))
     
     struCase: stru class obj
@@ -1390,11 +1209,18 @@ def fig_q_FFT(struCase, modeLIST, **kwargs):
             y_label
             legend_title
     '''
+    if not 'data_type' in kwargs:
+        print('Warning - No data_type in kwargs, using default')
+        kwargs['data_type'] = 'sadsd' #Definir nombres y completar
     if 'sharex' in kwargs:
         sharex = kwargs.get('sharex')
     else:
         sharex = "col"
-        
+    if not 'x_units' in kwargs:
+        kwargs['x_units'] = 'Hz'
+    
+    if not 'x_label' in kwargs:
+        kwargs['x_label'] = '$\Omega$' + ' [' + kwargs['x_units'] + ']'
     if 'p_prow' in kwargs:
         p_prow = kwargs.get('p_prows')
     else:
@@ -1406,10 +1232,6 @@ def fig_q_FFT(struCase, modeLIST, **kwargs):
     else:
         pass
         #Nada, quedan los indexes que ya vienen con el objeto
-    if not 'x_units' in kwargs:
-        kwargs['x_units'] = 'Hz'
-    if not 'x_label' in kwargs:
-        kwargs['x_label'] = '$\Omega$' + ' [' + kwargs['x_units'] + ']'
     if 'fig_save' in kwargs:
         fig_save = kwargs.get('fig_save')
         if 'fig_save_opts' in kwargs:
@@ -1419,32 +1241,31 @@ def fig_q_FFT(struCase, modeLIST, **kwargs):
     else:
         fig_save = False
     graphs_pack = handle_graph_info(**kwargs)
-    if type(modeLIST) == dict: #Para comodidad end-user
-        modeLIST = [modeLIST]
-    n = len(modeLIST)
+
+    if type(DATA_indic) == dict: #Para comodidad end-user
+        DATA_indic = [DATA_indic]            
+    n = len(DATA_indic)
     fig, axs = plt.subplots(n,p_prow, sharex=sharex)
     if n == 1: #Esto falla si ax no es un iterable (cuando n = 1 es sólo ax, no ax[:])
-        if type(modeLIST[0]) == int:
-            modeLIST = [modeLIST]
-        axs = plt_qFFT(struCase, modeLIST[0], axs, **kwargs)
+        if fig_type == 'modal':
+            if type(DATA_indic[0]) == int:
+                DATA_indic = [DATA_indic]
+        axs = plt_uFFT(struCase, DATA_indic[0], axs, **kwargs)
         axs.set_xlabel(graphs_pack['x_label'])
         axs.set_ylabel(graphs_pack['y_label'])
         axs.grid()
-        axs.legend()
     else:
-        for ax, mode_dict in zip(axs, modeLIST):
-            ax = plt_qFFT(struCase, mode_dict, ax,**kwargs)
+        for ax, exp_DATA_indic in zip(axs, DATA_indic):
+            ax = plt_uFFT(struCase, exp_DATA_indic, ax,**kwargs)
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
-            ax.legend()
         axs[-1].set_xlabel(graphs_pack['x_label'])
     fig.suptitle(graphs_pack['fig_title'])
     if fig_save:
         save_figure(fig,fig_save_opts,**kwargs)
     return(fig)
 
-
-def fig_u_spect(struCase, dofLIST, **kwargs):
+def fig_spect(struCase, DATA_indic, **kwargs):
     '''
     Arranges plots of Spectrogram(u(t)) or Spectrogram(load(t))
     
@@ -1463,7 +1284,28 @@ def fig_u_spect(struCase, dofLIST, **kwargs):
             x_label
             y_label
             legend_title
+            
+    Arranges plots of Spectrogram(q(t)) or Spectrogram(Q(t))
+    
+    struCase: stru class obj
+    dofLIST: list of modal_indexes or modal_inds list of modal indexes
+    kwargs: may contain
+        y_units, str: 'Hz' or 'rad' - Spectrogram f units
+        #General:
+        fig_save, bool - For saving purp.
+            fig_save_opts, dict - Folder, filecode, etc
+        sharex: matplotlib.pyplot.subplots() argument - default 'col'
+        p_prow: plots per row for the global figure - default 1
+        limit_tvals or limit_tinds: list or ndarray - time limits for plotting, values or indexes
+        #Plot customization:
+            fig_title
+            x_label
+            y_label
+            legend_title
     '''
+    if not 'data_type' in kwargs:
+        print('Warning - No data_type in kwargs, using default')
+        kwargs['data_type'] = 'sadsd'
     if 'sharex' in kwargs:
         sharex = kwargs.get('sharex')
     else:
@@ -1493,90 +1335,22 @@ def fig_u_spect(struCase, dofLIST, **kwargs):
     else:
         fig_save = False
     graphs_pack = handle_graph_info(**kwargs)
-    if type(dofLIST) == dict: #Para comodidad end-user
-        dofLIST = [dofLIST]
-    n = len(dofLIST)
-    fig, axs = plt.subplots(n,p_prow, sharex=sharex)
-    if n == 1: #Esto falla si ax no es un iterable (cuando n = 1 es sólo ax, no ax[:])
-        axs = plt_uspectr(struCase, dofLIST[0], fig, axs, **kwargs)
-        axs.set_xlabel(graphs_pack['x_label'])
-        axs.set_ylabel(graphs_pack['y_label'])
-        axs.grid()
-    else:
-        for ax, dof_dict in zip(axs, dofLIST):
-            ax = plt_uspectr(struCase, dof_dict, fig, ax,**kwargs)
-            ax.set_ylabel(graphs_pack['y_label'])
-            ax.grid()
-        axs[-1].set_xlabel(graphs_pack['x_label'])
-    # fig.suptitle(graphs_pack['fig_title'])
-    if fig_save:
-        save_figure(fig,fig_save_opts,**kwargs)
-    return(fig)
-
-def fig_q_spect(struCase, modeLIST, **kwargs):
-    '''
-    Arranges plots of Spectrogram(q(t)) or Spectrogram(Q(t))
     
-    struCase: stru class obj
-    dofLIST: list of modal_indexes or modal_inds list of modal indexes
-    kwargs: may contain
-        y_units, str: 'Hz' or 'rad' - Spectrogram f units
-        #General:
-        fig_save, bool - For saving purp.
-            fig_save_opts, dict - Folder, filecode, etc
-        sharex: matplotlib.pyplot.subplots() argument - default 'col'
-        p_prow: plots per row for the global figure - default 1
-        limit_tvals or limit_tinds: list or ndarray - time limits for plotting, values or indexes
-        #Plot customization:
-            fig_title
-            x_label
-            y_label
-            legend_title
-    '''
-    if 'sharex' in kwargs:
-        sharex = kwargs.get('sharex')
-    else:
-        sharex = "col"
-        
-    if 'p_prow' in kwargs:
-        p_prow = kwargs.get('p_prows')
-    else:
-        p_prow = 1
-        
-    if 'limit_tvals' in kwargs:
-        struCase = sfti_time(struCase,time_vals=kwargs.get('limit_tvals'))
-    elif 'limit_tinds' in kwargs:
-        struCase = sfti_time(struCase,indexes = kwargs.get('limit_tinds'))
-    else:
-        pass
-        #Nada, quedan los indexes que ya vienen con el objeto
-    if not 'y_units' in kwargs:
-       kwargs['y_units'] = 'Hz'
-    if not 'y_label' in kwargs:
-        kwargs['y_label'] = '$\Omega$' + ' [' + kwargs['y_units'] + ']'
-    if 'fig_save' in kwargs:
-        fig_save = kwargs.get('fig_save')
-        if 'fig_save_opts' in kwargs:
-            fig_save_opts = kwargs.get('fig_save_opts')
-        else:
-            fig_save_opts = {}
-    else:
-        fig_save = False 
-    graphs_pack = handle_graph_info(**kwargs)
-    if type(modeLIST) == dict: #Para comodidad end-user
-        modeLIST = [modeLIST]
-    n = len(modeLIST)
+    if type(DATA_indic) == dict: #Para comodidad end-user
+        DATA_indic = [DATA_indic]
+    n = len(DATA_indic)
     fig, axs = plt.subplots(n,p_prow, sharex=sharex)
     if n == 1: #Esto falla si ax no es un iterable (cuando n = 1 es sólo ax, no ax[:])
-        if type(modeLIST[0]) == int:
-            modeLIST = [modeLIST]
-        axs = plt_q_spectr(struCase, modeLIST[0], fig, axs, **kwargs)
+        if fig_type == 'modal':
+            if type(DATA_indic[0]) == int:
+                DATA_indic = [DATA_indic]
+        axs = plt_uspectr(struCase, DATA_indic[0], fig, axs, **kwargs)
         axs.set_xlabel(graphs_pack['x_label'])
         axs.set_ylabel(graphs_pack['y_label'])
         axs.grid()
     else:
-        for ax, mode_dict in zip(axs, modeLIST):
-            ax = plt_q_spectr(struCase, mode_dict, fig, ax,**kwargs)
+        for ax, exp_DATA_indic in zip(axs, DATA_indic):
+            ax = plt_uspectr(struCase, exp_DATA_indic, fig, ax,**kwargs)
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
         axs[-1].set_xlabel(graphs_pack['x_label'])
@@ -1585,7 +1359,7 @@ def fig_q_spect(struCase, modeLIST, **kwargs):
         save_figure(fig,fig_save_opts,**kwargs)
     return(fig)
 
-def fig_u_PP(struCase, dofLIST, **kwargs):
+def fig_PP(struCase, DATA_indic, **kwargs): #WARNING: Falta implementar / testear para q
     '''
     Arranges plots of PP(u(t)) or PP(load(t))
     
@@ -1604,6 +1378,9 @@ def fig_u_PP(struCase, dofLIST, **kwargs):
             y_label
             legend_title
     '''
+    if not 'data_type' in kwargs:
+        print('Warning - No data_type in kwargs, using default')
+        kwargs['data_type'] = 'sadsd'
     if 'sharex' in kwargs:
         sharex = kwargs.get('sharex')
     else:
@@ -1635,159 +1412,25 @@ def fig_u_PP(struCase, dofLIST, **kwargs):
         aspect_ratio = 'auto'
     graphs_pack = handle_graph_info(**kwargs)
     
-    if type(dofLIST) == dict: #Para comodidad end-user
-        dofLIST = [dofLIST]
+    if type(DATA_indic) == dict: #Para comodidad end-user
+        dofLIST = [DATA_indic]
 
-    n = len(dofLIST)
+    n = len(DATA_indic)
     
     fig, axs = plt.subplots(n, p_prow, sharex = sharex)
     if n == 1: #Esto falla si ax no es un iterable (cuando n = 1 es sólo ax, no ax[:])
-        axs = plt_uPP(struCase, dofLIST[0], axs, **kwargs)
+        axs = plt_uPP(struCase, DATA_indic[0], axs, **kwargs)
         axs.set_xlabel(graphs_pack['x_label'])
         axs.set_ylabel(graphs_pack['y_label'])
         axs.set_aspect(aspect_ratio)
         axs.grid()
     else:
-        for ax, dof_dict in zip(axs, dofLIST):
-            ax = plt_uPP(struCase, dof_dict, ax,**kwargs)
+        for ax, exp_DATA_indic in zip(axs, DATA_indic):
+            ax = plt_uPP(struCase, exp_DATA_indic, ax,**kwargs)
             ax.set_ylabel(graphs_pack['y_label'])
             ax.set_aspect(aspect_ratio)
             ax.grid()
         axs[-1].set_xlabel(graphs_pack['x_label'])
-    fig.suptitle(graphs_pack['fig_title'])
-    if fig_save:
-        save_figure(fig,fig_save_opts,**kwargs)
-    return(fig)
-
-def fig_ut_vt_pp(struCase, dofDict, **kwargs): #NOTA: No sé si esto refleja lo solicitado en el repo.
-    """
-    Arranges plots of u(t), v(t) and PP or load(t), vload(t) and PP
-    
-    struCase: stru class obj
-    dofLIST: a single dofDict: {'NODE':[DOFs]}
-    kwargs: may contain
-        #General:
-        fig_save, bool - For saving purp.
-            fig_save_opts, dict - Folder, filecode, etc
-        sharex: matplotlib.pyplot.subplots() argument - default 'col'
-        p_prow: plots per row for the global figure - default 1
-        limit_tvals or limit_tinds: list or ndarray - time limits for plotting, values or indexes
-        #Plot customization:
-            fig_title
-            x_label
-            y_label
-            legend_title
-    """  
-    
-    if 'sharex' in kwargs:
-        sharex = kwargs.get('sharex')
-    else:
-        sharex = "col"
-        
-    if 'p_prow' in kwargs:
-        p_prow = kwargs.get('p_prows')
-    else:
-        p_prow = 1
-        
-    if 'limit_tvals' in kwargs:
-        struCase = sfti_time(struCase,time_vals=kwargs.get('limit_tvals'))
-    elif 'limit_tinds' in kwargs:
-        struCase = sfti_time(struCase,indexes = kwargs.get('limit_tinds'))
-    else:
-        pass
-        #Nada, quedan los indexes que ya vienen con el objeto
-    if 'fig_save' in kwargs:
-        fig_save = kwargs.get('fig_save')
-        if 'fig_save_opts' in kwargs:
-            fig_save_opts = kwargs.get('fig_save_opts')
-        else:
-            fig_save_opts = {}
-    else:
-        fig_save = False 
-    graphs_pack = handle_graph_info(**kwargs)
-    gs = gridspec.GridSpec(2, 3)
-    fig = plt.figure()
-    ax1 = fig.add_subplot(gs[0,0:2])
-    ax2 = fig.add_subplot(gs[1,0:2])
-    ax3 = fig.add_subplot(gs[:,2])
-    axs = [ax1,ax2,ax3]
-    plt_ut(struCase, dofDict, ax1,**kwargs)
-    kwargs['vel'] = True
-    plt_ut(struCase,dofDict, ax2, **kwargs)
-    kwargs['vel'] = False
-    plt_uPP(struCase, dofDict, ax3,**kwargs)
-    for ax in axs:
-        ax.grid()
-    axs[-1].set_xlabel(graphs_pack['x_label'])
-    fig.suptitle(graphs_pack['fig_title'])
-    if fig_save:
-        save_figure(fig,fig_save_opts,**kwargs)
-    return(fig)
-
-def fig_qt_vt_pp(struCase, modal_inds, **kwargs): #NOTA: No sé si esto refleja lo solicitado en el repo.
-    """
-    Arranges plots of q(t), q_dot(t) and PP or Q(t), Q_dot(t) and PP
-    
-    struCase: stru class obj
-    dofLIST: a single modal_inds list of modal indexes
-    kwargs: may contain
-        fig_save, bool - For saving purp.
-            fig_save_opts, dict - Folder, filecode, etc
-        #General:
-        sharex: matplotlib.pyplot.subplots() argument - default 'col'
-        p_prow: plots per row for the global figure - default 1
-        limit_tvals or limit_tinds: list or ndarray - time limits for plotting, values or indexes
-        #Plot customization:
-            fig_title
-            x_label
-            y_label
-            legend_title
-    """  
-    
-    if 'sharex' in kwargs:
-        sharex = kwargs.get('sharex')
-    else:
-        sharex = "col"
-        
-    if 'p_prow' in kwargs:
-        p_prow = kwargs.get('p_prows')
-    else:
-        p_prow = 1
-        
-    if 'limit_tvals' in kwargs:
-        struCase = sfti_time(struCase,time_vals=kwargs.get('limit_tvals'))
-    elif 'limit_tinds' in kwargs:
-        struCase = sfti_time(struCase,indexes = kwargs.get('limit_tinds'))
-    else:
-        pass
-        #Nada, quedan los indexes que ya vienen con el objeto
-    if 'fig_save' in kwargs:
-        fig_save = kwargs.get('fig_save')
-        if 'fig_save_opts' in kwargs:
-            fig_save_opts = kwargs.get('fig_save_opts')
-        else:
-            fig_save_opts = {}
-    else:
-        fig_save = False
-    if type(modal_inds[0]) == list:
-        print('qt_vt_pp plot > Warning: 1D list only!')
-        return()
-    graphs_pack = handle_graph_info(**kwargs)
-    gs = gridspec.GridSpec(2, 3)
-    fig = plt.figure()
-    ax1 = fig.add_subplot(gs[0,0:2])
-    ax2 = fig.add_subplot(gs[1,0:2])
-    ax3 = fig.add_subplot(gs[:,2])
-    axs = [ax1,ax2,ax3]
-    
-    plt_qt(struCase, modal_inds, ax1,**kwargs)
-    kwargs['vel'] = True
-    plt_qt(struCase,modal_inds, ax2, **kwargs)
-    kwargs['vel'] = False
-    plt_qPP(struCase, modal_inds, ax3,**kwargs)
-    for ax in axs:
-        ax.grid()
-    axs[-1].set_xlabel(graphs_pack['x_label'])
     fig.suptitle(graphs_pack['fig_title'])
     if fig_save:
         save_figure(fig,fig_save_opts,**kwargs)
@@ -1853,6 +1496,7 @@ def fig_phi(struCase, modedofLIST, **kwargs):
     if fig_save:
         save_figure(fig,fig_save_opts,**kwargs)
     return(fig)
+
 """
 ------------------------------------------------------------------------------
 GENERAL TOOLS functions
@@ -2356,7 +2000,7 @@ def general_envs(struCase,**kwargs):
     new_prop = []
     for i in range(prop.shape[0]):
         #Asumiendo un primer axis
-        lmin,lmax = plotter.hl_envelopes_idx(prop[i])
+        lmin,lmax = hl_envelopes_idx(prop[i])
         raw_data_max = prop[i,lmax]
         raw_data_min = prop[i,lmin]
         new_prop.append([max(raw_data_max),max(abs(raw_data_min))])
