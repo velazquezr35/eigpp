@@ -449,9 +449,8 @@ def plt_FFT(struCase, data_indic, ax, **kwargs):
             ax.set_xlim(x_lims)
     return(ax)
 
-#Retratos de fase
 
-def plt_uPP(struCase, dofDict,ax,**kwargs):
+def plt_PP(struCase, data_indic, ax, **kwargs):
     """
     Plots phase-plane portraits, du/dt vs u or dFCS/dt vs FCS
     Inputs: 
@@ -468,49 +467,7 @@ def plt_uPP(struCase, dofDict,ax,**kwargs):
             graphs_pack, standard dict for plot customization        
     returns:
             ax obj
-    """
-    if 'data_type' in kwargs:
-        data_type = kwargs.get('data_type')
-    else:
-        data_type = 'UDS'
-    if 'u_type' in kwargs:
-        u_type = kwargs.get('u_type')
-    else:
-        u_type = 'mdr'
-    if 'deg' in kwargs:
-        deg = kwargs.get('deg')
-    else:
-        deg = False
-    if 'graphs_pack' in kwargs:
-        graphs_pack = kwargs.get('graphs_pack')
-    else:
-        graphs_pack = handle_graph_info(**kwargs)
-
-    desired_inds = nodeDof2idx(struCase, dofDict)
-    original_inds = flatten_values_list(dofDict.values())
-    for i in range(len(desired_inds)):
-        #NOTA: Esto se puede mejorar tomando u = todos y luego plot(u[desired])
-        if data_type == 'UDS':
-            if u_type=='mdr':
-                y = struCase.u_mdr[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
-            elif u_type=='raw':
-                y = struCase.u_raw[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
-            else:
-                print('Warning: Bad u_type def')
             
-            if deg:
-                if original_inds[i] in struCase.rot_inds:
-                    print('rot rad 2 deg,', original_inds[i])
-                    y = np.rad2deg(y)
-        elif data_type=='FCS':
-            y = struCase.aLoad[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
-        
-        dy = np.gradient(y,struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]])
-        ax.plot(y,dy, label=str(original_inds[i])) #NOTA: Creo que no es necesario el transpose, lo detecta sólo.
-    return(ax) #NOTA: ¿Necesito hacer el return? Quizá para actualizar
-
-def plt_qPP(struCase, modal_inds,ax,**kwargs):
-    """
     Plots phase-plane portraits, q vs dq/dt or external modal loads vs its d/dt
     Inputs: struCase is a Stru Class Obj
             modal_inds list of modal indexes
@@ -521,33 +478,72 @@ def plt_qPP(struCase, modal_inds,ax,**kwargs):
         'modal_inds_type': 'relative' (in order to use MOI´s inds), 'absolute' (phi´s inds, default)
     returns:
             ax obj
-                
     """
     if 'data_type' in kwargs:
         data_type = kwargs.get('data_type')
     else:
-        data_type = 'mod_desp'  
+        data_type = 'UDS'
+        print('Warning - No data_type in kwargs, using default: UDS')
+    if 'deg' in kwargs:
+        deg = kwargs.get('deg')
+    else:
+        deg = False
     if 'graphs_pack' in kwargs:
         graphs_pack = kwargs.get('graphs_pack')
     else:
         graphs_pack = handle_graph_info(**kwargs)
-    if 'modal_inds_type' in kwargs:
-        modal_inds_type = kwargs.get('modal_inds_type')
-    else:
-        modal_inds_type = 'absolute'
-
-    if type(modal_inds) == int:
-        modal_inds = [modal_inds]
-    modal_inds = handle_modal_inds(struCase, modal_inds, **kwargs)
-    for loc_ind in modal_inds:
-        #NOTA: Esto se puede mejorar tomando u = todos y luego plot(u[desired])
-        if data_type == 'mod_desp':
-            dy = np.gradient(struCase.q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]],struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]])
-            y = struCase.q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
-        elif data_type == 'mod_aLoad':
-            dy = np.gradient(struCase.Q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]],struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]])
-            y = struCase.Q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
-        ax.plot(y,dy, label=str(loc_ind))
+    
+    y_data = []
+    if data_type == 'UDS' or data_type == 'FCS':
+        plot_type = 'DOF'
+        if 'u_type' in kwargs:
+            u_type = kwargs.get('u_type')
+        else:
+            u_type = 'mdr'
+        desired_inds = nodeDof2idx(struCase, dofDict)
+        original_inds = flatten_values_list(dofDict.values())
+        for i in range(len(desired_inds)):
+            #NOTA: Esto se puede mejorar tomando u = todos y luego plot(u[desired])
+            if data_type == 'UDS':
+                if u_type=='mdr':
+                    y = struCase.u_mdr[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+                elif u_type=='raw':
+                    y = struCase.u_raw[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+                else:
+                    print('Warning: Bad u_type def')
+                
+                if deg:
+                    if original_inds[i] in struCase.rot_inds:
+                        print('rot rad 2 deg,', original_inds[i])
+                        y = np.rad2deg(y)
+            elif data_type=='FCS':
+                y = struCase.aLoad[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+            y_data.append(y)           
+    elif data_type == 'mod_desp' or data_type == 'mod_aLoad':
+        plot_type = 'modal'
+        if 'modal_inds_type' in kwargs:
+            modal_inds_type = kwargs.get('modal_inds_type')
+        else:
+            modal_inds_type = 'absolute'
+        if type(modal_inds) == int:
+            modal_inds = [modal_inds]
+        modal_inds = handle_modal_inds(struCase, modal_inds, **kwargs)
+        for loc_ind in modal_inds:
+            #NOTA: Esto se puede mejorar tomando u = todos y luego plot(u[desired])
+            if data_type == 'mod_desp':
+                y = struCase.q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+            elif data_type == 'mod_aLoad':
+                y = struCase.Q[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+            y_data.append(y)
+    counter = 0
+    for y in y_data:
+        dy = np.gradient(y,struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]])
+        if plot_type == 'modal':
+            lab = str(data_indic[counter])
+        elif plt_type == 'DOF':
+            lab = str(original_inds[counter])
+        ax.plot(y, dy, label = lab)
+        counter +=1
     ax.legend(graphs_pack['legend_title'])
     return(ax)
 
