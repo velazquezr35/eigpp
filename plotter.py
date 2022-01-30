@@ -591,121 +591,6 @@ def plt_qPP(struCase, modal_inds,ax,**kwargs):
 
 #Spectrogram
 
-def plt_uspectr(struCase, dofDict, fig, ax, **kwargs):
-    """
-    Plots spectrogram of an u-signal or FCS-signal
-    Inputs: struCase is a Stru Class Obj
-            dof_lst is a dict (o lista, ver cual dejar), {node:[DOFs]}
-            ax is a matplotlib.pyplot Axes obj
-    kwargs (may contain):
-        'data_type', str: 'FCS' or 'UDS' (loads or u-dofs, u-dofs as default)
-        if 'UDS' (may contain):
-            u_type: 'mdr' (default) or 'raw'
-            'vel': bool, default False - In order to calculate and plot the modal vel's spectrogram
-        elif 'FCS' (may contain):
-        global (may contain):
-            'SP_Winsize': str, default Dt/20 
-            'SP_OvrLapFactor': int, detault 80 (%)
-            'SP_WinType': str, default 'Hann' - Check supported FFT-Windows in scipy.signal
-            'SP_Normalize': bool, default True - In order to normalize the spectrogram
-            'y_units': str, 'Hz' or 'rad/s' - freq units
-            graphs_pack, standard dict for plot customization 
-            'x_lims', 'y_lims', list: Plotting lims
-    returns:
-            ax obj
-    """
-    if 'data_type' in kwargs:
-        data_type = kwargs.get('data_type')
-    else:
-        data_type = 'UDS'
-    if 'u_type' in kwargs:
-        u_type = kwargs.get('u_type')
-    else:
-        u_type = 'mdr'
-    if 'vel' in kwargs:
-        vel = kwargs.get('vel')
-    else:
-        vel = False
-    if 'graphs_pack' in kwargs:
-        graphs_pack = kwargs.get('graphs_pack')
-    else:
-        graphs_pack = handle_graph_info(**kwargs)
-    t = struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
-    D_t = t[-1] - t[0] #NOTA: Esto asume un único dt para el struCase
-    if 'SP_Winsize' in kwargs:
-        WinSize = int(len(t)/kwargs.get('SP_Winsize'))
-    else:
-        WinSize = int(len(t)/5) #NOTA: Esto asume un único winsize para el struCase. Ver si agregar info en un dict aparte para más customización
-    if 'SP_OvrLapFactor' in kwargs:
-        OverLapFactor = kwargs.get('SP_OvrLapFactor')
-    else:
-        OverLapFactor = 80 #NOTA: Default 80%
-        
-    if 'SP_WinType' in kwargs:
-        WinType = kwargs.get('SP_WinType')
-    else:
-        WinType = 'hann' #NOTA: Default Hann's window. ¿Sirve?
-        
-    if 'SP_normalize' in kwargs:
-        b_norm = kwargs.get('SP_normalize')
-    else:
-        b_norm = True #NOTA: Default normalizar el spectrogram
-    if 'y_lims' in kwargs:
-        y_lims = kwargs.get('y_lims')
-    else:
-        y_lims = False
-    if 'x_lims' in kwargs:
-        x_lims = kwargs.get('x_lims')
-    else:
-        x_lims = False
-    if 'y_units' in kwargs:
-        y_units = kwargs.get('y_units')
-    else:
-        print('Missing f units. Set to default (Hz)')
-        y_units = 'Hz'
-        
-    OverLap = np.round(WinSize*OverLapFactor/100)
-    fDef = len(t)/D_t
-    desired_inds = nodeDof2idx(struCase,dofDict)
-    original_inds = flatten_values_list(dofDict.values())
-    node_labels = label_asoc(dofDict) #OJO. No contempla posibles errores
-    for i in range(len(desired_inds)):
-        if data_type =='UDS':
-            if u_type=='mdr':
-                y = struCase.u_mdr[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
-            elif u_type=='raw':
-                y = struCase.u_raw[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
-            else:
-                print('Warning: Bad u_type def')
-            if vel:
-                y=np.gradient(y,t) #NOTA: Agregar al plot que es una velocidad
-        elif data_type =='FCS':
-            y = struCase.aLoad[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
-        F, T, S = signal.spectrogram(y, fDef,window=WinType, noverlap=OverLap,nperseg=WinSize)
-        if b_norm:
-            loc_m = 0
-            for j in range(len(S)):
-                if max(S[j,:]) > loc_m:
-                    loc_m = max(S[j,:])
-            if not loc_m == 0:
-                S = abs(S)/loc_m
-            else:
-                print('Warning: 1/0 found')
-        if y_units == 'rad/s':
-            print('f in rad/s!')
-            c = ax.pcolormesh(T,F*2*np.pi,S,shading = 'auto', cmap='gray_r')
-        elif y_units == 'Hz':
-            print('f in hz!')
-            c = ax.pcolormesh(T,F,S,shading = 'auto', cmap='gray_r')
-        fig.colorbar(c, ax = ax)
-        ax.set_title('Node(s): ' + keys_to_str(dofDict) + ', DOF(s):' + str(original_inds[i]))
-    if y_lims:
-        ax.set_ylim(y_lims)
-    if x_lims:
-        ax.set_xlim(x_lims)
-    ax.set_ylabel(graphs_pack['y_label'])
-    return(ax)
-
 def plt_spectr(struCase, data_indic, fig, ax, **kwargs):
     """
     Plots spectrogram of modal coords or modal external loads
@@ -796,17 +681,21 @@ def plt_spectr(struCase, data_indic, fig, ax, **kwargs):
         if 'modal_inds_type' in kwargs:
             modal_inds_type = kwargs.get('modal_inds_type')
         else:
-            modal_inds_type = 'absolute'
-        if type(modal_inds) == int:
-            modal_inds = [modal_inds]
-        modal_inds = handle_modal_inds(struCase, modal_inds, **kwargs)
+            modal_inds_type = 'absolute' #Ampliar esto a mois o relativos
+        if type(data_indic) == int:
+            data_indic = [data_indic]
+        data_indic = handle_modal_inds(struCase, data_indic, **kwargs)
         for loc_ind in modal_inds:
             y_data.append(getattr(struCase, data_type)[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]])
     elif data_type == 'UDS' or data_type == 'FCS':
+        if 'u_type' in kwargs:
+            u_type = kwargs.get('u_type')
+        else:
+            u_type = 'mdr'
         plot_type = 'DOF'
-        desired_inds = nodeDof2idx(struCase,dofDict)
-        original_inds = flatten_values_list(dofDict.values())
-        node_labels = label_asoc(dofDict) #OJO. No contempla posibles errores
+        desired_inds = nodeDof2idx(struCase,data_indic)
+        original_inds = flatten_values_list(data_indic.values())
+        node_labels = label_asoc(data_indic) #OJO. No contempla posibles errores
         for i in range(len(desired_inds)):
             if data_type =='UDS':
                 if u_type=='mdr':
@@ -816,7 +705,7 @@ def plt_spectr(struCase, data_indic, fig, ax, **kwargs):
                 else:
                     raise NameError('Wrong u_type def')
             elif data_type =='FCS':
-                y_data(struCase.aLoad[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]])
+                y_data.append(struCase.aLoad[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]])
     else:
         raise NameError('Wrong data_type')
     counter = 0
@@ -842,7 +731,7 @@ def plt_spectr(struCase, data_indic, fig, ax, **kwargs):
             ax.set_title('Modo: ' + lst2str(modal_inds))
             ax.set_ylabel(graphs_pack['y_label'])
         elif plot_type == 'DOF':
-            ax.set_title('Node(s): ' + keys_to_str(dofDict) + ', DOF(s):' + str(original_inds[counter]))
+            ax.set_title('Node(s): ' + keys_to_str(data_indic) + ', DOF(s):' + str(original_inds[counter]))
             counter +=1
     if y_lims:
         if type(y_lims) == str:
@@ -855,110 +744,6 @@ def plt_spectr(struCase, data_indic, fig, ax, **kwargs):
         else:
             ax.set_ylim(y_lims)
     return(ax)
-
-def plt_q_spectr(struCase, modal_inds, fig, ax, **kwargs):
-    """
-    Plots spectrogram of modal coords or modal external loads
-    Inputs: struCase is a Stru Class Obj
-            dof_lst is a dict (o lista, ver cual dejar), {node:[DOFs]}
-            ax is a matplotlib.pyplot Axes obj
-    kwargs (may contain):
-        'data_type': attr name (q, Q, etc...)
-        'vel': bool, default False - In order to calculate and plot the modal vel's spectrogram
-        'SP_Winsize': str, default Dt/20 
-        'SP_OvrLapFactor': int, detault 80 (%)
-        'SP_WinType': str, default 'Hann' - Check supported FFT-Windows in scipy.signal
-        'SP_Normalize': bool, default True - In order to normalize the spectrogram
-        'y_units': str, 'Hz' or 'rad/s' - freq units
-        'modal_inds_type': 'relative' (in order to use MOI´s inds), 'absolute' (phi´s inds, default)
-        'x_lims', 'y_lims', list: Plotting lims
-    """
-    if 'data_type' in kwargs:
-        data_type = kwargs.get('data_type')
-    else:
-        data_type = 'q'  
-    if 'vel' in kwargs:
-        vel = kwargs.get('vel')
-    else:
-        vel = False
-    if 'graphs_pack' in kwargs:
-        graphs_pack = kwargs.get('graphs_pack')
-    else:
-        graphs_pack = handle_graph_info(**kwargs)
-    t = struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
-    D_t = t[-1] - t[0] #NOTA: Esto asume un único t para el struCase
-    if 'SP_Winsize' in kwargs:
-        WinSize = int(len(t)/kwargs.get('SP_Winsize'))
-    else:
-        WinSize = int(len(t)/20) #NOTA: Esto asume un único winsize para el struCase. Ver si agregar info en un dict aparte para más customización
-    if 'SP_OvrLapFactor' in kwargs:
-        OverLapFactor = kwargs.get('SP_OvrLapFactor')
-    else:
-        OverLapFactor = 80 #NOTA: Default 80%
-        
-    if 'SP_WinType' in kwargs:
-        WinType = kwargs.get('SP_WinType')
-    else:
-        WinType = 'hann' #NOTA: Default Hann's window. ¿Sirve?
-        
-    if 'SP_Normalize' in kwargs:
-        b_norm = kwargs.get('SP_Normalize')
-    else:
-        b_norm = True #NOTA: Default normalizar el spectrogram
-        
-    if 'y_lims' in kwargs:
-        y_lims = kwargs.get('y_lims')
-    else:
-        y_lims = False
-    if 'y_units' in kwargs:
-        y_units = kwargs.get('y_units')
-    else:
-        print('Missing f units. Set to default (Hz)')
-        y_units = 'Hz'
-    if 'modal_inds_type' in kwargs:
-        modal_inds_type = kwargs.get('modal_inds_type')
-    else:
-        modal_inds_type = 'absolute'
-    OverLap = np.round(WinSize*OverLapFactor/100)
-    fDef = len(t)/D_t
-    
-    if type(modal_inds) == int:
-        modal_inds = [modal_inds]
-    modal_inds = handle_modal_inds(struCase, modal_inds, **kwargs)
-    for loc_ind in modal_inds:
-        y = getattr(struCase, data_type)[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
-        if vel:
-            y=np.gradient(y,t) #NOTA: Agregar al plot que es una velocidad
-        F, T, S = signal.spectrogram(y, fDef,window=WinType, noverlap=OverLap,nperseg=WinSize)
-        if b_norm:
-            loc_m = np.max(S)
-            if not loc_m == 0:
-                S = abs(S)/loc_m
-            else:
-                print('Warning: 1/0 found')
-        if y_units == 'rad/s':
-            print('f in rad/s!')
-            y_values = F*2*np.pi
-        elif y_units == 'Hz':
-            print('f in hz!')
-            y_values = F
-        c = ax.pcolormesh(T,y_values,S,shading = 'auto', cmap='gray_r')
-        fig.colorbar(c, ax = ax)
-    ax.set_title('Modo: ' + lst2str(modal_inds))
-    ax.set_ylabel(graphs_pack['y_label'])
-    if y_lims:
-        if type(y_lims) == str:
-            if y_lims == 'individual':
-                if not 'y_lims_SPEC' in kwargs:
-                    print('y_lims not set - SPECT')
-                else:
-                    y_lims = kwargs.get('y_lims_SPEC')
-                ax.set_ylim(y_lims)
-        else:
-            ax.set_ylim(y_lims)
-    return(ax)
-
-#Vs DOFs
 
 def plt_uxuy(struCase, vsDict, ax, **kwargs):
     '''
