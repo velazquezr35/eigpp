@@ -4,10 +4,11 @@
 
 ### classes
 
-`sim: `     full model info, container for simulation subparts
+`class sim: `     full model info, container for simulation subparts
 
-`    # instance attributes
+`
     def __init__(self):
+    
         self.name  = ''                             # short description
         self.descr = ''                             # description
         
@@ -19,10 +20,11 @@
         self.struList   = []    # list of "stru" class objects
         self.aeroList   = []    # list of "aero" class objects`
 
-`stru: ` structural model info
+`class stru: ` structural model info
 
-`    # instance attributes
+`  
     def __init__(self):
+    
         self.name   = ''                                    # short description
         self.descr  = ''                                    # description
                     
@@ -88,7 +90,7 @@
         self.intLabOffset = 0                               # offset node labels
         self.rot_inds = [4,5,6]                             # rotational DOFs inds (not Python´s)`
 
-`aero: ` aerodynamic model info
+`class aero: ` aerodynamic model info
 
 ### funcs
 
