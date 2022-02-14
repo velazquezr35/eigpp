@@ -344,7 +344,7 @@ def plt_FFT(struCase, data_indic, ax, **kwargs):
     t = struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
     fDef = 1/(t[-1]-t[0])
     y_data = []
-    if data_type == 'q' or data_type == 'Q':
+    if not data_type == 'UDS' or data_type == 'FCS':
         if 'modal_inds_type' in kwargs:
             modal_inds_type = kwargs.get('modal_inds_type')
         else:
@@ -364,7 +364,7 @@ def plt_FFT(struCase, data_indic, ax, **kwargs):
         original_inds = None
         node_labels = None
 
-    elif data_type == 'UDS' or data_type == 'FCS':
+    else:
         if 'u_type' in kwargs:
             u_type = kwargs.get('u_type')
         else:
@@ -575,7 +575,7 @@ def plt_spectr(struCase, data_indic, fig, ax, **kwargs):
     OverLap = np.round(WinSize*OverLapFactor/100)
     fDef = len(t)/D_t
     y_data = []
-    if data_type == 'q' or data_type == 'Q':
+    if not data_type == 'UDS' or data_type == 'FCS':
         plot_type = 'modal'
         if 'modal_inds_type' in kwargs:
             modal_inds_type = kwargs.get('modal_inds_type')
@@ -586,7 +586,7 @@ def plt_spectr(struCase, data_indic, fig, ax, **kwargs):
         data_indic = handle_modal_inds(struCase, data_indic, **kwargs)
         for loc_ind in data_indic:
             y_data.append(getattr(struCase, data_type)[loc_ind-1,struCase.plot_timeInds[0]:struCase.plot_timeInds[1]])
-    elif data_type == 'UDS' or data_type == 'FCS':
+    else:
         plot_type = 'DOF'
         if 'u_type' in kwargs:
             u_type = kwargs.get('u_type')
