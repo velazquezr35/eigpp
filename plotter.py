@@ -605,8 +605,8 @@ def plt_spectr(struCase, data_indic, fig, ax, **kwargs):
                     raise NameError('Wrong u_type def')
             elif data_type =='FCS':
                 y_data.append(struCase.aLoad[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]])
-    else:
-        raise NameError('Bad data_type')
+            else:
+                raise NameError('Bad data_type')
     counter = 0
     for y in y_data:
         if vel:
