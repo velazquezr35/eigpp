@@ -208,7 +208,7 @@ def upd_mnorm(struCase):
         alpha = 1/struCase.om[:,2]
         
     elif struCase.mnorm == 'norm':
-        alpha = 1/np.linalg.mnorm(struCase.phiR,axis=0)
+        alpha = 1/np.linalg.norm(struCase.phiR,axis=0)
     
     elif struCase.mnorm == 'max':
         alpha = 1/np.max(struCase.phiR, axis=0)
