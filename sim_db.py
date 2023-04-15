@@ -167,7 +167,7 @@ def upd_phiR(struCase):
         moi_inds = []
         for i in range(len(struCase.moi)):
             moi_inds.append(struCase.moi[i]-1)
-        struCase.phiR = struCase.phi[moi_inds]
+        struCase.phiR = struCase.phi[:,moi_inds]
         struCase.omR = struCase.om[moi_inds]
         
     return(struCase)
