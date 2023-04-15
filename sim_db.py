@@ -105,7 +105,7 @@ class stru:
         self.EigWorkOpt = True                              # True if modal work from external loads should be computed
         self.plot_timeInds = np.array([0,None])               # desired plot indexes
         self.plot_timeVals = np.array([np.inf,np.inf])      # desired plot time values
-        self.intLabOffset = 0                               # offset node labels
+        self.intLabOffset = 0                               # offset to match internal node labels in Delta and Simpact models (when a reduced model is used in Delta)
         self.rot_inds = [4,5,6]                             # rotational DOFs inds (not Python´s)
     
     #Methods
@@ -663,7 +663,9 @@ def NaN_filter(full_data, Nan_step, **kwargs):
     
 def rd_eqInfo(struCase, **kwargs):
     """
-    Extracts Information Relative to the Equations Numbers from ASCII *.rsn file (Simpact or Delta output, default Delta)
+    Extracts Information Relative to the Equations Numbers from ASCII *.rsn file (Simpact or Delta output, default Delta).
+    Helps to match rows in the *.rsn file matrices with nodes' external labels
+    (because, if the external labels have many digits, they are not properly printed in the mass matrix file section)
     
     Inputs:
         struCase: 'stru' class object
@@ -740,11 +742,12 @@ def rd_mass(struCase, **kwargs):
     raw_lumped_matrix = rd_SimpactTable(x_dat, locs_lumped[0]+c_lumped_m)
     struCase.mass = []
     struCase.iLabl = []
-    for j in range(0, len(struCase.eqInfo[:, 0])): #File to file
-        for a in range(0, struCase.nnode): #Node to node (of interest)
-            if struCase.eqInfo[j, 0] == struCase.nodes[a]:
+    for j in range(0, len(struCase.eqInfo[:, 0])): # a.- reads external node's labels in the first column of eqInfo matrix
+        for a in range(0, struCase.nnode): # b.- looks for next node label
+            if struCase.eqInfo[j, 0] == struCase.nodes[a]: # c.- and compares them
                 # save data
-                struCase.iLabl.append([struCase.nodes[a], struCase.eqInfo[j,-1]]) # NOTA: hay que modificar esto para que lea solo la última columna, así queda funcionando también apra leer los *.rsn de Simpact
+                struCase.iLabl.append([struCase.nodes[a], struCase.eqInfo[j,-1]])   # reads internal labels of Delta model
+                                                                                    # NOTA: hay que modificar esto para que lea solo la última columna, así queda funcionando también apra leer los *.rsn de Simpact
                 if len(raw_lumped_matrix[j]) == 6:
                     struCase.mass = np.append(struCase.mass, raw_lumped_matrix[j])
                 else:
@@ -756,7 +759,7 @@ def rd_mass(struCase, **kwargs):
     # close file
     y.close()
     
-    struCase.iLabl = np.array(struCase.iLabl) + struCase.intLabOffset
+    struCase.iLabl = np.array(struCase.iLabl) + struCase.intLabOffset   # the offset is used to match internal labels in Delta model with those in Simpact model
     
     return struCase
 
