@@ -346,7 +346,7 @@ def sfti_time(struCase, *reset, **kwargs):
     
 def nodeDof2idx(struCase, nodeDOFs):
     """
-    Returns indexes for the nodes and nodes DOFs of interest
+    Returns global indexes (from 0) for the "nodes and local DoFs" of interest
     Inputs:
         struCase: sim.stru obj
         nodeDOFs: dict, keys: nodes, values: list of DOFs per node
@@ -366,6 +366,32 @@ def nodeDof2idx(struCase, nodeDOFs):
                 loc_indexes.append(6*struCase.nodes.index(int(nodes[i]))+(dofs[i][j]-1))
             except:
                 print('Error - Revisar datos: nodo:', nodes[i], ', DOF: ', (dofs[i][j]-1))
+                break
+    return loc_indexes
+    
+    
+def nodeDof2idxEng(struCase, nodeDOFs):
+    """
+    Returns global indexes (from 1) for the "nodes and local DoFs" of interest
+    Inputs:
+        struCase: sim.stru obj
+        nodeDOFs: dict, keys: nodes, values: list of DOFs per node
+    Returns:
+        list of ints (indexes), sorted
+    """
+    loc_indexes = []
+    nodes = list(nodeDOFs.keys())
+    dofs = list(nodeDOFs.values())
+    
+    for i in range(len(nodes)):
+        for j in range(len(dofs[i])):
+            try:
+                if dofs[i][j] > 6 or dofs[i][j] < 1:
+                    print('DOF local mal definido')
+                    raise ValueError()
+                loc_indexes.append(6*struCase.nodes.index(int(nodes[i]))+(dofs[i][j]))
+            except:
+                print('Error - Revisar datos: nodo:', nodes[i], ', DOF: ', (dofs[i][j]))
                 break
     return loc_indexes
 
