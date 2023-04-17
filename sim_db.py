@@ -192,9 +192,9 @@ def upd_mnorm(struCase):
     struCase.mmass and struCase.mstif from struCase.mnorm.
     
     WARNING:
-        struCase.phiR, struCase.q, struCase.Q before this
-        function is called must have been determined using
-        mass-normalized modes.
+        struCase.phiR, struCase.q, struCase.Q must have
+        been determined using mass-normalized modes before
+        this function is called.
     
     Inputs:
         struCase, stru class obj
