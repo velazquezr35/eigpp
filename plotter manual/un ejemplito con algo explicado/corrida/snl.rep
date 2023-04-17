@@ -1,0 +1,181 @@
+                                 S I M P A C T
+
+                                 version: 7.2.0
+                                 date   : 06/12/12
+
+                     EXPLICIT NONLINEAR DYNAMIC ANALYSIS        
+                         BY THE FINITE ELEMENT METHOD           
+              GROUP OF NUMERICAL METHODS IN STRUCTURAL MECHANICS
+                           DEPARTMENT OF STRUCTURES             
+                        NATIONAL UNIVERSITY OF CORDOBA          
+                           (C) G M N M E   CopyRight            
+                              CORDOBA - ARGENTINA               
+
+
+                       Started at  20:14:33  on  15/04/2023
+
+
+*** PLEASE WAIT FOR THE PRELIMINARY CALCULATIONS TO BE COMPLETED ...
+
+
+     ***  BEGIN STAGE 1: str01                                                                                              
+
+ STEP 1250   DT=  0.5182E-03   Time= 0.64722E+00   CPU 0:00:00  CPU to end stage (est.) 0:00:55
+ STEP 2500   DT=  0.5182E-03   Time= 0.12950E+01   CPU 0:00:01  CPU to end stage (est.) 0:01:24
+ STEP 3750   DT=  0.5182E-03   Time= 0.19427E+01   CPU 0:00:01  CPU to end stage (est.) 0:01:42
+ STEP 5000   DT=  0.5182E-03   Time= 0.25904E+01   CPU 0:00:02  CPU to end stage (est.) 0:01:13
+ STEP 6250   DT=  0.5182E-03   Time= 0.32382E+01   CPU 0:00:02  CPU to end stage (est.) 0:01:26
+ STEP 7500   DT=  0.5182E-03   Time= 0.38859E+01   CPU 0:00:03  CPU to end stage (est.) 0:01:07
+ STEP 8750   DT=  0.5182E-03   Time= 0.45336E+01   CPU 0:00:03  CPU to end stage (est.) 0:01:13
+ STEP 10000   DT=  0.5182E-03   Time= 0.51814E+01   CPU 0:00:04  CPU to end stage (est.) 0:00:58
+ STEP 11250   DT=  0.5182E-03   Time= 0.58291E+01   CPU 0:00:04  CPU to end stage (est.) 0:01:03
+ STEP 12500   DT=  0.5182E-03   Time= 0.64768E+01   CPU 0:00:05  CPU to end stage (est.) 0:00:56
+ STEP 13750   DT=  0.5182E-03   Time= 0.71246E+01   CPU 0:00:05  CPU to end stage (est.) 0:01:00
+ STEP 15000   DT=  0.5182E-03   Time= 0.77723E+01   CPU 0:00:05  CPU to end stage (est.) 0:00:54
+ STEP 16250   DT=  0.5182E-03   Time= 0.84200E+01   CPU 0:00:06  CPU to end stage (est.) 0:00:55
+ STEP 17500   DT=  0.5182E-03   Time= 0.90678E+01   CPU 0:00:06  CPU to end stage (est.) 0:00:51
+ STEP 18750   DT=  0.5182E-03   Time= 0.97155E+01   CPU 0:00:06  CPU to end stage (est.) 0:00:53
+ STEP 20000   DT=  0.5182E-03   Time= 0.10363E+02   CPU 0:00:07  CPU to end stage (est.) 0:00:49
+ STEP 21250   DT=  0.5182E-03   Time= 0.11011E+02   CPU 0:00:07  CPU to end stage (est.) 0:00:56
+ STEP 22500   DT=  0.5182E-03   Time= 0.11659E+02   CPU 0:00:08  CPU to end stage (est.) 0:00:50
+ STEP 23750   DT=  0.5182E-03   Time= 0.12306E+02   CPU 0:00:08  CPU to end stage (est.) 0:01:00
+ STEP 25000   DT=  0.5182E-03   Time= 0.12954E+02   CPU 0:00:08  CPU to end stage (est.) 0:00:50
+ STEP 26250   DT=  0.5182E-03   Time= 0.13602E+02   CPU 0:00:09  CPU to end stage (est.) 0:00:51
+ STEP 27500   DT=  0.5182E-03   Time= 0.14250E+02   CPU 0:00:09  CPU to end stage (est.) 0:00:53
+ STEP 28750   DT=  0.5182E-03   Time= 0.14897E+02   CPU 0:00:10  CPU to end stage (est.) 0:00:49
+ STEP 30000   DT=  0.5182E-03   Time= 0.15545E+02   CPU 0:00:10  CPU to end stage (est.) 0:00:53
+ STEP 31250   DT=  0.5182E-03   Time= 0.16193E+02   CPU 0:00:10  CPU to end stage (est.) 0:00:51
+ STEP 32500   DT=  0.5182E-03   Time= 0.16841E+02   CPU 0:00:11  CPU to end stage (est.) 0:00:51
+ STEP 33750   DT=  0.5182E-03   Time= 0.17488E+02   CPU 0:00:11  CPU to end stage (est.) 0:00:45
+ STEP 35000   DT=  0.5182E-03   Time= 0.18136E+02   CPU 0:00:12  CPU to end stage (est.) 0:00:50
+ STEP 36250   DT=  0.5182E-03   Time= 0.18784E+02   CPU 0:00:12  CPU to end stage (est.) 0:00:47
+ STEP 37500   DT=  0.5182E-03   Time= 0.19432E+02   CPU 0:00:12  CPU to end stage (est.) 0:00:50
+ STEP 38750   DT=  0.5182E-03   Time= 0.20079E+02   CPU 0:00:13  CPU to end stage (est.) 0:00:45
+ STEP 40000   DT=  0.5182E-03   Time= 0.20727E+02   CPU 0:00:13  CPU to end stage (est.) 0:00:49
+ STEP 41250   DT=  0.5182E-03   Time= 0.21375E+02   CPU 0:00:13  CPU to end stage (est.) 0:00:45
+ STEP 42500   DT=  0.5182E-03   Time= 0.22022E+02   CPU 0:00:14  CPU to end stage (est.) 0:00:48
+ STEP 43750   DT=  0.5182E-03   Time= 0.22670E+02   CPU 0:00:14  CPU to end stage (est.) 0:00:44
+ STEP 45000   DT=  0.5182E-03   Time= 0.23318E+02   CPU 0:00:15  CPU to end stage (est.) 0:00:47
+ STEP 46250   DT=  0.5182E-03   Time= 0.23966E+02   CPU 0:00:15  CPU to end stage (est.) 0:00:41
+ STEP 47500   DT=  0.5182E-03   Time= 0.24613E+02   CPU 0:00:15  CPU to end stage (est.) 0:00:45
+ STEP 48750   DT=  0.5182E-03   Time= 0.25261E+02   CPU 0:00:16  CPU to end stage (est.) 0:00:43
+ STEP 50000   DT=  0.5182E-03   Time= 0.25909E+02   CPU 0:00:16  CPU to end stage (est.) 0:00:44
+ STEP 51250   DT=  0.5182E-03   Time= 0.26557E+02   CPU 0:00:17  CPU to end stage (est.) 0:00:39
+ STEP 52500   DT=  0.5182E-03   Time= 0.27204E+02   CPU 0:00:17  CPU to end stage (est.) 0:00:44
+ STEP 53750   DT=  0.5182E-03   Time= 0.27852E+02   CPU 0:00:17  CPU to end stage (est.) 0:00:42
+ STEP 55000   DT=  0.5182E-03   Time= 0.28500E+02   CPU 0:00:18  CPU to end stage (est.) 0:00:46
+ STEP 56250   DT=  0.5182E-03   Time= 0.29148E+02   CPU 0:00:18  CPU to end stage (est.) 0:00:42
+ STEP 57500   DT=  0.5182E-03   Time= 0.29795E+02   CPU 0:00:18  CPU to end stage (est.) 0:00:38
+ STEP 58750   DT=  0.5182E-03   Time= 0.30443E+02   CPU 0:00:19  CPU to end stage (est.) 0:00:41
+ STEP 60000   DT=  0.5182E-03   Time= 0.31091E+02   CPU 0:00:19  CPU to end stage (est.) 0:00:40
+ STEP 61250   DT=  0.5182E-03   Time= 0.31738E+02   CPU 0:00:20  CPU to end stage (est.) 0:00:39
+ STEP 62500   DT=  0.5182E-03   Time= 0.32386E+02   CPU 0:00:20  CPU to end stage (est.) 0:00:37
+ STEP 63750   DT=  0.5182E-03   Time= 0.33034E+02   CPU 0:00:20  CPU to end stage (est.) 0:00:41
+ STEP 65000   DT=  0.5182E-03   Time= 0.33682E+02   CPU 0:00:21  CPU to end stage (est.) 0:00:38
+ STEP 66250   DT=  0.5182E-03   Time= 0.34329E+02   CPU 0:00:21  CPU to end stage (est.) 0:00:40
+ STEP 67500   DT=  0.5182E-03   Time= 0.34977E+02   CPU 0:00:21  CPU to end stage (est.) 0:00:35
+ STEP 68750   DT=  0.5182E-03   Time= 0.35625E+02   CPU 0:00:22  CPU to end stage (est.) 0:00:41
+ STEP 70000   DT=  0.5182E-03   Time= 0.36273E+02   CPU 0:00:22  CPU to end stage (est.) 0:00:37
+ STEP 71250   DT=  0.5182E-03   Time= 0.36920E+02   CPU 0:00:23  CPU to end stage (est.) 0:00:41
+ STEP 72500   DT=  0.5182E-03   Time= 0.37568E+02   CPU 0:00:23  CPU to end stage (est.) 0:00:34
+ STEP 73750   DT=  0.5182E-03   Time= 0.38216E+02   CPU 0:00:23  CPU to end stage (est.) 0:00:35
+ STEP 75000   DT=  0.5182E-03   Time= 0.38864E+02   CPU 0:00:24  CPU to end stage (est.) 0:00:35
+ STEP 76250   DT=  0.5182E-03   Time= 0.39511E+02   CPU 0:00:24  CPU to end stage (est.) 0:00:38
+ STEP 77500   DT=  0.5182E-03   Time= 0.40159E+02   CPU 0:00:25  CPU to end stage (est.) 0:00:35
+ STEP 78750   DT=  0.5182E-03   Time= 0.40807E+02   CPU 0:00:25  CPU to end stage (est.) 0:00:38
+ STEP 80000   DT=  0.5182E-03   Time= 0.41455E+02   CPU 0:00:25  CPU to end stage (est.) 0:00:32
+ STEP 81250   DT=  0.5182E-03   Time= 0.42102E+02   CPU 0:00:26  CPU to end stage (est.) 0:00:36
+ STEP 82500   DT=  0.5182E-03   Time= 0.42750E+02   CPU 0:00:26  CPU to end stage (est.) 0:00:34
+ STEP 83750   DT=  0.5182E-03   Time= 0.43398E+02   CPU 0:00:27  CPU to end stage (est.) 0:00:32
+ STEP 85000   DT=  0.5182E-03   Time= 0.44045E+02   CPU 0:00:27  CPU to end stage (est.) 0:00:33
+ STEP 86250   DT=  0.5182E-03   Time= 0.44693E+02   CPU 0:00:27  CPU to end stage (est.) 0:00:33
+ STEP 87500   DT=  0.5182E-03   Time= 0.45341E+02   CPU 0:00:28  CPU to end stage (est.) 0:00:32
+ STEP 88750   DT=  0.5182E-03   Time= 0.45989E+02   CPU 0:00:28  CPU to end stage (est.) 0:00:31
+ STEP 90000   DT=  0.5182E-03   Time= 0.46636E+02   CPU 0:00:28  CPU to end stage (est.) 0:00:31
+ STEP 91250   DT=  0.5182E-03   Time= 0.47284E+02   CPU 0:00:29  CPU to end stage (est.) 0:00:31
+ STEP 92500   DT=  0.5182E-03   Time= 0.47932E+02   CPU 0:00:29  CPU to end stage (est.) 0:00:31
+ STEP 93750   DT=  0.5182E-03   Time= 0.48580E+02   CPU 0:00:30  CPU to end stage (est.) 0:00:30
+ STEP 95000   DT=  0.5182E-03   Time= 0.49227E+02   CPU 0:00:30  CPU to end stage (est.) 0:00:32
+ STEP 96250   DT=  0.5182E-03   Time= 0.49875E+02   CPU 0:00:30  CPU to end stage (est.) 0:00:29
+ STEP 97500   DT=  0.5182E-03   Time= 0.50523E+02   CPU 0:00:31  CPU to end stage (est.) 0:00:30
+ STEP 98750   DT=  0.5182E-03   Time= 0.51171E+02   CPU 0:00:31  CPU to end stage (est.) 0:00:27
+ STEP 100000   DT=  0.5182E-03   Time= 0.51818E+02   CPU 0:00:32  CPU to end stage (est.) 0:00:29
+ STEP 101250   DT=  0.5182E-03   Time= 0.52466E+02   CPU 0:00:32  CPU to end stage (est.) 0:00:27
+ STEP 102500   DT=  0.5182E-03   Time= 0.53114E+02   CPU 0:00:32  CPU to end stage (est.) 0:00:31
+ STEP 103750   DT=  0.5182E-03   Time= 0.53761E+02   CPU 0:00:33  CPU to end stage (est.) 0:00:27
+ STEP 105000   DT=  0.5182E-03   Time= 0.54409E+02   CPU 0:00:33  CPU to end stage (est.) 0:00:29
+ STEP 106250   DT=  0.5182E-03   Time= 0.55057E+02   CPU 0:00:34  CPU to end stage (est.) 0:00:26
+ STEP 107500   DT=  0.5182E-03   Time= 0.55705E+02   CPU 0:00:34  CPU to end stage (est.) 0:00:26
+ STEP 108750   DT=  0.5182E-03   Time= 0.56352E+02   CPU 0:00:34  CPU to end stage (est.) 0:00:25
+ STEP 110000   DT=  0.5182E-03   Time= 0.57000E+02   CPU 0:00:35  CPU to end stage (est.) 0:00:26
+ STEP 111250   DT=  0.5182E-03   Time= 0.57648E+02   CPU 0:00:35  CPU to end stage (est.) 0:00:24
+ STEP 112500   DT=  0.5182E-03   Time= 0.58296E+02   CPU 0:00:35  CPU to end stage (est.) 0:00:22
+ STEP 113750   DT=  0.5182E-03   Time= 0.58943E+02   CPU 0:00:36  CPU to end stage (est.) 0:00:27
+ STEP 115000   DT=  0.5182E-03   Time= 0.59591E+02   CPU 0:00:36  CPU to end stage (est.) 0:00:22
+ STEP 116250   DT=  0.5182E-03   Time= 0.60239E+02   CPU 0:00:37  CPU to end stage (est.) 0:00:22
+ STEP 117500   DT=  0.5182E-03   Time= 0.60887E+02   CPU 0:00:37  CPU to end stage (est.) 0:00:24
+ STEP 118750   DT=  0.5182E-03   Time= 0.61534E+02   CPU 0:00:37  CPU to end stage (est.) 0:00:24
+ STEP 120000   DT=  0.5182E-03   Time= 0.62182E+02   CPU 0:00:38  CPU to end stage (est.) 0:00:21
+ STEP 121250   DT=  0.5182E-03   Time= 0.62830E+02   CPU 0:00:38  CPU to end stage (est.) 0:00:21
+ STEP 122500   DT=  0.5182E-03   Time= 0.63478E+02   CPU 0:00:39  CPU to end stage (est.) 0:00:21
+ STEP 123750   DT=  0.5182E-03   Time= 0.64125E+02   CPU 0:00:39  CPU to end stage (est.) 0:00:22
+ STEP 125000   DT=  0.5182E-03   Time= 0.64773E+02   CPU 0:00:39  CPU to end stage (est.) 0:00:20
+ STEP 126250   DT=  0.5182E-03   Time= 0.65421E+02   CPU 0:00:40  CPU to end stage (est.) 0:00:20
+ STEP 127500   DT=  0.5182E-03   Time= 0.66068E+02   CPU 0:00:40  CPU to end stage (est.) 0:00:18
+ STEP 128750   DT=  0.5182E-03   Time= 0.66716E+02   CPU 0:00:41  CPU to end stage (est.) 0:00:21
+ STEP 130000   DT=  0.5182E-03   Time= 0.67364E+02   CPU 0:00:41  CPU to end stage (est.) 0:00:18
+ STEP 131250   DT=  0.5182E-03   Time= 0.68012E+02   CPU 0:00:41  CPU to end stage (est.) 0:00:19
+ STEP 132500   DT=  0.5182E-03   Time= 0.68659E+02   CPU 0:00:42  CPU to end stage (est.) 0:00:16
+ STEP 133750   DT=  0.5182E-03   Time= 0.69307E+02   CPU 0:00:42  CPU to end stage (est.) 0:00:19
+ STEP 135000   DT=  0.5182E-03   Time= 0.69955E+02   CPU 0:00:42  CPU to end stage (est.) 0:00:16
+ STEP 136250   DT=  0.5182E-03   Time= 0.70603E+02   CPU 0:00:43  CPU to end stage (est.) 0:00:17
+ STEP 137500   DT=  0.5182E-03   Time= 0.71250E+02   CPU 0:00:43  CPU to end stage (est.) 0:00:17
+ STEP 138750   DT=  0.5182E-03   Time= 0.71898E+02   CPU 0:00:44  CPU to end stage (est.) 0:00:16
+ STEP 140000   DT=  0.5182E-03   Time= 0.72546E+02   CPU 0:00:44  CPU to end stage (est.) 0:00:16
+ STEP 141250   DT=  0.5182E-03   Time= 0.73194E+02   CPU 0:00:44  CPU to end stage (est.) 0:00:15
+ STEP 142500   DT=  0.5182E-03   Time= 0.73841E+02   CPU 0:00:45  CPU to end stage (est.) 0:00:16
+ STEP 143750   DT=  0.5182E-03   Time= 0.74489E+02   CPU 0:00:45  CPU to end stage (est.) 0:00:15
+ STEP 145000   DT=  0.5182E-03   Time= 0.75137E+02   CPU 0:00:46  CPU to end stage (est.) 0:00:15
+ STEP 146250   DT=  0.5182E-03   Time= 0.75785E+02   CPU 0:00:46  CPU to end stage (est.) 0:00:14
+ STEP 147500   DT=  0.5182E-03   Time= 0.76432E+02   CPU 0:00:46  CPU to end stage (est.) 0:00:15
+ STEP 148750   DT=  0.5182E-03   Time= 0.77080E+02   CPU 0:00:47  CPU to end stage (est.) 0:00:14
+ STEP 150000   DT=  0.5182E-03   Time= 0.77728E+02   CPU 0:00:47  CPU to end stage (est.) 0:00:13
+ STEP 151250   DT=  0.5182E-03   Time= 0.78375E+02   CPU 0:00:47  CPU to end stage (est.) 0:00:12
+ STEP 152500   DT=  0.5182E-03   Time= 0.79023E+02   CPU 0:00:48  CPU to end stage (est.) 0:00:12
+ STEP 153750   DT=  0.5182E-03   Time= 0.79671E+02   CPU 0:00:48  CPU to end stage (est.) 0:00:11
+ STEP 155000   DT=  0.5182E-03   Time= 0.80319E+02   CPU 0:00:49  CPU to end stage (est.) 0:00:12
+ STEP 156250   DT=  0.5182E-03   Time= 0.80966E+02   CPU 0:00:49  CPU to end stage (est.) 0:00:11
+ STEP 157500   DT=  0.5182E-03   Time= 0.81614E+02   CPU 0:00:49  CPU to end stage (est.) 0:00:11
+ STEP 158750   DT=  0.5182E-03   Time= 0.82262E+02   CPU 0:00:50  CPU to end stage (est.) 0:00:10
+ STEP 160000   DT=  0.5182E-03   Time= 0.82910E+02   CPU 0:00:50  CPU to end stage (est.) 0:00:10
+ STEP 161250   DT=  0.5182E-03   Time= 0.83557E+02   CPU 0:00:51  CPU to end stage (est.) 0:00:09
+ STEP 162500   DT=  0.5182E-03   Time= 0.84205E+02   CPU 0:00:51  CPU to end stage (est.) 0:00:09
+ STEP 163750   DT=  0.5182E-03   Time= 0.84853E+02   CPU 0:00:51  CPU to end stage (est.) 0:00:09
+ STEP 165000   DT=  0.5182E-03   Time= 0.85501E+02   CPU 0:00:52  CPU to end stage (est.) 0:00:09
+ STEP 166250   DT=  0.5182E-03   Time= 0.86148E+02   CPU 0:00:52  CPU to end stage (est.) 0:00:08
+ STEP 167500   DT=  0.5182E-03   Time= 0.86796E+02   CPU 0:00:53  CPU to end stage (est.) 0:00:08
+ STEP 168750   DT=  0.5182E-03   Time= 0.87444E+02   CPU 0:00:53  CPU to end stage (est.) 0:00:07
+ STEP 170000   DT=  0.5182E-03   Time= 0.88092E+02   CPU 0:00:53  CPU to end stage (est.) 0:00:06
+ STEP 171250   DT=  0.5182E-03   Time= 0.88739E+02   CPU 0:00:54  CPU to end stage (est.) 0:00:06
+ STEP 172500   DT=  0.5182E-03   Time= 0.89387E+02   CPU 0:00:54  CPU to end stage (est.) 0:00:05
+ STEP 173750   DT=  0.5182E-03   Time= 0.90035E+02   CPU 0:00:55  CPU to end stage (est.) 0:00:06
+ STEP 175000   DT=  0.5182E-03   Time= 0.90682E+02   CPU 0:00:55  CPU to end stage (est.) 0:00:05
+ STEP 176250   DT=  0.5182E-03   Time= 0.91330E+02   CPU 0:00:55  CPU to end stage (est.) 0:00:05
+ STEP 177500   DT=  0.5182E-03   Time= 0.91978E+02   CPU 0:00:56  CPU to end stage (est.) 0:00:04
+ STEP 178750   DT=  0.5182E-03   Time= 0.92626E+02   CPU 0:00:56  CPU to end stage (est.) 0:00:04
+ STEP 180000   DT=  0.5182E-03   Time= 0.93273E+02   CPU 0:00:56  CPU to end stage (est.) 0:00:03
+ STEP 181250   DT=  0.5182E-03   Time= 0.93921E+02   CPU 0:00:57  CPU to end stage (est.) 0:00:03
+ STEP 182500   DT=  0.5182E-03   Time= 0.94569E+02   CPU 0:00:57  CPU to end stage (est.) 0:00:03
+ STEP 183750   DT=  0.5182E-03   Time= 0.95217E+02   CPU 0:00:58  CPU to end stage (est.) 0:00:02
+ STEP 185000   DT=  0.5182E-03   Time= 0.95864E+02   CPU 0:00:58  CPU to end stage (est.) 0:00:02
+ STEP 186250   DT=  0.5182E-03   Time= 0.96512E+02   CPU 0:00:58  CPU to end stage (est.) 0:00:02
+ STEP 187500   DT=  0.5182E-03   Time= 0.97160E+02   CPU 0:00:59  CPU to end stage (est.) 0:00:01
+ STEP 188750   DT=  0.5182E-03   Time= 0.97808E+02   CPU 0:00:59  CPU to end stage (est.) 0:00:01
+ STEP 190000   DT=  0.5182E-03   Time= 0.98455E+02   CPU 0:01:00  CPU to end stage (est.) 0:00:00
+ STEP 191250   DT=  0.5182E-03   Time= 0.99103E+02   CPU 0:01:00  CPU to end stage (est.) 0:00:00
+ STEP 192500   DT=  0.5182E-03   Time= 0.99751E+02   CPU 0:01:00  CPU to end stage (est.) 0:00:00
+     ***  END OF STAGE 1: str01                                                                                              
+
+
+                       *** NORMAL END OF EXECUTION ***
+
