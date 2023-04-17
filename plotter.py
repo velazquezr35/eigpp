@@ -311,7 +311,7 @@ def plt_FFT(struCase, data_indic, ax, **kwargs):
                 'modal_inds_type': 'relative' (in order to use MOI´s inds), 'absolute' (phi´s inds, default)
             if 'UDS' (may contain):
                 u_type: 'mdr' or 'raw'
-                vel, for in order to calculate and plot the FFT of DOF velocities
+                vel, in order to calculate and plot the FFT of DOF velocities
             'vel': False (default) or True (in order to calculate and plot velocities)
             'x_units', str: 'rad/s' or 'Hz' (default) - x freqs units
             'vel', for in order to calculate and plot the FFT of the modal velocities
@@ -1081,6 +1081,9 @@ def fig_FFT(struCase, DATA_indic, **kwargs):
     '''
     Arranges plots of FFT(u(t)) or FFT(load(t)) or FFT(q(t)) or FFT(Q(t))
     
+    WARNING:
+        Can only plot one FFT per axes - seems to be limitation of plt_FFT
+    
     Inputs:
         struCase: 'stru' class obj
         DATA_indic: lisf of dofDicts or a single one (DOF an) {'NODE':[DOFs]} or list of modal inds list [[modal_ind]] (modal an)
@@ -1137,15 +1140,18 @@ def fig_FFT(struCase, DATA_indic, **kwargs):
         DATA_indic = [DATA_indic]            
     n = len(DATA_indic)
     
+    local_kwargs = kwargs.copy()
     fig, axs = plt.subplots(n,p_prow, sharex=sharex)
     if n == 1: #Esto falla si ax no es un iterable (cuando n = 1 es sólo ax, no ax[:])
-        axs = plt_FFT(struCase, DATA_indic[0], axs, **kwargs)
+        local_kwargs["data_type"]=kwargs["data_type"][0][0]
+        axs = plt_FFT(struCase, DATA_indic[0], axs, **local_kwargs)
         axs.set_xlabel(graphs_pack['x_label'])
         axs.set_ylabel(graphs_pack['y_label'])
         axs.grid()
     else:
-        for ax, exp_DATA_indic in zip(axs, DATA_indic):
-            ax = plt_FFT(struCase, exp_DATA_indic, ax,**kwargs)
+        for ax, exp_DATA_indic, local_data_type in zip(axs, DATA_indic, kwargs["data_type"]):
+            local_kwargs["data_type"]=local_data_type[0]
+            ax = plt_FFT(struCase, exp_DATA_indic, ax,**local_kwargs)
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
         axs[-1].set_xlabel(graphs_pack['x_label'])
