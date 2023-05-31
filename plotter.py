@@ -1097,7 +1097,7 @@ def fig_FFT(struCase, DATA_indic, **kwargs):
         sharex: matplotlib.pyplot.subplots() argument - default 'col'
         p_prow: plots per row for the global figure - default 1
         limit_tvals or limit_tinds: list or ndarray - time limits for plotting, values or indexes
-        xlim: list with x-axis limit values
+        x_lims or y_lims: list with x- and y-axis limit values (see plt_FFT)
         #Plot customization:
             fig_title
             x_label
@@ -1127,8 +1127,6 @@ def fig_FFT(struCase, DATA_indic, **kwargs):
         struCase = sim_db.sfti_time(struCase,indexes=kwargs.get('limit_tinds'))
     else:
         pass
-    if 'xlim' in kwargs:
-        xlim=kwargs.get('xlim')
     if 'fig_save' in kwargs:
         fig_save = kwargs.get('fig_save')
         if 'fig_save_opts' in kwargs:
@@ -1151,14 +1149,12 @@ def fig_FFT(struCase, DATA_indic, **kwargs):
         axs.set_xlabel(graphs_pack['x_label'])
         axs.set_ylabel(graphs_pack['y_label'])
         axs.grid()
-        axs.set_xlim(xlim[0], xlim[1])
     else:
         for ax, exp_DATA_indic, local_data_type in zip(axs, DATA_indic, kwargs["data_type"]):
             local_kwargs["data_type"]=local_data_type[0]
             ax = plt_FFT(struCase, exp_DATA_indic, ax,**local_kwargs)
             ax.set_ylabel(graphs_pack['y_label'])
             ax.grid()
-            ax.set_xlim(xlim[0], xlim[1])
         axs[-1].set_xlabel(graphs_pack['x_label'])
     fig.suptitle(graphs_pack['fig_title'])
     if fig_save:
