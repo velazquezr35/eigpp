@@ -341,6 +341,8 @@ def plt_FFT(struCase, data_indic, ax, **kwargs):
         x_lims = kwargs.get('x_lims')
     else:
         x_lims = False
+        
+    # retrieve data
     t = struCase.t[struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
     fDef = 1/(t[-1]-t[0])
     y_data = []
@@ -364,11 +366,12 @@ def plt_FFT(struCase, data_indic, ax, **kwargs):
         original_inds = None
         node_labels = None
 
-    else:
+    else: # UDS or FCS
         if 'u_type' in kwargs:
             u_type = kwargs.get('u_type')
         else:
             u_type = 'mdr'
+        
         desired_inds = sim_db.nodeDof2idx(struCase,data_indic)
         original_inds = flatten_values_list(data_indic.values())
         node_labels = label_asoc(data_indic) #OJO. No contempla posibles errores
@@ -381,11 +384,16 @@ def plt_FFT(struCase, data_indic, ax, **kwargs):
                     y = struCase.u_raw[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
                 else:
                     print('Warning: Bad u_type def')  
-            if vel:
-                y=np.gradient(y,t) #NOTA: Agregar al plot que es una velocidad
+                
+                if vel: # Mauro Maza 2023/06/02
+                    y=np.gradient(y,t) #NOTA: Agregar al plot que es una velocidad
+            
             elif data_type == 'FCS':
                 y = struCase.aLoad[desired_inds[i],struCase.plot_timeInds[0]:struCase.plot_timeInds[1]]
+            
             y_data.append(y)
+    
+    # FFTs calc and plot
     for i in range(len(y_data)):
         y_f = abs(fft(y_data[i]))
         loc_m = max(y_f)
@@ -420,6 +428,7 @@ def plt_FFT(struCase, data_indic, ax, **kwargs):
                     ax.set_xlim(x_lims)
         else:
             ax.set_xlim(x_lims)
+    
     return(ax)
 
 def plt_PP(struCase, data_indic, ax, **kwargs):
@@ -830,19 +839,20 @@ def fig_general(struCase, indLIST, **kwargs):
     if type(data_type) == str:
         kwargs['data_type'] = list(kwargs['data_type'])
         
-    
+    # if 2nd arg. is just a list [id1, id2,..], create a nested list [[id1, id2,..]]
     if type(indLIST)==int:
         indLIST=list(indLIST)
+    
     n = len(indLIST)
     
     fig, axs = plt.subplots(n, p_prow, sharex = sharex)
-    if n == 1: #Esto falla si ax no es un iterable (cuando n = 1 es sólo ax, no ax[:])
+    if n == 1:
         kwargs['loc_data_type'] = data_type[0]
         axs = plt_general(struCase, indLIST[0], axs, **kwargs)
         axs.set_xlabel(graphs_pack['x_label'])
         axs.set_ylabel(graphs_pack['y_label'])
         axs.grid()
-    else:
+    else: # Esto falla si ax no es un iterable (cuando n = 1 es sólo ax, no ax[:])
         for ax, inds in zip(axs, indLIST):
             kwargs['loc_data_type'] = data_type[np.where(axs==ax)[0][0]]
             ax = plt_general(struCase, inds, ax,**kwargs)
