@@ -206,7 +206,7 @@ def upd_mnorm(struCase):
         alpha = 1
 
     elif struCase.mnorm == 'stiff':
-        alpha = 1/struCase.om[:,2]
+        alpha = 1/struCase.om[:,1]
         
     elif struCase.mnorm == 'norm':
         alpha = 1/np.linalg.norm(struCase.phiR,axis=0)
